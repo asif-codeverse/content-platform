@@ -1,5 +1,5 @@
 import { registerUser, loginUser } from "./auth.service.js";
-import { generateAccessToken, generateRefreshToken } from "../../utils/token";
+import { generateAccessToken, generateRefreshToken } from "../../utils/token.js";
 
 export const register = async (req, res, next) => {
   try {
@@ -22,7 +22,10 @@ export const login = async (req, res, next) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
-    res.json({ accessToken });
+    res.status(201).json({
+      message:"Logged in",
+      accessToken:accessToken,
+    })
   } catch (err) {
     next(err);
   }
