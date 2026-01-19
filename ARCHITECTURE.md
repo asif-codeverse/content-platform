@@ -1,12 +1,12 @@
 # Architecture Overview
 
-This project is a **monorepo** consisting of a `client` and a `server`, designed with **production-first backend architecture** and clear separation of concerns.
+This project is a **monorepo** consisting of a `client` and a `server`, designed with a **production-first backend architecture** and clear separation of concerns.
 
 ---
 
 ## Server Architecture
 
-The backend is an **Express-based REST API** structured for scalability and maintainability.
+The backend is an **Express-based REST API** structured for scalability, security, and long-term maintainability.
 
 ### Core Responsibilities
 
@@ -25,7 +25,7 @@ The backend is an **Express-based REST API** structured for scalability and main
 * **Centralized error handling**
 
   * All errors propagate to a single error middleware
-  * Consistent error response format
+  * Consistent error response format across the system
 
 * **Health endpoint**
 
@@ -35,13 +35,13 @@ The backend is an **Express-based REST API** structured for scalability and main
 
 ## Module Structure
 
-The backend follows a **feature-based modular architecture**.
+The backend follows a **feature-based modular architecture**, where each domain is isolated and self-contained.
 
 ```
 src/
 ├── config/        # Environment & infrastructure config
 ├── middlewares/   # Auth, RBAC, error handling
-├── modules/       # Feature modules (auth, future domains)
+├── modules/       # Feature modules (auth, articles, future domains)
 ├── utils/         # Shared utilities (JWT, helpers)
 ├── app.js
 └── server.js
@@ -55,6 +55,8 @@ Each module encapsulates:
 * Models
 * Validation logic
 
+This structure allows features to evolve independently without cross-module coupling.
+
 ---
 
 ## Authentication (Day 2)
@@ -67,16 +69,19 @@ The system uses **stateless JWT-based authentication**.
 
   * Short-lived
   * Sent via `Authorization: Bearer <token>` header
+  * Used for accessing protected APIs
+
 * **Refresh Token**
 
   * Long-lived
   * Stored in **HttpOnly cookies**
-  * Used only for token rotation (not for authorization)
+  * Used only for token rotation
+  * Never used for authorization
 
 ### Password Security
 
 * Passwords are **hashed using bcrypt**
-* Plain-text passwords are never stored or logged
+* Plain-text passwords are never stored, logged, or returned
 
 ---
 
@@ -86,9 +91,9 @@ Authorization is enforced using **Role-Based Access Control (RBAC)**.
 
 ### Roles
 
-* `USER`
-* `EDITOR`
-* `ADMIN`
+* `USER` – read-only access
+* `EDITOR` – content creation access
+* `ADMIN` – full administrative control
 
 ### Middleware Layers
 
@@ -99,10 +104,59 @@ Authorization is enforced using **Role-Based Access Control (RBAC)**.
 
 2. **Authorization middleware**
 
-   * Checks user role against allowed roles per route
-   * Prevents unauthorized access to protected resources
+   * Validates user role against allowed roles per route
+   * Enforces business permissions at the API boundary
 
-Authentication and authorization are **strictly separated**.
+Authentication and authorization responsibilities are **strictly separated**.
+
+---
+
+## Core Domain Entity: Articles (Day 4)
+
+The **Article** module represents the system’s first real business entity.
+It is intentionally designed to be **domain-agnostic**, so it can later map to:
+
+* Menu items
+* Dishes
+* Events
+* Listings
+
+### Article Responsibilities
+
+* Title and content management
+* SEO-friendly slug generation
+* Draft vs published lifecycle
+* Ownership tracking (author)
+* Soft deletion for business safety
+
+### Data Characteristics
+
+* Articles default to **DRAFT**
+* Only **PUBLISHED** articles are publicly visible
+* Deletion is **soft delete** (`isDeleted = true`)
+* Slugs are unique and indexed
+* Author is stored for auditability
+
+---
+
+## RBAC Applied to Domain Logic
+
+RBAC is enforced at the **route level** for article operations:
+
+* Public users can:
+
+  * View published articles
+
+* `EDITOR` and `ADMIN` can:
+
+  * Create articles
+
+* `ADMIN` only can:
+
+  * Publish articles
+  * Soft delete articles
+
+This ensures **business rules are enforced consistently** and not duplicated in controllers or services.
 
 ---
 
@@ -116,6 +170,7 @@ Client
  → Router
  → Controller
  → Service
+ → Database
  → Response
 ```
 
@@ -129,18 +184,19 @@ Errors at any stage are forwarded to the centralized error handler.
 * The server **does not start** unless the database connection succeeds
 * Environment variables are loaded and validated at startup
 
-This prevents partial or unsafe application states.
+This prevents partial, unsafe, or inconsistent runtime states.
 
 ---
 
 ## Design Principles
 
-* **Separation of concerns** across layers
+* **Separation of concerns** across all layers
 * **Thin routes**, no business logic in routers
 * **Explicit middleware responsibilities**
 * **Single source of truth** for configuration
+* **Soft deletes over hard deletes**
 * **Production-first error handling**
-* **Incremental architecture evolution**
+* **Incremental, intentional architecture evolution**
 
 ---
 
@@ -149,9 +205,10 @@ This prevents partial or unsafe application states.
 The system is designed to:
 
 * Scale feature complexity gradually
-* Support real business use cases (admin, staff, customers)
-* Serve as a foundation for future domains (e.g., ordering, bookings)
+* Support real business workflows (admin, staff, customers)
+* Act as a reusable backend foundation for multiple domains
+* Minimize refactoring as requirements grow
 
-This architecture prioritizes **clarity, safety, and long-term maintainability** over short-term convenience.
+This architecture prioritizes **clarity, correctness, and maintainability** over short-term speed.
 
 ---
