@@ -8,17 +8,18 @@ import {
 export const create = async (req, res, next) => {
   try {
     const article = await createArticle({
-      ...req.body,
+      title: req.body.title,
+      content: req.body.content,
       author: req.user.id,
     });
-    (res.status(201).json(article));
+    res.status(201).json(article);
   } catch (err) {
     next(err);
   }
 };
 
 export const listPublished = async (req, res, next) => {
-  try {        
+  try {
     const articles = await getPublishedArticles(req.params.id);
     res.json(articles);
   } catch (err) {

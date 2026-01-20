@@ -7,6 +7,9 @@ import {
   publish,
   remove,
 } from "./article.controller.js";
+import { validate } from "../../middlewares/validate.middleware.js";
+import { createArticleSchema } from "./article.validation.js";
+
 
 const router = Router();
 
@@ -14,7 +17,13 @@ const router = Router();
 router.get("/", listPublished);
 
 /* Protected */
-router.post("/", authenticate, authorize("ADMIN", "EDITOR"), create);
+router.post(
+  "/",
+  authenticate,
+  authorize("ADMIN", "EDITOR"),
+  validate(createArticleSchema),
+  create,
+);
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
 router.delete("/:id", authenticate, authorize("ADMIN"), remove);
 

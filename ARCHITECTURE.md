@@ -212,3 +212,9 @@ The system is designed to:
 This architecture prioritizes **clarity, correctness, and maintainability** over short-term speed.
 
 ---
+## Validation & Security
+
+- All write APIs use schema-based validation
+- Validation occurs before controller execution
+- Rate limiting protects against abuse
+- Controllers whitelist allowed fields
