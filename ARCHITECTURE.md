@@ -11,9 +11,10 @@ The backend is intentionally built to resemble **real-world systems**, not tutor
 * Clear separation of responsibilities
 * Secure, stateless authentication
 * Enforced authorization at API boundaries
-* Safe domain modeling
-* Abuse prevention
-* Full observability and traceability
+* Safe and explicit domain modeling
+* Abuse prevention and defensive defaults
+* Full observability and request traceability
+* Controlled data access and query safety
 * Incremental, intentional architectural evolution
 
 ---
@@ -63,8 +64,10 @@ src/
 │   └── db.js
 │
 ├── middlewares/     # Cross-cutting middleware
-│   ├── authenticate.middleware.js
-│   ├── authorize.middleware.js
+│   ├── auth.middleware.js
+│   ├── rbac.middleware.js
+│   ├── validate.middleware.js
+│   ├── rateLimit.middleware.js
 │   ├── error.middleware.js
 │   ├── httpLogger.middleware.js
 │   └── requestId.middleware.js
@@ -75,7 +78,7 @@ src/
 │
 ├── utils/           # Shared utilities
 │   ├── logger.js
-│   ├── jwt.js
+│   ├── queryParser.js
 │   └── helpers.js
 │
 ├── app.js
@@ -88,15 +91,15 @@ src/
 
 Each feature module is **self-contained** and owns its domain logic.
 
-### Module Structure
+### Module Responsibilities
 
 Each module encapsulates:
 
-* Routes
-* Controllers
-* Services
-* Models
-* Validation logic
+* Routes (HTTP mapping only)
+* Controllers (request orchestration)
+* Services (business logic)
+* Models (data schema)
+* Validation logic (input safety)
 
 This prevents cross-module coupling and allows features to evolve independently.
 
@@ -120,8 +123,6 @@ The system uses **stateless JWT-based authentication**.
 * Stored in **HttpOnly cookies**
 * Used only for token rotation
 * Never used for authorization
-
----
 
 ### Password Security
 
@@ -191,7 +192,7 @@ It is intentionally **domain-agnostic**, so it can later map to:
 
 ## RBAC Applied to Domain Logic
 
-RBAC is enforced at the **route level** for article operations:
+RBAC is enforced at the **route level** for article operations.
 
 ### Access Rules
 
@@ -208,7 +209,7 @@ RBAC is enforced at the **route level** for article operations:
   * Publish articles
   * Soft delete articles
 
-This guarantees business rules cannot be bypassed from the client.
+Business rules are enforced server-side and cannot be bypassed by the client.
 
 ---
 
@@ -222,18 +223,18 @@ This guarantees business rules cannot be bypassed from the client.
 
 ### Controller Safety
 
-* Controllers **explicitly whitelist allowed fields**
-* Prevents mass assignment vulnerabilities
+* Controllers explicitly whitelist allowed fields
+* Prevents mass-assignment vulnerabilities
 
 ### Rate Limiting
 
-* Global rate limiting is applied at the app level
+* Global rate limiting applied at the app level
 * Protects against:
 
   * Brute force attacks
   * Abuse
   * Accidental traffic spikes
-* Enforced using standard HTTP `429` responses
+* Enforced using HTTP `429` responses
 
 ---
 
@@ -243,32 +244,26 @@ The system implements **production-grade structured logging and request tracing*
 
 ### Logging Strategy
 
-* **Winston** is used as the centralized logger
+* **Winston** is the centralized logger
 * Logs include:
 
   * Timestamp
   * Log level (`info`, `warn`, `error`)
   * Structured metadata
-* `console.log` and `console.error` are **not used anywhere**
-
----
+* `console.log` / `console.error` are **not used**
 
 ### Request Correlation
 
-* Every incoming request is assigned a **unique request ID**
+* Every request receives a **unique request ID**
 * The request ID:
 
   * Is attached to `req.requestId`
-  * Is returned via `X-Request-Id` response header
+  * Is returned via `X-Request-Id` header
   * Appears in all request and error logs
-
-This enables tracing a single request across the system.
-
----
 
 ### HTTP Request Logging
 
-* All HTTP requests are logged **after the response is sent**
+* Requests are logged **after response completion**
 * Logged metadata:
 
   * Method
@@ -277,21 +272,16 @@ This enables tracing a single request across the system.
   * Duration
   * Request ID
 
----
-
 ### Error Logging
 
-* All errors flow to a centralized error middleware
+* Centralized error middleware
 * Error logs include:
 
-  * Error message
-  * Stack trace (server-side only)
+  * Message
   * Status code
+  * Stack trace (server-only)
   * Request ID
-  * Request path
 * Stack traces are **never exposed to clients**
-
----
 
 ### Startup & Infrastructure Logs
 
@@ -300,7 +290,42 @@ This enables tracing a single request across the system.
 
   * Port
   * Runtime environment
-* The application **fails fast** if critical dependencies are unavailable
+* Application **fails fast** if critical dependencies are unavailable
+
+---
+
+## Query Safety, Pagination & Filtering (Day 7)
+
+List endpoints are designed to be **safe by default** and resistant to abuse.
+
+### Pagination
+
+* Page-based pagination using `page` and `limit`
+* Hard caps on `limit` to prevent large scans
+* Server-controlled `skip` calculation
+
+### Filtering
+
+* Filters are **explicitly whitelisted**
+* Only allowed fields (e.g., `status`) are queryable
+* Prevents arbitrary query injection
+
+### Search
+
+* Text search implemented using controlled regex
+* Case-insensitive matching
+* Applied only to specific fields (`title`, `content`)
+
+### Sorting
+
+* Sorting options are restricted to predefined values
+* Prevents client-controlled sort injection
+
+### Query Parsing
+
+* All query parsing is centralized
+* Raw `req.query` is never passed directly to database calls
+* Ensures consistency, safety, and maintainability
 
 ---
 
@@ -309,6 +334,7 @@ This enables tracing a single request across the system.
 ```
 Client
  → Express App
+ → Rate Limiter
  → Request ID Middleware
  → HTTP Logger Middleware
  → Authentication Middleware (JWT)
@@ -329,7 +355,7 @@ Client
 * The server does **not start** unless the database connection succeeds
 * Environment variables are loaded and validated at startup
 
-This prevents unsafe partial runtime states.
+This prevents unsafe or partial runtime states.
 
 ---
 
@@ -342,6 +368,7 @@ This prevents unsafe partial runtime states.
 * Soft deletes over hard deletes
 * Secure defaults over convenience
 * Observability as a first-class concern
+* Correctness before optimization
 * Incremental, intentional architecture evolution
 
 ---
@@ -356,17 +383,5 @@ This system is designed to:
 * Minimize refactoring as requirements grow
 
 The architecture prioritizes **clarity, correctness, security, and maintainability** over short-term speed.
-
----
-
-## Current Maturity (End of Day 6)
-
-At this stage, the backend is:
-
-* Secure
-* Observable
-* Abuse-resistant
-* Production-oriented
-* Interview-ready
 
 ---

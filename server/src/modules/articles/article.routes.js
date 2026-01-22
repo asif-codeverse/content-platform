@@ -3,6 +3,7 @@ import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorize } from "../../middlewares/rbac.middleware.js";
 import {
   create,
+  getArticles,
   listPublished,
   publish,
   remove,
@@ -10,13 +11,15 @@ import {
 import { validate } from "../../middlewares/validate.middleware.js";
 import { createArticleSchema } from "./article.validation.js";
 
-
 const router = Router();
 
 /* Public */
 router.get("/", listPublished);
 
-/* Protected */
+/* Admin / Editor */
+router.get("/all", authenticate, authorize("ADMIN", "EDITOR"), getArticles);
+
+/* Protected writes */
 router.post(
   "/",
   authenticate,
@@ -24,6 +27,7 @@ router.post(
   validate(createArticleSchema),
   create,
 );
+
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
 router.delete("/:id", authenticate, authorize("ADMIN"), remove);
 

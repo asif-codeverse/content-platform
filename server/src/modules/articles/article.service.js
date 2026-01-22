@@ -4,17 +4,19 @@ import slugify from "slugify";
 export const createArticle = async ({ title, content, author }) => {
   const slug = slugify(title, { lower: true, strict: true });
 
-  const existing = await Article.findOne({ slug });
-  if (existing) {
-    throw { statusCode: 409, message: "Article with same title exists" };
+  try {
+    return await Article.create({
+      title,
+      slug,
+      content,
+      author,
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      throw { statusCode: 409, message: "Article with same title exists" };
+    }
+    throw err;
   }
-
-  return Article.create({
-    title,
-    slug,
-    content,
-    author,
-  });
 };
 
 export const getPublishedArticles = async () => {
@@ -43,4 +45,18 @@ export const softDeleteArticle = async (articleId) => {
 
   article.isDeleted = true;
   return article.save();
+};
+
+export const listArticles = async ({ filters, sort, skip, limit }) => {
+  const base = { isDeleted: false, ...filters };
+
+  const articles = await Article.find(base)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .select("-__v");
+
+  const total = await Article.countDocuments(base);
+
+  return { articles, total };
 };
