@@ -38,4 +38,9 @@ const articleSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+articleSchema.index(
+  { status: 1, isDeleted: 1, createdAt: -1 },
+  { name: "article_list_index" },
+);
+
 export const Article = mongoose.model("Article", articleSchema);

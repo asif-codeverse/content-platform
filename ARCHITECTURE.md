@@ -1,69 +1,78 @@
 # Architecture Overview
 
-This project is a **monorepo** consisting of a `client` and a `server`, designed with a **production-first backend architecture** and strict separation of concerns.
+This repository is a **monorepo** containing a `client` and a `server`, designed with a **production-first backend architecture** and strict separation of concerns.
 
-The backend is intentionally built to resemble **real-world systems**, not tutorial demos.
-
----
-
-## High-Level Goals
-
-* Clear separation of responsibilities
-* Secure, stateless authentication
-* Enforced authorization at API boundaries
-* Safe and explicit domain modeling
-* Abuse prevention and defensive defaults
-* Full observability and request traceability
-* Controlled data access and query safety
-* Incremental, intentional architectural evolution
+The backend is intentionally engineered to reflect **real-world production systems**, prioritizing correctness, security, observability, and long-term maintainability over tutorial simplicity.
 
 ---
 
-## Monorepo Structure
+## Architectural Objectives
+
+The system is designed to achieve the following:
+
+* Clear separation of responsibilities across layers
+* Stateless and secure authentication
+* Explicit authorization at API boundaries
+* Robust domain modeling with safe defaults
+* Protection against abuse and misuse
+* End-to-end observability and request traceability
+* Controlled and safe data access patterns
+* Measurable performance and scalability
+* Incremental and intentional architectural evolution
+
+---
+
+## Repository Structure
 
 ```
 /
-├── client/          # Frontend (separate concern)
+├── client/          # Frontend application (independent concern)
 └── server/          # Backend API
 ```
 
-The frontend and backend evolve independently but share a single repository for coordinated development.
+The frontend and backend evolve independently while sharing a single repository to support coordinated development and deployment workflows.
 
 ---
 
-## Server Architecture
+## Backend Architecture
 
-The backend is an **Express-based REST API** structured for scalability, security, and long-term maintainability.
+The backend is an **Express-based REST API** designed for scalability, security, and operational stability.
 
-### Core Responsibilities
+### Core Entry Points
 
 #### `app.js`
 
-* Express application setup
+Responsible for:
+
+* Express application configuration
 * Global middleware registration
 * Route mounting
-* Error middleware registration
+* Centralized error handling registration
 
 #### `server.js`
+
+Responsible for:
 
 * Infrastructure bootstrapping
 * Database connection initialization
 * HTTP server startup
-* Startup logging
+* Startup and lifecycle logging
+
+This separation ensures that application configuration and infrastructure concerns remain isolated.
 
 ---
 
 ## Source Layout (`src/`)
 
-All application code lives inside `src/` to isolate it from tooling and runtime artifacts.
+All application code resides under `src/` to clearly separate runtime logic from tooling, configuration, and deployment artifacts.
 
 ```
 src/
-├── config/          # Environment & infrastructure configuration
+├── config/          # Environment and infrastructure configuration
 │   ├── env.js
 │   └── db.js
 │
-├── middlewares/     # Cross-cutting middleware
+├── middlewares/     # Cross-cutting concerns
 │   ├── auth.middleware.js
 │   ├── rbac.middleware.js
 │   ├── validate.middleware.js
@@ -72,7 +81,7 @@ src/
 │   ├── httpLogger.middleware.js
 │   └── requestId.middleware.js
 │
-├── modules/         # Feature-based modules
+├── modules/         # Feature-based domains
 │   ├── auth/
 │   └── articles/
 │
@@ -87,120 +96,116 @@ src/
 
 ---
 
-## Feature-Based Modular Architecture
+## Feature-Based Modular Design
 
-Each feature module is **self-contained** and owns its domain logic.
+The system follows a **feature-based modular architecture**, where each domain is fully self-contained.
 
 ### Module Responsibilities
 
-Each module encapsulates:
+Each module owns:
 
 * Routes (HTTP mapping only)
 * Controllers (request orchestration)
 * Services (business logic)
-* Models (data schema)
-* Validation logic (input safety)
+* Models (data schema and persistence)
+* Validation rules (input safety)
 
-This prevents cross-module coupling and allows features to evolve independently.
+This approach minimizes cross-module coupling and enables independent feature evolution.
 
 ---
 
 ## Authentication (Day 2)
 
-The system uses **stateless JWT-based authentication**.
+Authentication is implemented using **stateless JWT-based access control**.
 
-### Token Strategy
+### Token Model
 
 #### Access Token
 
 * Short-lived
 * Sent via `Authorization: Bearer <token>` header
-* Used for accessing protected APIs
+* Required for all protected endpoints
 
 #### Refresh Token
 
 * Long-lived
 * Stored in **HttpOnly cookies**
-* Used only for token rotation
-* Never used for authorization
+* Used exclusively for token rotation
+* Never used for authorization decisions
 
-### Password Security
+### Password Handling
 
 * Passwords are hashed using **bcrypt**
-* Plain-text passwords are never:
-
-  * Stored
-  * Logged
-  * Returned in responses
+* Plain-text passwords are never stored, logged, or returned
 
 ---
 
 ## Authorization & RBAC (Day 3)
 
-Authorization is enforced using **Role-Based Access Control (RBAC)**.
+Authorization is enforced using **Role-Based Access Control (RBAC)** at the API boundary.
 
 ### Roles
 
 * `USER` — read-only access
-* `EDITOR` — content creation
+* `EDITOR` — content creation and modification
 * `ADMIN` — full administrative control
 
-### Middleware Layers
+### Enforcement Model
 
 1. **Authentication Middleware**
 
-   * Verifies JWT access token
+   * Verifies access token validity
    * Attaches trusted identity to `req.user`
 
 2. **Authorization Middleware**
 
-   * Validates user role against allowed roles per route
-   * Enforces permissions at the API boundary
+   * Validates role permissions per route
+   * Prevents unauthorized access at the boundary
 
-Authentication and authorization responsibilities are **strictly separated**.
+Authentication and authorization are deliberately separated to preserve clarity and security.
 
 ---
 
-## Core Domain Entity: Articles (Day 4)
+## Core Domain: Articles (Day 4)
 
-The **Article** module represents the system’s first real business entity.
+The **Article** module represents the system’s first concrete business domain.
 
-It is intentionally **domain-agnostic**, so it can later map to:
+It is intentionally **domain-agnostic**, allowing it to later map cleanly to concepts such as:
 
 * Menu items
 * Dishes
 * Events
 * Listings
 
-### Article Responsibilities
+### Responsibilities
 
-* Title and content management
+* Content lifecycle management
 * SEO-friendly slug generation
-* Draft vs published lifecycle
-* Ownership tracking (author)
-* Soft deletion for business safety
+* Draft and publish workflow
+* Ownership and auditability
+* Soft deletion for operational safety
 
-### Data Characteristics
+### Data Guarantees
 
-* Articles default to **DRAFT**
-* Only **PUBLISHED** articles are publicly visible
-* Deletion is **soft delete** (`isDeleted = true`)
+* Articles default to `DRAFT`
+* Only `PUBLISHED` articles are publicly visible
+* Deletion is logical (`isDeleted = true`)
 * Slugs are unique and indexed
-* Author is stored for auditability
+* Author attribution is mandatory
 
 ---
 
 ## RBAC Applied to Domain Logic
 
-RBAC is enforced at the **route level** for article operations.
+Authorization rules are enforced **at the route level**, ensuring business rules cannot be bypassed.
 
 ### Access Rules
 
 * Public users:
 
-  * View published articles
+  * Read published articles
 
-* `EDITOR` and `ADMIN`:
+* `EDITOR`, `ADMIN`:
 
   * Create articles
 
@@ -209,179 +214,185 @@ RBAC is enforced at the **route level** for article operations.
   * Publish articles
   * Soft delete articles
 
-Business rules are enforced server-side and cannot be bypassed by the client.
-
 ---
 
-## Validation & Abuse Protection (Day 5)
+## Validation & Abuse Prevention (Day 5)
 
-### Validation
+### Input Validation
 
-* All write APIs use **schema-based validation**
-* Validation executes **before controller logic**
-* Invalid data never reaches business logic
+* All write operations use schema-based validation
+* Validation executes before controller logic
+* Invalid input never reaches business logic
 
 ### Controller Safety
 
-* Controllers explicitly whitelist allowed fields
+* Controllers explicitly whitelist permitted fields
 * Prevents mass-assignment vulnerabilities
 
 ### Rate Limiting
 
-* Global rate limiting applied at the app level
+* Applied globally at the application level
 * Protects against:
 
-  * Brute force attacks
+  * Brute-force attacks
   * Abuse
   * Accidental traffic spikes
-* Enforced using HTTP `429` responses
+* Enforced using standard HTTP `429` responses
 
 ---
 
 ## Logging & Observability (Day 6)
 
-The system implements **production-grade structured logging and request tracing**.
+The system provides **structured, production-grade observability**.
 
-### Logging Strategy
+### Logging
 
-* **Winston** is the centralized logger
+* Centralized logging using **Winston**
 * Logs include:
 
   * Timestamp
-  * Log level (`info`, `warn`, `error`)
+  * Severity level
   * Structured metadata
-* `console.log` / `console.error` are **not used**
+* Direct `console.log` usage is prohibited
 
 ### Request Correlation
 
-* Every request receives a **unique request ID**
+* Every request is assigned a unique request ID
 * The request ID:
 
   * Is attached to `req.requestId`
   * Is returned via `X-Request-Id` header
   * Appears in all request and error logs
 
-### HTTP Request Logging
+### HTTP Logging
 
-* Requests are logged **after response completion**
-* Logged metadata:
+* Requests are logged after response completion
+* Includes method, path, status, duration, and request ID
 
-  * Method
-  * Path
-  * Status code
-  * Duration
-  * Request ID
-
-### Error Logging
+### Error Handling
 
 * Centralized error middleware
-* Error logs include:
+* Server-side stack traces only
+* No internal error details exposed to clients
 
-  * Message
-  * Status code
-  * Stack trace (server-only)
-  * Request ID
-* Stack traces are **never exposed to clients**
-
-### Startup & Infrastructure Logs
+### Startup Guarantees
 
 * Database connection success/failure is logged
-* Server startup logs include:
-
-  * Port
-  * Runtime environment
-* Application **fails fast** if critical dependencies are unavailable
+* Application fails fast if critical dependencies are unavailable
 
 ---
 
 ## Query Safety, Pagination & Filtering (Day 7)
 
-List endpoints are designed to be **safe by default** and resistant to abuse.
+List endpoints are designed to be **safe by default**.
 
 ### Pagination
 
-* Page-based pagination using `page` and `limit`
-* Hard caps on `limit` to prevent large scans
-* Server-controlled `skip` calculation
+* Page-based pagination with capped limits
+* Server-controlled offset calculation
+* Prevents unbounded data scans
 
-### Filtering
+### Filtering & Sorting
 
-* Filters are **explicitly whitelisted**
-* Only allowed fields (e.g., `status`) are queryable
-* Prevents arbitrary query injection
+* Filters and sort options are explicitly whitelisted
+* Prevents client-controlled query injection
 
 ### Search
 
-* Text search implemented using controlled regex
-* Case-insensitive matching
-* Applied only to specific fields (`title`, `content`)
-
-### Sorting
-
-* Sorting options are restricted to predefined values
-* Prevents client-controlled sort injection
+* Controlled regex-based search on specific fields
+* Case-insensitive
+* Designed to evolve into indexed or external search
 
 ### Query Parsing
 
 * All query parsing is centralized
-* Raw `req.query` is never passed directly to database calls
-* Ensures consistency, safety, and maintainability
+* Raw `req.query` is never passed directly to the database
 
 ---
 
-## Request Lifecycle (Actual Execution Order)
+## Indexing & Performance Engineering (Day 8)
+
+Performance optimization is **evidence-driven**, not speculative.
+
+### Index Strategy
+
+Indexes are created strictly based on **observed query patterns**.
+
+* Compound index on:
+
+  ```
+  { status, isDeleted, createdAt }
+  ```
+* Supports filtered listing, sorting, and pagination
+* Slug field is uniquely indexed
+
+### Validation
+
+* Index usage is verified using execution plans
+* Queries must use `IXSCAN`
+* Collection scans are treated as performance defects
+
+### Trade-offs
+
+* Regex search is intentionally not indexed
+* Pagination uses offset-based strategy initially
+* Advanced optimizations are deferred intentionally
+
+---
+
+## Request Execution Flow
 
 ```
 Client
  → Express App
  → Rate Limiter
  → Request ID Middleware
- → HTTP Logger Middleware
- → Authentication Middleware (JWT)
- → Authorization Middleware (RBAC)
+ → HTTP Logger
+ → Authentication
+ → Authorization
  → Router
  → Controller
  → Service
  → Database
  → Response
- → Central Error Logger (on failure)
+ → Central Error Handler (on failure)
 ```
 
 ---
 
-## Database & Infrastructure
+## Infrastructure Guarantees
 
-* **MongoDB** is used for persistence
-* The server does **not start** unless the database connection succeeds
-* Environment variables are loaded and validated at startup
+* MongoDB is the sole persistence layer
+* Server does not start without a successful DB connection
+* Environment configuration is validated at startup
 
-This prevents unsafe or partial runtime states.
+This prevents partial or unsafe runtime states.
 
 ---
 
 ## Design Principles
 
 * Separation of concerns across all layers
-* Thin routes, no business logic in routers
-* Explicit middleware responsibilities
+* Thin routing layer
+* Explicit middleware ownership
 * Single source of truth for configuration
-* Soft deletes over hard deletes
+* Soft deletes over destructive operations
 * Secure defaults over convenience
 * Observability as a first-class concern
 * Correctness before optimization
-* Incremental, intentional architecture evolution
+* Evolution driven by real constraints
 
 ---
 
 ## Architectural Intent
 
-This system is designed to:
+This backend is designed to:
 
 * Scale feature complexity gradually
-* Support real business workflows (admin, staff, customers)
-* Act as a reusable backend foundation for multiple domains
-* Minimize refactoring as requirements grow
+* Support real business workflows
+* Serve as a reusable foundation across domains
+* Minimize long-term refactoring cost
 
-The architecture prioritizes **clarity, correctness, security, and maintainability** over short-term speed.
+The architecture prioritizes **clarity, safety, performance, and maintainability** over short-term velocity.
 
 ---

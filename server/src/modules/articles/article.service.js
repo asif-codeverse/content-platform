@@ -23,7 +23,10 @@ export const getPublishedArticles = async () => {
   return Article.find({
     status: "PUBLISHED",
     isDeleted: false,
-  }).sort({ createdAt: -1 });
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 };
 
 export const publishArticle = async (articleId) => {
