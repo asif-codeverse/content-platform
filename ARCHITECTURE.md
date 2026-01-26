@@ -2,23 +2,22 @@
 
 This repository is a **monorepo** containing a `client` and a `server`, designed with a **production-first backend architecture** and strict separation of concerns.
 
-The backend is intentionally engineered to reflect **real-world production systems**, prioritizing correctness, security, observability, performance, and long-term maintainability over tutorial simplicity.
+The backend is intentionally engineered to mirror **real-world production systems**, prioritizing correctness, security, observability, performance, and long-term maintainability over tutorial simplicity or rapid prototyping.
 
 ---
 
 ## Architectural Objectives
 
-The system is designed to achieve the following:
+The system is designed to achieve the following objectives:
 
-* Clear separation of responsibilities across layers
-* Stateless and secure authentication
-* Explicit authorization at API boundaries
-* Robust domain modeling with safe defaults
-* Protection against abuse and misuse
+* Clear separation of responsibilities across architectural layers
+* Stateless, secure authentication and explicit authorization boundaries
+* Robust domain modeling with defensive defaults
+* Protection against abuse, misuse, and accidental overload
 * End-to-end observability and request traceability
-* Controlled and safe data access patterns
-* Measurable performance and scalability
-* Incremental and intentional architectural evolution
+* Controlled, explicit, and safe data access patterns
+* Measurable performance characteristics and scalability paths
+* Incremental, intentional architectural evolution over time
 
 ---
 
@@ -27,16 +26,16 @@ The system is designed to achieve the following:
 ```
 /
 ├── client/          # Frontend application (independent concern)
-└── server/          # Backend API
+└── server/          # Backend REST API
 ```
 
-The frontend and backend evolve independently while sharing a single repository to support coordinated development and deployment workflows.
+The frontend and backend evolve independently while sharing a single repository to support coordinated development, versioning, and deployment workflows.
 
 ---
 
 ## Backend Architecture
 
-The backend is an **Express-based REST API** designed for scalability, security, and operational stability.
+The backend is an **Express-based REST API**, designed for scalability, security, and operational stability.
 
 ### Core Entry Points
 
@@ -47,7 +46,7 @@ Responsible for:
 * Express application configuration
 * Global middleware registration
 * Route mounting
-* Centralized error handling registration
+* Centralized error middleware registration
 
 #### `server.js`
 
@@ -58,13 +57,13 @@ Responsible for:
 * HTTP server startup
 * Startup and lifecycle logging
 
-Application configuration and infrastructure concerns are deliberately isolated.
+Application configuration and infrastructure concerns are deliberately isolated to preserve clarity and testability.
 
 ---
 
 ## Source Layout (`src/`)
 
-All application code resides under `src/` to separate runtime logic from tooling and deployment artifacts.
+All application runtime code resides under `src/` to clearly separate execution logic from tooling and deployment artifacts.
 
 ```
 src/
@@ -90,13 +89,13 @@ Each module owns:
 * Models (data schema and persistence)
 * Validation rules (input safety)
 
-This structure minimizes coupling and enables independent feature evolution.
+This structure minimizes coupling, improves testability, and enables independent feature evolution.
 
 ---
 
 ## Authentication (Day 2)
 
-Authentication uses **stateless JWT-based access control**.
+Authentication is implemented using **stateless JWT-based access control**.
 
 ### Token Model
 
@@ -104,16 +103,16 @@ Authentication uses **stateless JWT-based access control**.
 
 * Short-lived
 * Sent via `Authorization: Bearer <token>`
-* Required for protected endpoints
+* Required for all protected endpoints
 
 **Refresh Token**
 
 * Long-lived
 * Stored in **HttpOnly cookies**
-* Used only for token rotation
-* Never used for authorization
+* Used exclusively for token rotation
+* Never used for authorization decisions
 
-Passwords are hashed using **bcrypt** and never stored or logged in plain text.
+Passwords are hashed using **bcrypt** and are never stored, logged, or returned in plain text.
 
 ---
 
@@ -121,21 +120,21 @@ Passwords are hashed using **bcrypt** and never stored or logged in plain text.
 
 Authorization is enforced using **Role-Based Access Control (RBAC)** at the API boundary.
 
-Roles:
+### Roles
 
 * `USER` — read-only access
 * `EDITOR` — content creation
 * `ADMIN` — full administrative control
 
-Authentication and authorization are intentionally separated to preserve clarity and security.
+Authentication and authorization responsibilities are intentionally separated to preserve clarity, security, and auditability.
 
 ---
 
 ## Core Domain: Articles (Day 4)
 
-The **Article** module represents the first concrete business domain.
+The **Article** module represents the system’s first concrete business domain.
 
-Responsibilities:
+### Responsibilities
 
 * Content lifecycle management
 * SEO-friendly slug generation
@@ -143,11 +142,11 @@ Responsibilities:
 * Ownership and auditability
 * Soft deletion for operational safety
 
-Guarantees:
+### Guarantees
 
-* Default state: `DRAFT`
-* Only `PUBLISHED` content is public
-* Soft deletes via `isDeleted`
+* Default state is `DRAFT`
+* Only `PUBLISHED` content is publicly visible
+* Deletion is logical via `isDeleted`
 * Slugs are unique and indexed
 
 ---
@@ -155,9 +154,9 @@ Guarantees:
 ## Validation & Abuse Prevention (Day 5)
 
 * Schema-based validation for all write operations
-* Validation occurs before controller execution
-* Controllers whitelist allowed fields
-* Global rate limiting prevents abuse and traffic spikes
+* Validation executes before controller logic
+* Controllers explicitly whitelist allowed fields
+* Global rate limiting protects against abuse and traffic spikes
 
 ---
 
@@ -165,30 +164,30 @@ Guarantees:
 
 The system provides **structured, production-grade observability**.
 
-* Centralized logging via **Winston**
-* No `console.log` usage
-* Request correlation via unique request IDs
-* Full HTTP request/response timing
-* Centralized error logging with no stack leaks to clients
-* Fail-fast startup guarantees
+* Centralized logging using **Winston**
+* Direct `console.log` usage is prohibited
+* Every request receives a unique request ID
+* Full HTTP request/response timing is logged
+* Centralized error handling with no stack trace leakage to clients
+* Fail-fast startup behavior when critical dependencies are unavailable
 
 ---
 
 ## Query Safety, Pagination & Filtering (Day 7)
 
-List endpoints are **safe by default**.
+All list endpoints are **safe by default**.
 
-* Page-based pagination with capped limits
+* Page-based pagination with hard limits
 * Explicitly whitelisted filters and sort options
-* Controlled regex-based search on specific fields
+* Controlled regex-based search on specific fields only
 * Centralized query parsing
-* Raw `req.query` is never passed directly to the database
+* Raw `req.query` is never passed directly to database queries
 
 ---
 
 ## Indexing & Performance Engineering (Day 8)
 
-Performance optimizations are **driven by observed query behavior**.
+Performance optimizations are **driven by observed query behavior**, not speculation.
 
 ### Index Strategy
 
@@ -197,45 +196,47 @@ Performance optimizations are **driven by observed query behavior**.
   ```
   { status, isDeleted, createdAt }
   ```
+
 * Supports filtered listing, sorting, and pagination
-* Unique index on `slug`
+
+* Unique index enforced on `slug`
 
 ### Validation
 
 * Index usage verified via execution plans (`IXSCAN`)
-* Collection scans treated as performance defects
+* Collection scans are treated as performance defects
 
-Trade-offs are explicit and intentional.
+All trade-offs are explicit and documented.
 
 ---
 
 ## HTTP Caching & Response Optimization (Day 9)
 
-Public read-heavy endpoints implement **HTTP-level caching** to reduce database load and improve latency.
+Public, read-heavy endpoints implement **HTTP-level caching** to reduce database load and improve latency.
 
 ### Caching Strategy
 
 * **ETag-based conditional requests**
-* ETags generated from the full response payload (data + pagination metadata)
+* ETags generated from the complete response payload
 * Ensures cache correctness across pagination, filters, and sorting
 
 ### Cache Control
 
-* Public endpoints set:
+Public endpoints return:
 
-  ```
-  Cache-Control: public, max-age=60, stale-while-revalidate=30
-  ```
-* Enables browser and CDN caching
-* Prevents unnecessary database reads
+```
+Cache-Control: public, max-age=60, stale-while-revalidate=30
+```
+
+This enables browser and CDN caching while preserving correctness.
 
 ### Safety Guarantees
 
 * Only public, unauthenticated endpoints are cached
 * Authenticated or user-specific responses are never cached
-* Cache invalidation is automatic via ETag changes
+* Cache invalidation occurs automatically through ETag changes
 
-This provides **real performance gains without compromising correctness or security**.
+This provides measurable performance gains without compromising security or correctness.
 
 ---
 
@@ -262,7 +263,7 @@ Client
 ## Infrastructure Guarantees
 
 * MongoDB is the sole persistence layer
-* Server does not start without a successful DB connection
+* Server does not start without a successful database connection
 * Environment configuration is validated at startup
 
 This prevents partial or unsafe runtime states.
@@ -271,7 +272,7 @@ This prevents partial or unsafe runtime states.
 
 ## Design Principles
 
-* Separation of concerns across all layers
+* Strict separation of concerns
 * Thin routing layer
 * Explicit middleware ownership
 * Single source of truth for configuration
@@ -287,8 +288,8 @@ This prevents partial or unsafe runtime states.
 
 This backend is designed to:
 
-* Scale feature complexity gradually
-* Support real business workflows
+* Scale feature complexity incrementally
+* Support real-world business workflows
 * Serve as a reusable foundation across domains
 * Minimize long-term refactoring cost
 

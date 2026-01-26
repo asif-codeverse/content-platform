@@ -1,3 +1,4 @@
+import { publishArticleJob } from "../../jobs/index.js";
 import { Article } from "./article.model.js";
 import slugify from "slugify";
 
@@ -38,6 +39,9 @@ export const publishArticle = async (articleId) => {
 
   article.status = "PUBLISHED";
   return article.save();
+
+  // async side effects
+  publishArticleJob(articleId);
 };
 
 export const softDeleteArticle = async (articleId) => {
@@ -56,10 +60,22 @@ export const listArticles = async ({ filters, sort, skip, limit }) => {
   const articles = await Article.find(base)
     .sort(sort)
     .skip(skip)
-    .limit(limit)
-    .select("-__v");
+    .limit(limit);
 
   const total = await Article.countDocuments(base);
 
   return { articles, total };
 };
+
+
+export const getLatestPublishedUpdate = async () => {
+  const latest = await Article.findOne({
+    status: "PUBLISHED",
+    isDeleted: false,
+  })
+    .sort({ updatedAt: -1 })
+    .select("updatedAt");
+
+  return latest?.updatedAt;
+};
+

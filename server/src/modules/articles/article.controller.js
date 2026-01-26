@@ -1,5 +1,6 @@
 import {
   createArticle,
+  getLatestPublishedUpdate,
   getPublishedArticles,
   publishArticle,
   softDeleteArticle,
@@ -28,6 +29,17 @@ export const listPublished = async (req, res, next) => {
   try {
     const { page, limit, skip, sort } = parseQuery(req.query);
 
+    const lastModified = await getLatestPublishedUpdate();
+
+    if (lastModified) {
+      res.set("Last-Modified", lastModified.toUTCString());
+
+      const ifModifiedSince = req.headers["if-modified-since"];
+      if (ifModifiedSince && new Date(ifModifiedSince) >= lastModified) {
+        return res.status(304).end();
+      }
+    }
+
     const { articles, total } = await listArticles({
       filters: { status: "PUBLISHED" },
       sort,
@@ -35,8 +47,7 @@ export const listPublished = async (req, res, next) => {
       limit,
     });
 
-    // build stable response payload
-    const responsePayload = {
+    return res.json({
       success: true,
       data: articles,
       meta: {
@@ -45,24 +56,7 @@ export const listPublished = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    };
-
-    // genetate Etag from full response (important)
-    const etag = generateETag(responsePayload);
-
-    // set caching headers
-    res.setHeader("ETag", etag);
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=60,stale-while-revalidate=30",
-    );
-
-    // conditionla request check
-    if (req.headers["if-none-match"] === etag) {
-      return res.status(304).end();
-    }
-
-    return res.status(304).end();
+    });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,9 @@
 export const parseQuery = (query) => {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  const limit = Math.min(parseInt(query.limit, 10) || 10, 15);
+  const rawPage = Number(query.page);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const rawLimit = Number(query.limit);
+  const limit =
+    Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 15) : 10;
   const skip = (page - 1) * limit;
 
   const sortMap = {
