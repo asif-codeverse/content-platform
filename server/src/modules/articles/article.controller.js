@@ -6,6 +6,7 @@ import {
   listArticles,
 } from "./article.service.js";
 
+import { generateETag } from "../../utils/etag.js";
 import { logger } from "../../utils/logger.js";
 import { parseQuery } from "../../utils/queryParser.js";
 
@@ -34,7 +35,8 @@ export const listPublished = async (req, res, next) => {
       limit,
     });
 
-    return res.json({
+    // build stable response payload
+    const responsePayload = {
       success: true,
       data: articles,
       meta: {
@@ -43,7 +45,24 @@ export const listPublished = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    // genetate Etag from full response (important)
+    const etag = generateETag(responsePayload);
+
+    // set caching headers
+    res.setHeader("ETag", etag);
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=60,stale-while-revalidate=30",
+    );
+
+    // conditionla request check
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+
+    return res.status(304).end();
   } catch (err) {
     next(err);
   }

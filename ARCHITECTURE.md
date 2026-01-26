@@ -2,7 +2,7 @@
 
 This repository is a **monorepo** containing a `client` and a `server`, designed with a **production-first backend architecture** and strict separation of concerns.
 
-The backend is intentionally engineered to reflect **real-world production systems**, prioritizing correctness, security, observability, and long-term maintainability over tutorial simplicity.
+The backend is intentionally engineered to reflect **real-world production systems**, prioritizing correctness, security, observability, performance, and long-term maintainability over tutorial simplicity.
 
 ---
 
@@ -58,38 +58,20 @@ Responsible for:
 * HTTP server startup
 * Startup and lifecycle logging
 
-This separation ensures that application configuration and infrastructure concerns remain isolated.
+Application configuration and infrastructure concerns are deliberately isolated.
 
 ---
 
 ## Source Layout (`src/`)
 
-All application code resides under `src/` to clearly separate runtime logic from tooling, configuration, and deployment artifacts.
+All application code resides under `src/` to separate runtime logic from tooling and deployment artifacts.
 
 ```
 src/
 ├── config/          # Environment and infrastructure configuration
-│   ├── env.js
-│   └── db.js
-│
 ├── middlewares/     # Cross-cutting concerns
-│   ├── auth.middleware.js
-│   ├── rbac.middleware.js
-│   ├── validate.middleware.js
-│   ├── rateLimit.middleware.js
-│   ├── error.middleware.js
-│   ├── httpLogger.middleware.js
-│   └── requestId.middleware.js
-│
 ├── modules/         # Feature-based domains
-│   ├── auth/
-│   └── articles/
-│
 ├── utils/           # Shared utilities
-│   ├── logger.js
-│   ├── queryParser.js
-│   └── helpers.js
-│
 ├── app.js
 └── server.js
 ```
@@ -100,8 +82,6 @@ src/
 
 The system follows a **feature-based modular architecture**, where each domain is fully self-contained.
 
-### Module Responsibilities
-
 Each module owns:
 
 * Routes (HTTP mapping only)
@@ -110,33 +90,30 @@ Each module owns:
 * Models (data schema and persistence)
 * Validation rules (input safety)
 
-This approach minimizes cross-module coupling and enables independent feature evolution.
+This structure minimizes coupling and enables independent feature evolution.
 
 ---
 
 ## Authentication (Day 2)
 
-Authentication is implemented using **stateless JWT-based access control**.
+Authentication uses **stateless JWT-based access control**.
 
 ### Token Model
 
-#### Access Token
+**Access Token**
 
 * Short-lived
-* Sent via `Authorization: Bearer <token>` header
-* Required for all protected endpoints
+* Sent via `Authorization: Bearer <token>`
+* Required for protected endpoints
 
-#### Refresh Token
+**Refresh Token**
 
 * Long-lived
 * Stored in **HttpOnly cookies**
-* Used exclusively for token rotation
-* Never used for authorization decisions
+* Used only for token rotation
+* Never used for authorization
 
-### Password Handling
-
-* Passwords are hashed using **bcrypt**
-* Plain-text passwords are never stored, logged, or returned
+Passwords are hashed using **bcrypt** and never stored or logged in plain text.
 
 ---
 
@@ -144,100 +121,43 @@ Authentication is implemented using **stateless JWT-based access control**.
 
 Authorization is enforced using **Role-Based Access Control (RBAC)** at the API boundary.
 
-### Roles
+Roles:
 
 * `USER` — read-only access
-* `EDITOR` — content creation and modification
+* `EDITOR` — content creation
 * `ADMIN` — full administrative control
 
-### Enforcement Model
-
-1. **Authentication Middleware**
-
-   * Verifies access token validity
-   * Attaches trusted identity to `req.user`
-
-2. **Authorization Middleware**
-
-   * Validates role permissions per route
-   * Prevents unauthorized access at the boundary
-
-Authentication and authorization are deliberately separated to preserve clarity and security.
+Authentication and authorization are intentionally separated to preserve clarity and security.
 
 ---
 
 ## Core Domain: Articles (Day 4)
 
-The **Article** module represents the system’s first concrete business domain.
+The **Article** module represents the first concrete business domain.
 
-It is intentionally **domain-agnostic**, allowing it to later map cleanly to concepts such as:
-
-* Menu items
-* Dishes
-* Events
-* Listings
-
-### Responsibilities
+Responsibilities:
 
 * Content lifecycle management
 * SEO-friendly slug generation
-* Draft and publish workflow
+* Draft → publish workflow
 * Ownership and auditability
 * Soft deletion for operational safety
 
-### Data Guarantees
+Guarantees:
 
-* Articles default to `DRAFT`
-* Only `PUBLISHED` articles are publicly visible
-* Deletion is logical (`isDeleted = true`)
+* Default state: `DRAFT`
+* Only `PUBLISHED` content is public
+* Soft deletes via `isDeleted`
 * Slugs are unique and indexed
-* Author attribution is mandatory
-
----
-
-## RBAC Applied to Domain Logic
-
-Authorization rules are enforced **at the route level**, ensuring business rules cannot be bypassed.
-
-### Access Rules
-
-* Public users:
-
-  * Read published articles
-
-* `EDITOR`, `ADMIN`:
-
-  * Create articles
-
-* `ADMIN` only:
-
-  * Publish articles
-  * Soft delete articles
 
 ---
 
 ## Validation & Abuse Prevention (Day 5)
 
-### Input Validation
-
-* All write operations use schema-based validation
-* Validation executes before controller logic
-* Invalid input never reaches business logic
-
-### Controller Safety
-
-* Controllers explicitly whitelist permitted fields
-* Prevents mass-assignment vulnerabilities
-
-### Rate Limiting
-
-* Applied globally at the application level
-* Protects against:
-
-  * Brute-force attacks
-  * Abuse
-  * Accidental traffic spikes
-* Enforced using standard HTTP `429` responses
+* Schema-based validation for all write operations
+* Validation occurs before controller execution
+* Controllers whitelist allowed fields
+* Global rate limiting prevents abuse and traffic spikes
 
 ---
 
@@ -245,98 +165,77 @@ Authorization rules are enforced **at the route level**, ensuring business rules
 
 The system provides **structured, production-grade observability**.
 
-### Logging
-
-* Centralized logging using **Winston**
-* Logs include:
-
-  * Timestamp
-  * Severity level
-  * Structured metadata
-* Direct `console.log` usage is prohibited
-
-### Request Correlation
-
-* Every request is assigned a unique request ID
-* The request ID:
-
-  * Is attached to `req.requestId`
-  * Is returned via `X-Request-Id` header
-  * Appears in all request and error logs
-
-### HTTP Logging
-
-* Requests are logged after response completion
-* Includes method, path, status, duration, and request ID
-
-### Error Handling
-
-* Centralized error middleware
-* Server-side stack traces only
-* No internal error details exposed to clients
-
-### Startup Guarantees
-
-* Database connection success/failure is logged
-* Application fails fast if critical dependencies are unavailable
+* Centralized logging via **Winston**
+* No `console.log` usage
+* Request correlation via unique request IDs
+* Full HTTP request/response timing
+* Centralized error logging with no stack leaks to clients
+* Fail-fast startup guarantees
 
 ---
 
 ## Query Safety, Pagination & Filtering (Day 7)
 
-List endpoints are designed to be **safe by default**.
-
-### Pagination
+List endpoints are **safe by default**.
 
 * Page-based pagination with capped limits
-* Server-controlled offset calculation
-* Prevents unbounded data scans
-
-### Filtering & Sorting
-
-* Filters and sort options are explicitly whitelisted
-* Prevents client-controlled query injection
-
-### Search
-
+* Explicitly whitelisted filters and sort options
 * Controlled regex-based search on specific fields
-* Case-insensitive
-* Designed to evolve into indexed or external search
-
-### Query Parsing
-
-* All query parsing is centralized
+* Centralized query parsing
 * Raw `req.query` is never passed directly to the database
 
 ---
 
 ## Indexing & Performance Engineering (Day 8)
 
-Performance optimization is **evidence-driven**, not speculative.
+Performance optimizations are **driven by observed query behavior**.
 
 ### Index Strategy
 
-Indexes are created strictly based on **observed query patterns**.
-
-* Compound index on:
+* Compound index:
 
   ```
   { status, isDeleted, createdAt }
   ```
 * Supports filtered listing, sorting, and pagination
-* Slug field is uniquely indexed
+* Unique index on `slug`
 
 ### Validation
 
-* Index usage is verified using execution plans
-* Queries must use `IXSCAN`
-* Collection scans are treated as performance defects
+* Index usage verified via execution plans (`IXSCAN`)
+* Collection scans treated as performance defects
 
-### Trade-offs
+Trade-offs are explicit and intentional.
 
-* Regex search is intentionally not indexed
-* Pagination uses offset-based strategy initially
-* Advanced optimizations are deferred intentionally
+---
+
+## HTTP Caching & Response Optimization (Day 9)
+
+Public read-heavy endpoints implement **HTTP-level caching** to reduce database load and improve latency.
+
+### Caching Strategy
+
+* **ETag-based conditional requests**
+* ETags generated from the full response payload (data + pagination metadata)
+* Ensures cache correctness across pagination, filters, and sorting
+
+### Cache Control
+
+* Public endpoints set:
+
+  ```
+  Cache-Control: public, max-age=60, stale-while-revalidate=30
+  ```
+* Enables browser and CDN caching
+* Prevents unnecessary database reads
+
+### Safety Guarantees
+
+* Only public, unauthenticated endpoints are cached
+* Authenticated or user-specific responses are never cached
+* Cache invalidation is automatic via ETag changes
+
+This provides **real performance gains without compromising correctness or security**.
 
 ---
 
