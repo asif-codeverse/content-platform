@@ -1,7 +1,6 @@
 import {
   createArticle,
   getLatestPublishedUpdate,
-  getPublishedArticles,
   publishArticle,
   softDeleteArticle,
   listArticles,
@@ -10,6 +9,7 @@ import {
 import { generateETag } from "../../utils/etag.js";
 import { logger } from "../../utils/logger.js";
 import { parseQuery } from "../../utils/queryParser.js";
+import { enqueueJob } from "../../jobs/index.js";
 
 export const create = async (req, res, next) => {
   try {
@@ -65,6 +65,12 @@ export const listPublished = async (req, res, next) => {
 export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
+
+    enqueueJob({
+      type: "ARTICLE_PUBLISHED",
+      payload: { articleId: article._id.toString() },
+    });
+
     return res.json(article);
   } catch (err) {
     next(err);

@@ -1,7 +1,9 @@
-import { publishArticleJob } from "../../jobs/index.js";
 import { Article } from "./article.model.js";
 import slugify from "slugify";
 
+/**
+ * Create article (DRAFT by default)
+ */
 export const createArticle = async ({ title, content, author }) => {
   const slug = slugify(title, { lower: true, strict: true });
 
@@ -20,16 +22,9 @@ export const createArticle = async ({ title, content, author }) => {
   }
 };
 
-export const getPublishedArticles = async () => {
-  return Article.find({
-    status: "PUBLISHED",
-    isDeleted: false,
-  })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-};
-
+/**
+ * Publish article (pure domain mutation)
+ */
 export const publishArticle = async (articleId) => {
   const article = await Article.findById(articleId);
 
@@ -39,13 +34,14 @@ export const publishArticle = async (articleId) => {
 
   article.status = "PUBLISHED";
   return article.save();
-
-  // async side effects
-  publishArticleJob(articleId);
 };
 
+/**
+ * Soft delete article
+ */
 export const softDeleteArticle = async (articleId) => {
   const article = await Article.findById(articleId);
+
   if (!article || article.isDeleted) {
     throw { statusCode: 404, message: "Article not found" };
   }
@@ -54,20 +50,22 @@ export const softDeleteArticle = async (articleId) => {
   return article.save();
 };
 
+/**
+ * List articles with filtering & pagination
+ */
 export const listArticles = async ({ filters, sort, skip, limit }) => {
   const base = { isDeleted: false, ...filters };
 
-  const articles = await Article.find(base)
-    .sort(sort)
-    .skip(skip)
-    .limit(limit);
+  const articles = await Article.find(base).sort(sort).skip(skip).limit(limit);
 
   const total = await Article.countDocuments(base);
 
   return { articles, total };
 };
 
-
+/**
+ * Used for HTTP caching (Last-Modified / ETag)
+ */
 export const getLatestPublishedUpdate = async () => {
   const latest = await Article.findOne({
     status: "PUBLISHED",
@@ -78,4 +76,3 @@ export const getLatestPublishedUpdate = async () => {
 
   return latest?.updatedAt;
 };
-

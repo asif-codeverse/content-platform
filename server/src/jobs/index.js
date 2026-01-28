@@ -1,10 +1,12 @@
-import { enqueueJob } from "./jobRunner.js";
-import { onArticlePublished } from "./article.jobs.js";
+import { v4 as uuid } from "uuid";
+import { enqueueInternal } from "./worker.js";
 
-export const publishArticleJob = (articleId) => {
-  enqueueJob({
-    type: "ARTICLE_PUBLISHED",
-    payload: { articleId },
-    handler: onArticlePublished,
+export const enqueueJob = ({ type, payload }) => {
+  enqueueInternal({
+    jobId: uuid(),
+    type,
+    payload,
+    attempts: 0,
+    maxAttempts: 5,
   });
 };

@@ -11,12 +11,13 @@ The backend is intentionally engineered to mirror **real-world production system
 The system is designed to achieve the following objectives:
 
 * Clear separation of responsibilities across architectural layers
-* Stateless, secure authentication and explicit authorization boundaries
+* Stateless, secure authentication with explicit authorization boundaries
 * Robust domain modeling with defensive defaults
 * Protection against abuse, misuse, and accidental overload
 * End-to-end observability and request traceability
 * Controlled, explicit, and safe data access patterns
 * Measurable performance characteristics and scalability paths
+* Reliable asynchronous processing with failure safety
 * Incremental, intentional architectural evolution over time
 
 ---
@@ -69,7 +70,8 @@ All application runtime code resides under `src/` to clearly separate execution 
 src/
 ├── config/          # Environment and infrastructure configuration
 ├── middlewares/     # Cross-cutting concerns
-├── modules/         # Feature-based domains
+├── modules/         # Feature-based business domains
+├── jobs/            # Background job infrastructure
 ├── utils/           # Shared utilities
 ├── app.js
 └── server.js
@@ -79,7 +81,7 @@ src/
 
 ## Feature-Based Modular Design
 
-The system follows a **feature-based modular architecture**, where each domain is fully self-contained.
+The system follows a **feature-based modular architecture**, where each business domain is fully self-contained.
 
 Each module owns:
 
@@ -196,9 +198,7 @@ Performance optimizations are **driven by observed query behavior**, not specula
   ```
   { status, isDeleted, createdAt }
   ```
-
 * Supports filtered listing, sorting, and pagination
-
 * Unique index enforced on `slug`
 
 ### Validation
@@ -212,13 +212,13 @@ All trade-offs are explicit and documented.
 
 ## HTTP Caching & Response Optimization (Day 9)
 
-Public, read-heavy endpoints implement **HTTP-level caching** to reduce database load and improve latency.
+Public, read-heavy endpoints implement **HTTP-level caching**.
 
 ### Caching Strategy
 
-* **ETag-based conditional requests**
-* ETags generated from the complete response payload
-* Ensures cache correctness across pagination, filters, and sorting
+* Conditional requests using `Last-Modified`
+* Cache correctness derived from actual data mutations
+* Pagination- and filter-safe caching behavior
 
 ### Cache Control
 
@@ -228,15 +228,44 @@ Public endpoints return:
 Cache-Control: public, max-age=60, stale-while-revalidate=30
 ```
 
-This enables browser and CDN caching while preserving correctness.
-
 ### Safety Guarantees
 
 * Only public, unauthenticated endpoints are cached
-* Authenticated or user-specific responses are never cached
-* Cache invalidation occurs automatically through ETag changes
+* User-specific or authenticated responses are never cached
+* Cache invalidation occurs automatically through data updates
 
-This provides measurable performance gains without compromising security or correctness.
+---
+
+## Background Jobs & Reliability (Day 11)
+
+The system supports **reliable asynchronous processing** through a dedicated background job subsystem.
+
+### Design Principles
+
+* Controllers remain synchronous and fast
+* Business services mutate domain state only
+* All side effects execute asynchronously
+* Background jobs are **idempotent and retry-safe**
+
+### Job Architecture
+
+```
+src/jobs/
+├── index.js                # Public enqueue API
+├── worker.js               # Execution, retries, backoff
+├── jobExecution.model.js   # Idempotency & execution tracking
+└── handlers/               # Pure async side-effect handlers
+```
+
+### Guarantees
+
+* Each job executes **at most once**
+* Duplicate jobs are ignored safely
+* Failures retry with exponential backoff
+* Permanent failures are recorded for observability
+* Infrastructure concerns never leak into domain services
+
+This ensures correctness under retries, crashes, and partial failures.
 
 ---
 
@@ -257,6 +286,8 @@ Client
  → Response
  → Central Error Handler (on failure)
 ```
+
+Background jobs execute **outside** this request lifecycle.
 
 ---
 
@@ -280,6 +311,7 @@ This prevents partial or unsafe runtime states.
 * Secure defaults over convenience
 * Observability as a first-class concern
 * Correctness before optimization
+* Reliability before scale
 * Evolution driven by real constraints
 
 ---
@@ -290,9 +322,10 @@ This backend is designed to:
 
 * Scale feature complexity incrementally
 * Support real-world business workflows
+* Handle asynchronous side effects safely
 * Serve as a reusable foundation across domains
 * Minimize long-term refactoring cost
 
-The architecture prioritizes **clarity, safety, performance, and maintainability** over short-term velocity.
+The architecture prioritizes **clarity, safety, reliability, performance, and maintainability** over short-term velocity.
 
 ---
