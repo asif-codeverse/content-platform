@@ -1,5 +1,6 @@
 import { Article } from "./article.model.js";
 import slugify from "slugify";
+import { canEditArticle } from "../../utils/authorization.js";
 
 /**
  * Create article (DRAFT by default)
@@ -20,6 +21,34 @@ export const createArticle = async ({ title, content, author }) => {
     }
     throw err;
   }
+};
+
+// update article
+export const updateArticle = async (articleId, data, user) => {
+  const article = await Article.findById(articleId);
+
+  // Existence check
+  if (!article || article.isDeleted) {
+    throw { statusCode: 404, message: "Article not found" };
+  }
+
+  // ownership (ABAC enforcement)
+  if (!canEditArticle(user, article)) {
+    throw {
+      statusCode: 403,
+      message: "Not allowed to modify this article",
+    };
+  }
+
+  // explicit field whitelisting
+  if (data.title !== undefined) {
+    article.title = data.title;
+    article.slug = slugify(data.title, { lower: true, strict: true });
+  }
+  if (data.content !== undefined) {
+    article.content = data.content;
+  }
+  return article.save();
 };
 
 /**

@@ -4,6 +4,7 @@ import {
   publishArticle,
   softDeleteArticle,
   listArticles,
+  updateArticle,
 } from "./article.service.js";
 
 import { generateETag } from "../../utils/etag.js";
@@ -20,6 +21,23 @@ export const create = async (req, res, next) => {
     });
 
     return res.status(201).json(article);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const update = async (req, res, next) => {
+  try {
+    const article = await updateArticle(
+      req.params.id,
+      {
+        title: req.body.title,
+        content: req.body.content,
+      },
+      req.user,
+    );
+
+    return res.json(article);
   } catch (err) {
     next(err);
   }

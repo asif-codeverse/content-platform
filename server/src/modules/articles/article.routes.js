@@ -7,6 +7,7 @@ import {
   listPublished,
   publish,
   remove,
+  update,
 } from "./article.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { createArticleSchema } from "./article.validation.js";
@@ -30,5 +31,6 @@ router.post(
 
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
 router.delete("/:id", authenticate, authorize("ADMIN"), remove);
+router.patch("/:id", authenticate, authorize("ADMIN", "EDITOR"), update);
 
 export default router;

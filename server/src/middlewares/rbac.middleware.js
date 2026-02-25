@@ -1,14 +1,19 @@
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return next({ statuCode: 401, message: "User not auhthenticated" });
+      return next({
+        statusCode: 401,
+        message: "User not authenticated",
+      });
     }
+
     if (!allowedRoles.includes(req.user.role)) {
       return next({
-        statuCode: 403,
+        statusCode: 403,
         message: "Forbidden: insufficient rights",
       });
     }
+
     next();
   };
 };
