@@ -10,7 +10,7 @@ import {
 import { generateETag } from "../../utils/etag.js";
 import { logger } from "../../utils/logger.js";
 import { parseQuery } from "../../utils/queryParser.js";
-import { enqueueJob } from "../../jobs/index.js";
+import { enqueueJob } from "../../jobs/queue.js";
 
 export const create = async (req, res, next) => {
   try {
@@ -84,9 +84,8 @@ export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
 
-    enqueueJob({
-      type: "ARTICLE_PUBLISHED",
-      payload: { articleId: article._id.toString() },
+    enqueueJob("ARTICLE_PUBLISHED",{
+      articleId : article._id.toString(),
     });
 
     return res.json(article);

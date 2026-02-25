@@ -2,74 +2,81 @@
 
 This repository is a **monorepo** containing a `client` and a `server`, designed with a **production-first backend architecture** and strict separation of concerns.
 
-The backend is intentionally engineered to mirror **real-world production systems**, prioritizing correctness, security, observability, performance, and long-term maintainability over tutorial simplicity or rapid prototyping.
+The backend mirrors real-world production systems and prioritizes:
+
+* Correctness before convenience
+* Security before feature velocity
+* Observability before optimization
+* Reliability before scale
 
 ---
 
-## Architectural Objectives
+# Architectural Objectives
 
-The system is designed to achieve the following objectives:
+The system is engineered to guarantee:
 
-* Clear separation of responsibilities across architectural layers
-* Stateless, secure authentication with explicit authorization boundaries
-* Robust domain modeling with defensive defaults
-* Protection against abuse, misuse, and accidental overload
-* End-to-end observability and request traceability
-* Controlled, explicit, and safe data access patterns
-* Measurable performance characteristics and scalability paths
-* Reliable asynchronous processing with failure safety
-* Incremental, intentional architectural evolution over time
+* Strict separation of responsibilities across layers
+* Stateless authentication with explicit authorization boundaries
+* Ownership-aware authorization (RBAC + ABAC)
+* Defensive domain modeling with safe defaults
+* Abuse prevention and bounded resource usage
+* Structured observability and request traceability
+* Explicit, controlled data access patterns
+* Verified performance through indexing
+* Reliable asynchronous processing with idempotency
+* Predictable and evolvable system design
 
 ---
 
-## Repository Structure
+# Repository Structure
 
 ```
 /
-├── client/          # Frontend application (independent concern)
+├── client/          # Frontend application
 └── server/          # Backend REST API
 ```
 
-The frontend and backend evolve independently while sharing a single repository to support coordinated development, versioning, and deployment workflows.
+Frontend and backend evolve independently but share versioning and deployment coordination.
 
 ---
 
-## Backend Architecture
+# Backend Architecture
 
-The backend is an **Express-based REST API**, designed for scalability, security, and operational stability.
+The backend is an **Express-based REST API** built for operational stability and clarity.
 
-### Core Entry Points
+---
 
-#### `app.js`
+## Core Entry Points
+
+### `app.js`
 
 Responsible for:
 
-* Express application configuration
+* Express initialization
 * Global middleware registration
 * Route mounting
-* Centralized error middleware registration
+* Error middleware registration
 
-#### `server.js`
+### `server.js`
 
 Responsible for:
 
-* Infrastructure bootstrapping
-* Database connection initialization
+* Environment validation
+* Database connection
 * HTTP server startup
-* Startup and lifecycle logging
+* Startup logging
 
-Application configuration and infrastructure concerns are deliberately isolated to preserve clarity and testability.
+`app.js` never starts the server directly.
+Infrastructure bootstrapping is isolated.
 
 ---
 
-## Source Layout (`src/`)
-
-All application runtime code resides under `src/` to clearly separate execution logic from tooling and deployment artifacts.
+# Source Layout (`src/`)
 
 ```
 src/
-├── config/          # Environment and infrastructure configuration
-├── middlewares/     # Cross-cutting concerns
+├── config/          # Env validation, DB connection
+├── middlewares/     # Auth, RBAC, rate limit, error handling
 ├── modules/         # Feature-based business domains
 ├── jobs/            # Background job infrastructure
 ├── utils/           # Shared utilities
@@ -77,199 +84,252 @@ src/
 └── server.js
 ```
 
+All runtime code is contained inside `src/` to isolate it from tooling.
+
 ---
 
-## Feature-Based Modular Design
+# Feature-Based Modular Design
 
-The system follows a **feature-based modular architecture**, where each business domain is fully self-contained.
+Each domain module encapsulates:
 
-Each module owns:
-
-* Routes (HTTP mapping only)
+* Routes (transport mapping only)
 * Controllers (request orchestration)
 * Services (business logic)
-* Models (data schema and persistence)
-* Validation rules (input safety)
+* Models (schema + persistence)
+* Validation rules
 
-This structure minimizes coupling, improves testability, and enables independent feature evolution.
+Modules do not import each other’s internals.
+Business rules remain isolated.
 
 ---
 
-## Authentication (Day 2)
+# Authentication (Day 2)
 
-Authentication is implemented using **stateless JWT-based access control**.
+Stateless JWT-based authentication.
 
-### Token Model
-
-**Access Token**
+### Access Token
 
 * Short-lived
-* Sent via `Authorization: Bearer <token>`
-* Required for all protected endpoints
+* Sent via `Authorization: Bearer`
+* Required for protected routes
 
-**Refresh Token**
+### Refresh Token
 
 * Long-lived
-* Stored in **HttpOnly cookies**
-* Used exclusively for token rotation
-* Never used for authorization decisions
+* Stored in HttpOnly cookie
+* Used only for token rotation
 
-Passwords are hashed using **bcrypt** and are never stored, logged, or returned in plain text.
-
----
-
-## Authorization & RBAC (Day 3)
-
-Authorization is enforced using **Role-Based Access Control (RBAC)** at the API boundary.
-
-### Roles
-
-* `USER` — read-only access
-* `EDITOR` — content creation
-* `ADMIN` — full administrative control
-
-Authentication and authorization responsibilities are intentionally separated to preserve clarity, security, and auditability.
+Passwords are hashed using bcrypt.
+Plain text credentials are never logged or returned.
 
 ---
 
-## Core Domain: Articles (Day 4)
+# Authorization (Day 3 & Day 12)
 
-The **Article** module represents the system’s first concrete business domain.
+Authorization combines:
 
-### Responsibilities
+### 1. RBAC (Role-Based Access Control)
 
-* Content lifecycle management
-* SEO-friendly slug generation
-* Draft → publish workflow
-* Ownership and auditability
-* Soft deletion for operational safety
+Roles:
+
+* USER
+* EDITOR
+* ADMIN
+
+Enforced at route boundary.
+
+---
+
+### 2. Ownership / ABAC (Attribute-Based Control)
+
+Editors may modify only their own articles.
+Admins may override ownership restrictions.
+
+Ownership checks:
+
+* Executed inside service layer
+* Based on resource attributes (`author`)
+* Return `403 Forbidden` on violation
+
+Authorization is enforced both at:
+
+* API boundary (RBAC)
+* Domain layer (ownership)
+
+---
+
+# Core Domain: Articles (Day 4)
+
+Responsibilities:
+
+* Draft → Publish workflow
+* Slug generation
+* Ownership tracking
+* Soft deletion
+* Auditability
 
 ### Guarantees
 
-* Default state is `DRAFT`
-* Only `PUBLISHED` content is publicly visible
-* Deletion is logical via `isDeleted`
-* Slugs are unique and indexed
+* Default state: `DRAFT`
+* Only `PUBLISHED` visible publicly
+* Logical deletion via `isDeleted`
+* Slugs unique and indexed
+
+Domain mutations are pure and synchronous.
+
+Side effects are asynchronous.
 
 ---
 
-## Validation & Abuse Prevention (Day 5)
+# Validation & Abuse Prevention (Day 5)
 
-* Schema-based validation for all write operations
-* Validation executes before controller logic
-* Controllers explicitly whitelist allowed fields
-* Global rate limiting protects against abuse and traffic spikes
+* Schema-based request validation
+* Validation before controller execution
+* Explicit field whitelisting
+* Global rate limiting
 
----
-
-## Logging & Observability (Day 6)
-
-The system provides **structured, production-grade observability**.
-
-* Centralized logging using **Winston**
-* Direct `console.log` usage is prohibited
-* Every request receives a unique request ID
-* Full HTTP request/response timing is logged
-* Centralized error handling with no stack trace leakage to clients
-* Fail-fast startup behavior when critical dependencies are unavailable
+Raw request input is never trusted.
 
 ---
 
-## Query Safety, Pagination & Filtering (Day 7)
+# Logging & Observability (Day 6)
 
-All list endpoints are **safe by default**.
+Structured logging using Winston.
 
-* Page-based pagination with hard limits
-* Explicitly whitelisted filters and sort options
-* Controlled regex-based search on specific fields only
+Guarantees:
+
+* No `console.log`
+* Request ID correlation
+* Full HTTP request timing
+* Centralized error logging
+* No stack traces leaked to clients
+* Fail-fast startup behavior
+
+Logs are structured for production analysis.
+
+---
+
+# Query Safety, Pagination & Filtering (Day 7)
+
+List endpoints are defensive by design.
+
+* Pagination with hard upper bounds
+* Whitelisted filters
+* Controlled regex search
 * Centralized query parsing
-* Raw `req.query` is never passed directly to database queries
+* No raw `req.query` passed to database
+
+Prevents:
+
+* Injection
+* Unbounded scans
+* Resource exhaustion
 
 ---
 
-## Indexing & Performance Engineering (Day 8)
+# Indexing & Performance Engineering (Day 8)
 
-Performance optimizations are **driven by observed query behavior**, not speculation.
+Indexes are driven by observed query patterns.
 
 ### Index Strategy
 
-* Compound index:
+```
+{ status, isDeleted, createdAt }
+```
 
-  ```
-  { status, isDeleted, createdAt }
-  ```
-* Supports filtered listing, sorting, and pagination
-* Unique index enforced on `slug`
+Supports:
 
-### Validation
+* Filtered listing
+* Sorting
+* Pagination
 
-* Index usage verified via execution plans (`IXSCAN`)
-* Collection scans are treated as performance defects
+Unique index on `slug`.
 
-All trade-offs are explicit and documented.
+Execution plans are verified.
+Collection scans are treated as defects.
 
 ---
 
-## HTTP Caching & Response Optimization (Day 9)
+# HTTP Caching & Response Optimization (Day 9)
 
-Public, read-heavy endpoints implement **HTTP-level caching**.
+Public endpoints implement conditional requests.
 
-### Caching Strategy
+### Strategy
 
-* Conditional requests using `Last-Modified`
-* Cache correctness derived from actual data mutations
-* Pagination- and filter-safe caching behavior
+* `Last-Modified` header
+* `If-Modified-Since` handling
+* Safe 304 responses
 
-### Cache Control
-
-Public endpoints return:
+### Cache-Control
 
 ```
 Cache-Control: public, max-age=60, stale-while-revalidate=30
 ```
 
-### Safety Guarantees
+### Guarantees
 
-* Only public, unauthenticated endpoints are cached
-* User-specific or authenticated responses are never cached
-* Cache invalidation occurs automatically through data updates
+* Only public endpoints cached
+* Authenticated routes never cached
+* Cache validity derived from actual data mutations
+
+Correctness is prioritized over aggressiveness.
 
 ---
 
-## Background Jobs & Reliability (Day 11)
+# Background Jobs & Reliability (Day 13)
 
-The system supports **reliable asynchronous processing** through a dedicated background job subsystem.
+The system supports reliable asynchronous side effects.
 
-### Design Principles
+---
+
+## Design Principles
 
 * Controllers remain synchronous and fast
-* Business services mutate domain state only
-* All side effects execute asynchronously
-* Background jobs are **idempotent and retry-safe**
+* Services perform domain mutations only
+* Side effects execute asynchronously
+* Jobs are idempotent
+* Retries are bounded and exponential
 
-### Job Architecture
+---
+
+## Job Architecture
 
 ```
 src/jobs/
-├── index.js                # Public enqueue API
-├── worker.js               # Execution, retries, backoff
-├── jobExecution.model.js   # Idempotency & execution tracking
-└── handlers/               # Pure async side-effect handlers
+├── queue.js                 # In-memory queue + dispatcher
+├── worker.js                # Execution, retry, backoff
+├── jobExecution.model.js    # Idempotency persistence
+└── handlers/
+    └── articlePublished.job.js
 ```
-
-### Guarantees
-
-* Each job executes **at most once**
-* Duplicate jobs are ignored safely
-* Failures retry with exponential backoff
-* Permanent failures are recorded for observability
-* Infrastructure concerns never leak into domain services
-
-This ensures correctness under retries, crashes, and partial failures.
 
 ---
 
-## Request Execution Flow
+## Execution Flow
+
+1. Controller enqueues job
+2. Queue pushes job into memory
+3. Worker processes job
+4. Handler executes side effect
+5. Execution state persisted
+6. Failures retry with exponential backoff
+7. Permanent failures recorded
+
+---
+
+## Guarantees
+
+* Each job executes at most once
+* Duplicate executions are ignored
+* Failures are logged
+* Retries are bounded
+* Domain services remain deterministic
+
+This resembles an event-driven architecture.
+
+---
+
+# Request Execution Flow
 
 ```
 Client
@@ -278,54 +338,76 @@ Client
  → Request ID Middleware
  → HTTP Logger
  → Authentication
- → Authorization
+ → Authorization (RBAC)
  → Router
  → Controller
- → Service
+ → Service (includes ownership checks)
  → Database
  → Response
- → Central Error Handler (on failure)
+ → Central Error Handler
 ```
 
-Background jobs execute **outside** this request lifecycle.
+Background jobs execute outside this lifecycle.
 
 ---
 
-## Infrastructure Guarantees
+# Infrastructure Guarantees
 
-* MongoDB is the sole persistence layer
-* Server does not start without a successful database connection
-* Environment configuration is validated at startup
-
-This prevents partial or unsafe runtime states.
+* MongoDB is required for startup
+* Server fails fast if DB unavailable
+* Environment validated at boot
+* No partial initialization states
 
 ---
 
-## Design Principles
+# Trust Boundaries
 
-* Strict separation of concerns
-* Thin routing layer
-* Explicit middleware ownership
-* Single source of truth for configuration
-* Soft deletes over destructive operations
-* Secure defaults over convenience
-* Observability as a first-class concern
-* Correctness before optimization
+Trusted:
+
+* `req.user` (derived from verified JWT)
+
+Untrusted:
+
+* `req.body`
+* `req.query`
+* Client-supplied headers
+
+All untrusted data is validated and sanitized.
+
+---
+
+# Design Principles
+
+* Thin controllers
+* Pure domain services
+* Explicit authorization rules
+* Idempotent side effects
+* Defensive query design
+* Verified index usage
+* Observability first
 * Reliability before scale
-* Evolution driven by real constraints
+* Incremental evolution
 
 ---
 
-## Architectural Intent
+# Architectural Intent
 
-This backend is designed to:
+This backend is built to:
 
-* Scale feature complexity incrementally
-* Support real-world business workflows
+* Demonstrate production reasoning
+* Enforce ownership and role boundaries
 * Handle asynchronous side effects safely
-* Serve as a reusable foundation across domains
-* Minimize long-term refactoring cost
+* Scale query patterns responsibly
+* Support future horizontal scaling
+* Minimize architectural rewrites
 
-The architecture prioritizes **clarity, safety, reliability, performance, and maintainability** over short-term velocity.
+The system favors:
+
+Clarity.
+Correctness.
+Safety.
+Reliability.
+
+Over speed of implementation.
 
 ---
