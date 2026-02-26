@@ -744,3 +744,160 @@ It resembles an event-driven architecture, where domain events trigger asynchron
 
 ---
 
+# 🔹 LEVEL 18 — HTTP Caching & Correctness (Day 14)
+
+---
+
+### 89. What is the primary purpose of HTTP caching in a REST API?
+
+**Answer:**
+To reduce unnecessary data transfer while preserving correctness. Caching is not about speed alone—it is about serving accurate responses efficiently.
+
+---
+
+### 90. What does the `Last-Modified` header represent?
+
+**Answer:**
+It represents the timestamp of the most recent modification of the requested resource, allowing clients to validate whether their cached version is still valid.
+
+---
+
+### 91. What is the role of the `If-Modified-Since` header?
+
+**Answer:**
+It allows the client to ask the server whether the resource has changed since a specific timestamp. If not, the server can return `304 Not Modified`.
+
+---
+
+### 92. When should a server return `304 Not Modified`?
+
+**Answer:**
+Only when the resource has not changed since the timestamp provided in `If-Modified-Since`, and it is safe to reuse the cached version.
+
+---
+
+### 93. Why must the `Last-Modified` value be derived from actual data mutations?
+
+**Answer:**
+Because cache validity must reflect real state changes. Artificial or manual timestamps risk serving stale or incorrect data.
+
+---
+
+### 94. Why is it dangerous to return `304` incorrectly?
+
+**Answer:**
+An incorrect `304` causes the client to reuse stale data, violating data correctness and potentially breaking business logic.
+
+---
+
+### 95. Why should conditional checks occur before fetching heavy data?
+
+**Answer:**
+To avoid unnecessary database reads when the client’s cached version is already up-to-date.
+
+---
+
+### 96. Why should only public endpoints be cacheable?
+
+**Answer:**
+Because caching authenticated or user-specific data risks exposing private information to other users.
+
+---
+
+### 97. Why is `Cache-Control: public` inappropriate for protected endpoints?
+
+**Answer:**
+Because it allows intermediaries and browsers to cache responses that may contain sensitive data.
+
+---
+
+### 98. What is the purpose of `max-age` in Cache-Control?
+
+**Answer:**
+It defines how long a response can be considered fresh before revalidation is required.
+
+---
+
+### 99. What does `stale-while-revalidate` enable?
+
+**Answer:**
+It allows clients to temporarily use stale responses while asynchronously revalidating in the background.
+
+---
+
+### 100. Why is HTTP-level caching preferred before introducing Redis?
+
+**Answer:**
+Because HTTP caching leverages built-in browser and CDN mechanisms without adding infrastructure complexity.
+
+---
+
+### 101. Why must pagination and filtering remain cache-safe?
+
+**Answer:**
+Because cache validation should reflect global data changes while ensuring filtered results remain consistent.
+
+---
+
+### 102. Why is tying caching to `updatedAt` considered robust?
+
+**Answer:**
+Because `updatedAt` changes automatically on every mutation, making cache invalidation data-driven and reliable.
+
+---
+
+### 103. What is the architectural benefit of conditional requests?
+
+**Answer:**
+They reduce bandwidth usage while maintaining correctness, improving scalability without additional infrastructure.
+
+---
+
+### 104. Why should cache invalidation logic not live in background jobs for this design?
+
+**Answer:**
+Because cache correctness is derived from data timestamps. Explicit invalidation becomes unnecessary when using conditional requests.
+
+---
+
+### 105. What problem occurs if timestamps are not enabled in Mongoose?
+
+**Answer:**
+`updatedAt` will not change on mutations, causing incorrect `Last-Modified` values and broken cache validation.
+
+---
+
+### 106. Why must header dates be validated before comparison?
+
+**Answer:**
+Because malformed or invalid dates could cause incorrect comparisons and unintended `304` responses.
+
+---
+
+### 107. Why is HTTP caching considered stateless?
+
+**Answer:**
+Because validation relies solely on request headers and resource metadata, not on server session memory.
+
+---
+
+### 108. What real-world systems rely heavily on conditional HTTP requests?
+
+**Answer:**
+Browsers, CDNs, mobile apps, and distributed frontend clients that aggressively cache resources to reduce latency.
+
+---
+
+### 109. Why is cache correctness more important than cache aggressiveness?
+
+**Answer:**
+Because incorrect data delivery can break business integrity, whereas slower responses only affect performance.
+
+---
+
+### 110. What senior-level architectural principle does Day 14 reinforce?
+
+**Answer:**
+Correctness under mutation. Systems must behave predictably when state changes, especially under caching and distributed clients.
+
+---

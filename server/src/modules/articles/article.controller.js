@@ -53,8 +53,12 @@ export const listPublished = async (req, res, next) => {
       res.set("Last-Modified", lastModified.toUTCString());
 
       const ifModifiedSince = req.headers["if-modified-since"];
-      if (ifModifiedSince && new Date(ifModifiedSince) >= lastModified) {
-        return res.status(304).end();
+      if (ifModifiedSince){
+        const since = new Date(ifModifiedSince);
+
+        if(!isNaN(since) && since >= lastModified){
+          return res.status(304).end();
+        }
       }
     }
 
@@ -64,6 +68,11 @@ export const listPublished = async (req, res, next) => {
       skip,
       limit,
     });
+
+    res.set(
+      "Cache-Control",
+      "public, max-age=60, stale-while-revallidate=30"
+    )
 
     return res.json({
       success: true,
