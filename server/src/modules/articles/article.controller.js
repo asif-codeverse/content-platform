@@ -71,7 +71,7 @@ export const listPublished = async (req, res, next) => {
 
     res.set(
       "Cache-Control",
-      "public, max-age=60, stale-while-revallidate=30"
+      "public, max-age=60, stale-while-revalidate=30"
     )
 
     return res.json({
@@ -112,35 +112,64 @@ export const remove = async (req, res, next) => {
   }
 };
 
+
 export const getArticles = async (req, res, next) => {
   try {
-    const { page, limit, skip, sort, filters } = parseQuery(req.query);
+    const parsed = parseQuery(req.query);
+
+    const filters = {
+      status: "PUBLISHED",
+      ...(parsed.filters || {}),
+    };
+
+    if (req.query.slug) {
+      filters.slug = req.query.slug;
+    }
 
     const { articles, total } = await listArticles({
       filters,
-      sort,
-      skip,
-      limit,
-    });
-
-    logger.info("Articles fetched", {
-      page,
-      limit,
-      filters,
-      requestId: req.requestId,
+      sort: parsed.sort,
+      skip: parsed.skip,
+      limit: parsed.limit,
     });
 
     return res.json({
       success: true,
       data: articles,
       meta: {
-        page,
-        limit,
+        page: parsed.page,
+        limit: parsed.limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / parsed.limit),
       },
     });
   } catch (err) {
     next(err);
   }
 };
+
+export const getBySlug = async (req,res,next) => {
+  try {
+    const {slug} = req.params;
+
+    const {articles} = await listArticles({
+      filters : {
+        slug,
+        status : "PUBLISHED",
+      },
+      sort : {},
+      skip : 0,
+      limit : 1,
+    });
+
+    if(!articles.length){
+      return next({statusCode : 404 ,message : "Article not found"});
+    }
+    return res.json({
+      success : true,
+      data : articles[0],
+    });
+  } catch (err) {
+    next(err);
+  }
+}

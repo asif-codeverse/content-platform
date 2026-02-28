@@ -4,6 +4,7 @@ import { authorize } from "../../middlewares/rbac.middleware.js";
 import {
   create,
   getArticles,
+  getBySlug,
   listPublished,
   publish,
   remove,
@@ -14,7 +15,10 @@ import { createArticleSchema } from "./article.validation.js";
 
 const router = Router();
 
+
 /* Public */
+router.get("/:slug" , getBySlug);
+
 router.get("/", listPublished);
 
 /* Admin / Editor */
