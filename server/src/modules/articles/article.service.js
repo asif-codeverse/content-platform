@@ -40,14 +40,36 @@ export const updateArticle = async (articleId, data, user) => {
     };
   }
 
-  // explicit field whitelisting
-  if (data.title !== undefined) {
-    article.title = data.title;
-    article.slug = slugify(data.title, { lower: true, strict: true });
+  if (article.status === "PUBLISHED" && user.role !== "ADMIN") {
+    throw {
+      statusCode: 403,
+      message: "Published articles cannot be modified by editor",
+    };
   }
+
+  if (data.title !== undefined) {
+    const newSlug = slugify(data.title, { lower: true, strict: true });
+
+    // prevent slug collision
+    const existing = await Article.findOne({
+      slug: newSlug,
+      _id: { $ne: article._id },
+    });
+    if (existing) {
+      throw {
+        statusCode: 409,
+        message: "Another article already uses this article",
+      };
+    }
+
+    article.title = data.title;
+    article.slug = newSlug;
+  }
+
   if (data.content !== undefined) {
     article.content = data.content;
   }
+
   return article.save();
 };
 

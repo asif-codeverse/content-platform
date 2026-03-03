@@ -1,12 +1,12 @@
-export const canEditArticle = (user,article)=>{
-    // admin can edit anything
-    if(user.role === 'admin') return true ;
+export const canEditArticle = (user, article) => {
+  // ADMIN override
+  if (user.role === "ADMIN") return true;
 
-    // editor can edit only article
-    if(user.role === 'EDITOR'){
-        return article.author.toString() === user.id ;
-    }
+  // EDITOR ownership check
+  if (user.role === "EDITOR") {
+    return article.author.toString() === user.userId;
+  }
 
-    // All other : no access
-    return false ;
-}
+  // All others: no access
+  return false;
+};

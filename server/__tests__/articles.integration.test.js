@@ -4,17 +4,16 @@ import app from "../src/app.js";
 import { connectDB } from "../src/config/db.js";
 import { env } from "../src/config/env.js";
 import { Article } from "../src/modules/articles/article.model.js";
-import bcrypt from "bcryptjs";
 import { User } from "../src/modules/auth/auth.model.js";
+import bcrypt from "bcryptjs";
 
 describe("Articles Public API", () => {
-
   beforeAll(async () => {
     await connectDB();
-    if (!env.mongoUri.includes("test")) {
-    throw new Error("Refusing to run tests on non-test database");
 
-  }
+    if (!env.mongoUri.includes("test")) {
+      throw new Error("Refusing to run tests on non-test database");
+    }
   });
 
   afterEach(async () => {
@@ -25,91 +24,260 @@ describe("Articles Public API", () => {
     await mongoose.connection.close();
   });
 
+  // ---------------------------------------
+  // PUBLIC LIST TEST
+  // ---------------------------------------
+
   it("should return 200 for public list endpoint", async () => {
     const res = await request(app).get("/articles");
+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
-  it("should NOT return draft articles in public list", async () => {
+  // ---------------------------------------
+  // DRAFT VISIBILITY TEST
+  // ---------------------------------------
 
+  it("should NOT return draft articles in public list", async () => {
     await Article.create({
       title: "Draft Test",
       content: "This is draft content",
       status: "DRAFT",
       author: new mongoose.Types.ObjectId(),
-      slug: "draft-test"
+      slug: "draft-test",
     });
 
     const res = await request(app).get("/articles");
 
-    const titles = res.body.data.map(a => a.title);
+    const titles = res.body.data.map((a) => a.title);
 
     expect(titles).not.toContain("Draft Test");
   });
 
-  
-it("should NOT allow publishing without authentication", async () => {
-  const article = await Article.create({
-    title: "Publish Test",
-    content: "Test",
-    status: "DRAFT",
-    author: new mongoose.Types.ObjectId(),
-    slug: "publish-test"
-  });
+  // ---------------------------------------
+  // AUTH REQUIRED FOR PUBLISH
+  // ---------------------------------------
 
-  const publishRes = await request(app)
-    .patch(`/articles/${article._id}/publish`);
-
-  expect(publishRes.statusCode).toBe(401);
-});
-
-it("should allow ADMIN to publish and make article public", async () => {
-
-  // 1️⃣ Create admin directly in DB
-  const hashedPassword = await bcrypt.hash("Password123", 10);
-
-  const admin = await User.create({
-    email: "admin@test.com",
-    password: hashedPassword,
-    role: "ADMIN",
-    refreshTokenVersion: 0
-  });
-
-  // 2️⃣ Login
-  const loginRes = await request(app)
-    .post("/auth/login")
-    .send({
-      email: "admin@test.com",
-      password: "Password123"
+  it("should NOT allow publishing without authentication", async () => {
+    const article = await Article.create({
+      title: "Publish Test",
+      content: "Test",
+      status: "DRAFT",
+      author: new mongoose.Types.ObjectId(),
+      slug: "publish-test",
     });
 
-  const token = loginRes.body.accessToken;
-  expect(token).toBeDefined();
+    const publishRes = await request(app).patch(
+      `/articles/${article._id}/publish`,
+    );
 
-  // 3️⃣ Create draft article
-  const article = await Article.create({
-    title: "Publish Flow Test",
-    content: "Will become public",
-    status: "DRAFT",
-    author: admin._id,
-    slug: "publish-flow-test"
+    expect(publishRes.statusCode).toBe(401);
   });
 
-  // 4️⃣ Publish as admin
-  const publishRes = await request(app)
-    .patch(`/articles/${article._id}/publish`)
-    .set("Authorization", `Bearer ${token}`);
+  // ---------------------------------------
+  // ADMIN CAN PUBLISH
+  // ---------------------------------------
 
-  expect(publishRes.statusCode).toBe(200);
+  it("should allow ADMIN to publish and make article public", async () => {
+    const hashedPassword = await bcrypt.hash("Password123", 10);
 
-  // 5️⃣ Verify public visibility
-  const publicRes = await request(app).get("/articles");
+    const admin = await User.create({
+      email: "admin@test.com",
+      password: hashedPassword,
+      role: "ADMIN",
+      refreshTokenVersion: 0,
+    });
 
-  const titles = publicRes.body.data.map(a => a.title);
+    const loginRes = await request(app).post("/auth/login").send({
+      email: "admin@test.com",
+      password: "Password123",
+    });
 
-  expect(titles).toContain("Publish Flow Test");
-});
+    const token = loginRes.body.accessToken;
+    expect(token).toBeDefined();
 
+    const article = await Article.create({
+      title: "Publish Flow Test",
+      content: "Will become public",
+      status: "DRAFT",
+      author: admin._id,
+      slug: "publish-flow-test",
+    });
 
+    const publishRes = await request(app)
+      .patch(`/articles/${article._id}/publish`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(publishRes.statusCode).toBe(200);
+
+    const publicRes = await request(app).get("/articles");
+
+    const titles = publicRes.body.data.map((a) => a.title);
+
+    expect(titles).toContain("Publish Flow Test");
+  });
+
+  // ---------------------------------------
+  // EDITOR CANNOT PUBLISH
+  // ---------------------------------------
+
+  it("should NOT allow EDITOR to publish article", async () => {
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    const editor = await User.create({
+      email: "editor@test.com",
+      password: hashedPassword,
+      role: "EDITOR",
+      refreshTokenVersion: 0,
+    });
+
+    const loginRes = await request(app).post("/auth/login").send({
+      email: "editor@test.com",
+      password: "password123",
+    });
+
+    const token = loginRes.body.accessToken;
+
+    const article = await Article.create({
+      title: "Editor Draft",
+      content: "Editor content",
+      status: "DRAFT",
+      author: editor._id,
+      slug: "editor-draft",
+    });
+
+    const res = await request(app)
+      .patch(`/articles/${article._id}/publish`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  // ---------------------------------------
+  // EDITOR CANNOT EDIT OTHERS' ARTICLE
+  // ---------------------------------------
+
+  it("should NOT allow EDITOR to edit another user's article", async () => {
+    const hashedAdminPassword = await bcrypt.hash("password123", 10);
+
+    const admin = await User.create({
+      email: "admin2@test.com",
+      password: hashedAdminPassword,
+      role: "ADMIN",
+      refreshTokenVersion: 0,
+    });
+
+    const article = await Article.create({
+      title: "Admin Article",
+      content: "Admin content",
+      status: "DRAFT",
+      author: admin._id,
+      slug: "admin-article",
+    });
+
+    const hashedEditorPassword = await bcrypt.hash("password123", 10);
+
+    const editor = await User.create({
+      email: "editor2@test.com",
+      password: hashedEditorPassword,
+      role: "EDITOR",
+      refreshTokenVersion: 0,
+    });
+
+    const editorLogin = await request(app).post("/auth/login").send({
+      email: "editor2@test.com",
+      password: "password123",
+    });
+
+    const editorToken = editorLogin.body.accessToken;
+
+    const res = await request(app)
+      .patch(`/articles/${article._id}`)
+      .set("Authorization", `Bearer ${editorToken}`)
+      .send({ title: "Hacked Title" });
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("should NOT allow updating title to an existing slug", async () => {
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    const admin = await User.create({
+      email: "admin3@test.com",
+      password: hashedPassword,
+      role: "ADMIN",
+      refreshTokenVersion: 0,
+    });
+
+    const loginRes = await request(app).post("/auth/login").send({
+      email: "admin3@test.com",
+      password: "password123",
+    });
+
+    const token = loginRes.body.accessToken;
+
+    const article1 = await Article.create({
+      title: "First Title",
+      content: "Content",
+      status: "DRAFT",
+      author: admin._id,
+      slug: "first-title",
+    });
+
+    await Article.create({
+      title: "Second Title",
+      content: "Content",
+      status: "DRAFT",
+      author: admin._id,
+      slug: "second-title",
+    });
+
+    const res = await request(app)
+      .patch(`/articles/${article1._id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "Second Title" });
+
+    expect(res.statusCode).toBe(409);
+  });
+
+  it("should NOT allow EDITOR to modify published article", async () => {
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    const admin = await User.create({
+      email: "admin4@test.com",
+      password: hashedPassword,
+      role: "ADMIN",
+      refreshTokenVersion: 0,
+    });
+
+    const editor = await User.create({
+      email: "editor4@test.com",
+      password: hashedPassword,
+      role: "EDITOR",
+      refreshTokenVersion: 0,
+    });
+
+    const article = await Article.create({
+      title: "Published Article",
+      content: "Content",
+      status: "PUBLISHED",
+      author: editor._id,
+      slug: "published-article",
+    });
+
+    const loginRes = await request(app).post("/auth/login").send({
+      email: "editor4@test.com",
+      password: "password123",
+    });
+
+    const token = loginRes.body.accessToken;
+
+    const res = await request(app)
+      .patch(`/articles/${article._id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "Changed Title" });
+
+    expect(res.statusCode).toBe(403);
+  });
 });

@@ -1863,3 +1863,246 @@ Authorization rules behave consistently.
 Publishing changes state in controlled way.
 Tests now validate that behavior.
 Determinism is critical for production reliability.
+
+
+
+
+121. What is the difference between authentication and authorization?
+
+Answer:
+Authentication verifies identity (who you are).
+Example: Logging in using email and password to receive a JWT.
+Authorization verifies permissions (what you can do).
+Example: Only ADMIN can publish articles.
+Authentication happens first; authorization depends on authenticated identity.
+
+
+---
+
+122. What is RBAC in backend systems?
+
+Answer:
+RBAC stands for Role-Based Access Control.
+Access is granted based on user roles like ADMIN or EDITOR.
+Example: authorize("ADMIN") middleware protects publish route.
+RBAC simplifies permission management across the system.
+It is enforced at route or middleware level.
+
+
+---
+
+123. What is ABAC and how is it different from RBAC?
+
+Answer:
+ABAC stands for Attribute-Based Access Control.
+It uses attributes like resource ownership or status.
+Example: Editor can edit only articles where article.author === user.userId.
+RBAC checks role; ABAC checks resource attributes.
+Production systems often combine both.
+
+
+---
+
+124. Why should ownership checks be inside the service layer?
+
+Answer:
+Service layer contains business logic.
+Controllers should only handle HTTP flow.
+If ownership is in controller, it can be bypassed.
+Placing ABAC in service guarantees consistent enforcement.
+This improves security and maintainability.
+
+
+---
+
+125. What is slug and why must it be unique?
+
+Answer:
+Slug is a URL-friendly identifier derived from title.
+Example: "My First Post" → my-first-post.
+It allows readable routes like /articles/my-first-post.
+If duplicate slugs exist, routing becomes ambiguous.
+Therefore a unique DB index is required.
+
+
+---
+
+126. Why should slug collisions be checked before saving?
+
+Answer:
+Relying only on DB unique index throws raw database errors.
+This results in poor API responses (500 instead of 409).
+Pre-check allows controlled conflict response.
+Example: Return HTTP 409 Conflict.
+Production APIs should handle conflicts gracefully.
+
+
+---
+
+127. What is HTTP 409 Conflict?
+
+Answer:
+409 indicates request conflicts with current resource state.
+Example: Updating title to one already used.
+It signals semantic conflict, not server error.
+Clients can handle it predictably.
+It improves API correctness.
+
+
+---
+
+128. Why should background jobs be disabled during tests?
+
+Answer:
+Background jobs introduce asynchronous behavior.
+Tests should remain deterministic.
+After test finishes, DB connection closes.
+Worker may still run and cause MongoNotConnectedError.
+Disabling jobs in test environment prevents instability.
+
+
+---
+
+129. Why is environment isolation important in backend systems?
+
+Answer:
+Different environments require different configs.
+Example: .env for dev, .env.test for tests.
+Tests may drop database collections.
+Running tests on production DB causes data loss.
+Isolation ensures safety.
+
+
+---
+
+130. What is fail-fast startup behavior?
+
+Answer:
+Fail-fast means application stops immediately on critical failure.
+Example: Missing MONGODB_URI stops server.
+Better to crash at startup than during request.
+Prevents partial system availability.
+This is production-grade design.
+
+
+---
+
+131. Why must role strings be consistent?
+
+Answer:
+Role comparison is case-sensitive in JavaScript.
+Example: "admin" ≠ "ADMIN".
+Mismatch silently breaks authorization.
+Enums or constants reduce risk.
+Consistency prevents security bugs.
+
+
+---
+
+132. What is integration testing?
+
+Answer:
+Integration testing validates full request lifecycle.
+It includes middleware, controller, service, and DB.
+Example: Test publishing flow from login to public visibility.
+It verifies real-world behavior.
+It is stronger than isolated unit tests.
+
+
+---
+
+133. Why should destructive DB operations be guarded in tests?
+
+Answer:
+Tests may call dropDatabase() or deleteMany().
+If run on production DB, data loss occurs.
+Guard like if (!mongoUri.includes("test")) throw.
+This prevents catastrophic mistakes.
+It is defensive engineering.
+
+
+---
+
+134. What is deterministic behavior in backend systems?
+
+Answer:
+Deterministic means same input produces same output.
+Example: Editor always receives 403 when editing others’ article.
+No randomness or hidden side effects.
+It simplifies debugging and scaling.
+Tests validate determinism.
+
+
+---
+
+135. Why should business rules prevent editing published articles?
+
+Answer:
+Published content represents finalized state.
+Allowing arbitrary edits may break audit consistency.
+Editors may alter public information unexpectedly.
+Admin override may still be allowed.
+Business rules maintain domain integrity.
+
+
+---
+
+136. What is soft deletion?
+
+Answer:
+Soft deletion marks record as deleted without removing it.
+Example: isDeleted: true.
+Data remains recoverable.
+Prevents accidental permanent loss.
+Queries must explicitly exclude soft-deleted records.
+
+
+---
+
+137. Why is explicit field whitelisting important?
+
+Answer:
+Prevents mass assignment vulnerabilities.
+Example: Client cannot modify author or role.
+Only allowed fields are updated.
+Improves data integrity.
+Common security best practice.
+
+
+---
+
+138. What is idempotency in background processing?
+
+Answer:
+Idempotency means repeated execution yields same result.
+Example: Publishing same article twice changes nothing after first.
+Prevents duplication during retries.
+Essential for reliability.
+Important in distributed systems.
+
+
+---
+
+139. Why should update logic check resource existence first?
+
+Answer:
+Operating on non-existent data causes errors.
+Example: Updating deleted article should return 404.
+Avoids unexpected DB behavior.
+Improves API clarity.
+Consistency matters for clients.
+
+
+---
+
+140. Why combine RBAC and ABAC in production systems?
+
+Answer:
+RBAC restricts high-level role permissions.
+ABAC restricts resource-specific permissions.
+Example: Editor can edit only own article.
+Combining both prevents privilege escalation.
+It ensures layered security model.
+
+
+---
