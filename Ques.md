@@ -1704,3 +1704,162 @@ They design systems that behave correctly under stress, not just during demos.
 
 ---
 
+101. Why should integration tests use a separate test database?
+Answer:
+A separate test database prevents accidental deletion of real production data.
+Integration tests often reset or clear collections before running.
+If tests run on the main database, all users, articles, and jobs may be wiped.
+Using a -test database ensures safe isolation.
+This is a fundamental production safety practice.
+
+102. What is the risk of running tests on a production database?
+Answer:
+Tests often call deleteMany() or drop collections.
+If connected to the real DB, all live data gets erased.
+This is exactly why your content-platform database was getting deleted.
+Production systems must enforce environment checks before destructive operations.
+Always refuse to run tests if the DB URI does not include "test".
+
+103. Why should background jobs be disabled during integration tests?
+Answer:
+Integration tests should validate HTTP behavior and domain logic only.
+Background jobs introduce async behavior and race conditions.
+When Jest finishes, DB connection closes, but worker may still run.
+This caused your MongoNotConnectedError.
+So we disable jobs in test mode using NODE_ENV !== "test".
+
+104. What is the difference between RBAC and ABAC?
+Answer:
+RBAC (Role-Based Access Control) restricts actions based on user role (ADMIN, EDITOR).
+Example: Only ADMIN can publish articles.
+ABAC (Attribute-Based Access Control) restricts based on resource ownership.
+Example: Editor can edit only their own article.
+Production systems often combine both.
+
+105. Why did JWT fail with “secretOrPrivateKey must have a value”?
+Answer:
+JWT requires a secret key to sign tokens.
+Your env.jwtAccessSecret was undefined.
+But your .env had JWT_SECRET, not JWT_ACCESS_SECRET.
+Mismatch between config and env variables caused runtime failure.
+Production systems must validate required env variables at startup.
+
+106. Why should environment variables be validated on startup?
+Answer:
+Missing secrets cause runtime crashes.
+Better to fail fast at boot than during a request.
+For example, missing MONGODB_URI or JWT_SECRET should stop server start.
+This prevents partial system availability.
+Fail-fast behavior is production-grade design.
+
+107. Why is process.env.NODE_ENV important?
+Answer:
+It controls environment-specific behavior.
+In your case, it selects .env vs .env.test.
+It disables background jobs during tests.
+It can also control logging verbosity.
+Production systems behave differently in dev, test, and prod modes.
+
+108. Why should publish endpoint require authentication?
+Answer:
+Publishing changes article state from DRAFT to PUBLISHED.
+This is a privileged action.
+Without authentication, anyone could publish content.
+This would break integrity of content lifecycle.
+Security boundaries must be enforced at route level.
+
+109. Why did your real database content disappear earlier?
+Answer:
+Because tests were connected to the main content-platform DB.
+Test suite cleared collections before each run.
+So your real data was erased every time tests executed.
+The fix was creating content-platform-test database.
+This is a classic environment isolation mistake.
+
+110. What is idempotency in background jobs?
+Answer:
+Idempotency means executing the same job multiple times produces the same result.
+Example: Publishing the same article twice should not duplicate effects.
+If retry happens due to crash, system remains consistent.
+Your jobExecution model helps enforce this.
+This prevents corruption during retries.
+
+111. Why should controllers not contain business logic?
+Answer:
+Controllers handle HTTP request/response only.
+Business rules belong in services.
+This keeps transport layer separate from domain layer.
+It improves testability and reuse.
+Production systems maintain strict separation of concerns.
+
+112. Why must draft articles not appear in public listing?
+Answer:
+Drafts are internal state.
+Public users should only see PUBLISHED content.
+Exposing drafts may reveal incomplete or sensitive data.
+Your test validates this rule explicitly.
+Domain visibility must be enforced at query level.
+
+113. What is conditional HTTP caching using Last-Modified?
+Answer:
+Server sends Last-Modified header based on data update time.
+Client sends If-Modified-Since on next request.
+If no change, server returns 304 Not Modified.
+This reduces bandwidth and DB load.
+It is HTTP-compliant performance optimization.
+
+114. Why is slug uniqueness important?
+Answer:
+Slug identifies article in URL.
+Example: /articles/my-first-post.
+If two articles share slug, routing becomes ambiguous.
+MongoDB unique index enforces this constraint.
+Database-level enforcement is safer than app-level checks.
+
+115. Why did you get MongoNotConnectedError in jobs?
+Answer:
+Jest closed DB connection after tests finished.
+But background worker still tried to run.
+When worker accessed DB, connection was already closed.
+Hence MongoNotConnectedError occurred.
+Disabling jobs in test environment solved this.
+
+116. What is the benefit of integration testing over unit testing here?
+Answer:
+Integration tests validate full HTTP pipeline.
+They test middleware → controller → service → DB.
+Unit tests test isolated functions only.
+Your integration tests verified RBAC and publish flow.
+This ensures real-world behavior correctness.
+
+117. Why should admin override ownership restrictions?
+Answer:
+Admins are system-level controllers.
+They must resolve disputes or moderate content.
+Ownership checks apply to editors, not admins.
+So ABAC logic must allow ADMIN override.
+This ensures operational flexibility.
+
+118. Why must destructive operations be guarded by environment checks?
+Answer:
+Functions like deleteMany() are dangerous.
+If run in production accidentally, data loss occurs.
+Adding a safety check like if (!mongoUri.includes("test")) throw error
+prevents catastrophic mistakes.
+This is defensive programming.
+
+119. Why should async workers be separate from HTTP lifecycle?
+Answer:
+HTTP requests must remain fast.
+Side effects (emails, analytics, indexing) should run asynchronously.
+If executed inline, user waits longer.
+Worker isolation improves performance and reliability.
+This resembles event-driven architecture.
+
+120. What does it mean that your architecture is deterministic?
+Answer:
+Given the same input, system produces predictable output.
+Authorization rules behave consistently.
+Publishing changes state in controlled way.
+Tests now validate that behavior.
+Determinism is critical for production reliability.
