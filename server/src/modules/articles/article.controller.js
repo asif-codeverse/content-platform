@@ -53,10 +53,10 @@ export const listPublished = async (req, res, next) => {
       res.set("Last-Modified", lastModified.toUTCString());
 
       const ifModifiedSince = req.headers["if-modified-since"];
-      if (ifModifiedSince){
+      if (ifModifiedSince) {
         const since = new Date(ifModifiedSince);
 
-        if(!isNaN(since) && since >= lastModified){
+        if (!isNaN(since) && since >= lastModified) {
           return res.status(304).end();
         }
       }
@@ -69,10 +69,7 @@ export const listPublished = async (req, res, next) => {
       limit,
     });
 
-    res.set(
-      "Cache-Control",
-      "public, max-age=60, stale-while-revalidate=30"
-    )
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
 
     return res.json({
       success: true,
@@ -93,9 +90,11 @@ export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
 
-    enqueueJob("ARTICLE_PUBLISHED",{
-      articleId : article._id.toString(),
-    });
+    if (process.env.NODE_ENV !== "test") {
+      enqueueJob("ARTICLE_PUBLISHED", {
+        articleId: article._id.toString(),
+      });
+    }
 
     return res.json(article);
   } catch (err) {
@@ -111,7 +110,6 @@ export const remove = async (req, res, next) => {
     next(err);
   }
 };
-
 
 export const getArticles = async (req, res, next) => {
   try {
@@ -148,28 +146,28 @@ export const getArticles = async (req, res, next) => {
   }
 };
 
-export const getBySlug = async (req,res,next) => {
+export const getBySlug = async (req, res, next) => {
   try {
-    const {slug} = req.params;
+    const { slug } = req.params;
 
-    const {articles} = await listArticles({
-      filters : {
+    const { articles } = await listArticles({
+      filters: {
         slug,
-        status : "PUBLISHED",
+        status: "PUBLISHED",
       },
-      sort : {},
-      skip : 0,
-      limit : 1,
+      sort: {},
+      skip: 0,
+      limit: 1,
     });
 
-    if(!articles.length){
-      return next({statusCode : 404 ,message : "Article not found"});
+    if (!articles.length) {
+      return next({ statusCode: 404, message: "Article not found" });
     }
     return res.json({
-      success : true,
-      data : articles[0],
+      success: true,
+      data: articles[0],
     });
   } catch (err) {
     next(err);
   }
-}
+};

@@ -5,7 +5,7 @@ import { connectDB } from "../src/config/db.js";
 import { env } from "../src/config/env.js";
 import { Article } from "../src/modules/articles/article.model.js";
 import bcrypt from "bcryptjs";
-import { User } from "../src/modules/users/user.model.js";
+import { User } from "../src/modules/auth/auth.model.js";
 
 describe("Articles Public API", () => {
 
@@ -49,25 +49,19 @@ describe("Articles Public API", () => {
   });
 
   
-it("should make article visible after publishing", async () => {
+it("should NOT allow publishing without authentication", async () => {
   const article = await Article.create({
     title: "Publish Test",
-    content: "Will be published",
+    content: "Test",
     status: "DRAFT",
     author: new mongoose.Types.ObjectId(),
     slug: "publish-test"
   });
 
-  // Call publish endpoint
-  await request(app)
-    .patch(`/articles/${article._id}/publish`)
-    .set("Authorization", "Bearer dummy"); // will fail if route protected
+  const publishRes = await request(app)
+    .patch(`/articles/${article._id}/publish`);
 
-  const res = await request(app).get("/articles");
-
-  const titles = res.body.data.map(a => a.title);
-
-  expect(titles).toContain("Publish Test");
+  expect(publishRes.statusCode).toBe(401);
 });
 
 it("should allow ADMIN to publish and make article public", async () => {
