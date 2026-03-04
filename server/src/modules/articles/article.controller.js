@@ -11,6 +11,7 @@ import { generateETag } from "../../utils/etag.js";
 import { logger } from "../../utils/logger.js";
 import { parseQuery } from "../../utils/queryParser.js";
 import { enqueueJob } from "../../jobs/queue.js";
+import { refreshTokens } from "../auth/auth.service.js";
 
 export const create = async (req, res, next) => {
   try {
@@ -167,6 +168,23 @@ export const getBySlug = async (req, res, next) => {
       success: true,
       data: articles[0],
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+export const refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw { statusCode: 400, message: "Refresh token required" };
+    }
+
+    const tokens = await refreshTokens(refreshToken);
+
+    return res.json(tokens);
   } catch (err) {
     next(err);
   }

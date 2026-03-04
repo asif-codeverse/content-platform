@@ -2,6 +2,9 @@ import { Router } from "express";
 import { register, login } from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorize } from "../../middlewares/rbac.middleware.js";
+import { refresh } from "../articles/article.controller.js";
+
+
 
 const router = Router();
 
@@ -19,5 +22,7 @@ router.get(
     });
   },
 );
+
+router.post("/refresh", refresh);
 
 export default router;
