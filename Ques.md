@@ -2106,3 +2106,352 @@ It ensures layered security model.
 
 
 ---
+
+
+141. What is Continuous Integration (CI)?
+
+Definition:
+Continuous Integration (CI) is a development practice where code changes are automatically built and tested whenever developers push code to a repository.
+
+Explanation:
+CI ensures that newly added code does not break existing functionality. Automated pipelines run tests, install dependencies, and verify code quality.
+
+Example:
+In this project, GitHub Actions automatically runs:
+
+npm install
+npm test
+
+after every push to ensure all API tests pass successfully.
+
+
+---
+
+142. What is GitHub Actions?
+
+Definition:
+GitHub Actions is a CI/CD automation tool that runs workflows directly inside a GitHub repository.
+
+Explanation:
+It allows developers to automate tasks such as building, testing, and deploying applications whenever specific events occur.
+
+Example:
+A workflow defined in:
+
+.github/workflows/ci.yml
+
+can run automated tests every time code is pushed to the repository.
+
+
+---
+
+143. Why are automated tests important in CI pipelines?
+
+Definition:
+Automated tests verify application functionality automatically without manual testing.
+
+Explanation:
+They help detect bugs early during development. If tests fail, the CI pipeline stops and alerts developers.
+
+Example:
+Your integration tests verify routes like:
+
+GET /articles
+PATCH /articles/:id/publish
+
+ensuring that article publishing logic works correctly.
+
+
+---
+
+144. What are environment variables in backend applications?
+
+Definition:
+Environment variables store configuration values required for running applications.
+
+Explanation:
+Sensitive information such as database URLs, API keys, and JWT secrets should never be hardcoded in source code.
+
+Example:
+
+MONGODB_URI
+JWT_ACCESS_SECRET
+JWT_REFRESH_SECRET
+
+These variables are read using process.env.
+
+
+---
+
+145. What are GitHub Secrets?
+
+Definition:
+GitHub Secrets are encrypted variables used in GitHub Actions workflows to securely store sensitive information.
+
+Explanation:
+Secrets ensure that credentials are not exposed in code repositories or logs.
+
+Example:
+Secrets used in CI include:
+
+MONGODB_URI_TEST
+JWT_ACCESS_SECRET
+JWT_REFRESH_SECRET
+
+These are injected into workflows during pipeline execution.
+
+
+---
+
+146. What is a JWT Access Token?
+
+Definition:
+An access token is a short-lived JSON Web Token used to authenticate API requests.
+
+Explanation:
+The client includes the token in the Authorization header to access protected routes.
+
+Example:
+
+Authorization: Bearer <access_token>
+
+In this project, access tokens expire in 15 minutes.
+
+
+---
+
+147. What is a Refresh Token?
+
+Definition:
+A refresh token is a long-lived token used to generate new access tokens when the current one expires.
+
+Explanation:
+It allows users to stay logged in without repeatedly entering credentials.
+
+Example Flow:
+
+login
+→ access token (15 min)
+→ refresh token (7 days)
+
+When the access token expires, /auth/refresh issues a new one.
+
+
+---
+
+148. Why are refresh tokens stored in HTTP-only cookies?
+
+Definition:
+HTTP-only cookies are cookies that cannot be accessed by JavaScript running in the browser.
+
+Explanation:
+This protects refresh tokens from cross-site scripting (XSS) attacks.
+
+Example:
+
+res.cookie("refreshToken", token, {
+  httpOnly: true,
+  sameSite: "strict"
+});
+
+This ensures the token is only sent automatically with HTTP requests.
+
+
+---
+
+149. What is the Refresh Token Endpoint?
+
+Definition:
+The refresh endpoint allows clients to request a new access token using a valid refresh token.
+
+Explanation:
+It prevents users from logging in repeatedly after access token expiration.
+
+Example Endpoint:
+
+POST /auth/refresh
+
+If the refresh token is valid, a new access token is returned.
+
+
+---
+
+150. What is Refresh Token Rotation?
+
+Definition:
+Refresh token rotation is a security technique where a new refresh token is issued every time the refresh endpoint is used.
+
+Explanation:
+This prevents stolen refresh tokens from being reused.
+
+Example Flow:
+
+refresh request
+→ new access token
+→ new refresh token
+
+This method is used in systems like Google OAuth and Auth0.
+
+
+---
+
+151. What is API Rate Limiting?
+
+Definition:
+Rate limiting restricts the number of requests a client can make within a specific time period.
+
+Explanation:
+It prevents API abuse such as brute force attacks and excessive traffic.
+
+Example Rule:
+
+100 requests per minute per IP
+
+If the limit is exceeded, the API returns:
+
+429 Too Many Requests
+
+
+---
+
+152. Why is rate limiting important for authentication endpoints?
+
+Definition:
+Rate limiting protects login endpoints from brute-force password attacks.
+
+Explanation:
+Without rate limiting, attackers can attempt thousands of password combinations quickly.
+
+Example Attack:
+
+POST /auth/login
+password: guess1
+password: guess2
+password: guess3
+
+Rate limiting blocks repeated attempts from the same IP.
+
+
+---
+
+153. What is cookie-parser middleware?
+
+Definition:
+Cookie-parser is an Express middleware used to parse cookies from incoming HTTP requests.
+
+Explanation:
+It extracts cookie values and stores them in req.cookies.
+
+Example:
+
+const token = req.cookies.refreshToken;
+
+Without cookie-parser, the refresh token cannot be accessed in the request.
+
+
+---
+
+154. Why is middleware order important in Express?
+
+Definition:
+Middleware order determines how requests are processed before reaching route handlers.
+
+Explanation:
+Incorrect ordering may cause missing request data or unprocessed cookies.
+
+Example Order:
+
+requestId
+httpLogger
+rateLimiter
+express.json
+cookieParser
+routes
+
+This ensures proper request processing.
+
+
+---
+
+155. What is request ID middleware?
+
+Definition:
+Request ID middleware assigns a unique identifier to each incoming request.
+
+Explanation:
+This helps track requests across logs and debugging tools.
+
+Example Log:
+
+requestId: 60e06dbe
+GET /articles
+status: 200
+
+Developers can trace the full lifecycle of the request.
+
+
+---
+
+156. What is HTTP request logging?
+
+Definition:
+HTTP logging records details about each API request and response.
+
+Explanation:
+Logs help monitor application behavior and identify performance issues.
+
+Example Log Entry:
+
+method: GET
+path: /articles
+status: 200
+duration: 1172ms
+
+This information helps diagnose server issues.
+
+
+---
+
+157. What is the role of error handling middleware?
+
+Definition:
+Error handling middleware catches runtime errors and returns structured error responses.
+
+Explanation:
+It prevents application crashes and ensures consistent error handling.
+
+Example Response:
+
+status: 500
+message: Server error
+
+Errors are logged while users receive safe messages.
+
+
+---
+
+158. What authentication architecture was implemented in this project?
+
+Definition:
+The project uses a JWT-based authentication system with access tokens and refresh tokens.
+
+Explanation:
+Access tokens provide short-term API authorization, while refresh tokens generate new access tokens.
+
+Authentication Flow:
+
+login
+↓
+access token
+refresh token
+↓
+access expires
+↓
+POST /auth/refresh
+↓
+new access token
+
+This architecture is widely used in modern web applications.
+
+
+---
