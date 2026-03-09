@@ -9,12 +9,11 @@ export const connectDB = async () => {
     logger.info("MongoDB connected successfully", {
       uri: env.mongoUri.replace(/\/\/.*@/, "//***:***@"), // optional masking
     });
-  } catch (error) {
-    logger.error("MongoDB connection failed", {
-      message: error.message,
-      stack: error.stack,
-    });
+  } catch (err) {
+    logger.error("MongoDB connection failed", err);
 
-    process.exit(1);
+    if (process.env.NODE_ENV !== "test") {
+      process.exit(1);
+    }
   }
 };
