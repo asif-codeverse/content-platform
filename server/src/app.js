@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -12,10 +13,11 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 // Global middlewares (order matters)
-app.use(apiLimiter);
-app.use(express.json());
 app.use(requestId);
 app.use(httpLogger);
+app.use(apiLimiter);
+app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use("/health", healthRoutes);
