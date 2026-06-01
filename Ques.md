@@ -2455,3 +2455,234 @@ This architecture is widely used in modern web applications.
 
 
 ---
+
+
+
+# 159. What is Docker?
+
+**Definition:**
+Docker is a containerization platform that packages applications and their dependencies into lightweight, portable containers.
+
+**Explanation:**
+Containers ensure that applications run consistently across different environments such as development, testing, and production.
+
+**Example:**
+Instead of installing Node.js and dependencies manually on every server, Docker packages everything inside one container that runs anywhere.
+
+---
+
+# 160. What is a Docker Image?
+
+**Definition:**
+A Docker image is a read-only template used to create containers.
+
+**Explanation:**
+It contains application code, runtime, libraries, and configuration required to run the application.
+
+**Example:**
+In this project, the command:
+
+```bash
+docker build -t content-platform-api .
+```
+
+creates an image containing the Node.js API.
+
+---
+
+# 161. What is a Docker Container?
+
+**Definition:**
+A container is a running instance of a Docker image.
+
+**Explanation:**
+Containers are isolated environments that run applications without interfering with the host system or other containers.
+
+**Example:**
+
+```bash
+docker run -p 5000:5000 content-platform-api
+```
+
+runs the API container exposing port 5000.
+
+---
+
+# 162. What is a Dockerfile?
+
+**Definition:**
+A Dockerfile is a configuration file that contains instructions for building a Docker image.
+
+**Explanation:**
+It defines the base image, dependencies, working directory, and commands required to run the application.
+
+**Example Dockerfile:**
+
+```dockerfile
+FROM node:20
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["npm","start"]
+```
+
+This builds the containerized Node.js backend.
+
+---
+
+# 163. What is the purpose of `.dockerignore`?
+
+**Definition:**
+`.dockerignore` is used to exclude unnecessary files from the Docker build context.
+
+**Explanation:**
+This reduces image size and speeds up builds by preventing files like `node_modules` and `.git` from being copied into the container.
+
+**Example:**
+
+```text
+node_modules
+.env
+.git
+```
+
+These files are ignored during image creation.
+
+---
+
+# 164. What is Docker Compose?
+
+**Definition:**
+Docker Compose is a tool used to define and run multi-container Docker applications.
+
+**Explanation:**
+It allows developers to manage multiple services such as APIs, databases, and caching systems using a single configuration file.
+
+**Example Command:**
+
+```bash
+docker compose up
+```
+
+starts all services defined in `docker-compose.yml`.
+
+---
+
+# 165. What is the purpose of `docker-compose.yml`?
+
+**Definition:**
+`docker-compose.yml` is a configuration file used to define multiple services and their relationships.
+
+**Explanation:**
+It specifies containers, ports, volumes, environment variables, and dependencies.
+
+**Example Architecture:**
+
+```text
+API container
+MongoDB container
+Redis container
+```
+
+All services are started together using Docker Compose.
+
+---
+
+# 166. Why do Docker containers use service names for networking?
+
+**Definition:**
+Docker containers communicate with each other using service names defined in `docker-compose.yml`.
+
+**Explanation:**
+Instead of using `localhost`, containers refer to each other using the service name.
+
+**Example:**
+
+```text
+mongodb://mongo:27017/content-platform
+```
+
+Here `mongo` is the container name.
+
+---
+
+# 167. What is port mapping in Docker?
+
+**Definition:**
+Port mapping connects a port on the host machine to a port inside the container.
+
+**Explanation:**
+It allows external systems such as browsers or APIs to access services running inside containers.
+
+**Example:**
+
+```bash
+-p 5000:5000
+```
+
+Host port 5000 → Container port 5000.
+
+---
+
+# 168. Why are environment variables required in containers?
+
+**Definition:**
+Environment variables store configuration values required by applications.
+
+**Explanation:**
+Containers run in isolated environments, so variables like database URLs must be passed explicitly.
+
+**Example:**
+
+```bash
+docker run --env-file .env
+```
+
+This injects environment variables into the container.
+
+---
+
+# 169. What problem does Docker solve in software development?
+
+**Definition:**
+Docker solves the problem of inconsistent development environments.
+
+**Explanation:**
+Applications often fail on different systems due to dependency mismatches. Docker ensures the same environment runs everywhere.
+
+**Example Scenario:**
+
+```text
+Works on developer machine
+Fails on production server
+```
+
+With Docker:
+
+```text
+Same container runs everywhere
+```
+
+---
+
+# 170. What architecture was achieved in Day 19?
+
+**Definition:**
+Day 19 introduced containerized backend architecture using Docker and Docker Compose.
+
+**Explanation:**
+The system now runs multiple services as containers rather than relying on external services.
+
+**Final Architecture:**
+
+```text
+content-platform
+ ├ API container
+ ├ MongoDB container
+ └ Redis container
+```
+
+This architecture closely resembles real production backend systems.
+
+---

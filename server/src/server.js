@@ -8,13 +8,15 @@ import { logger } from "./utils/logger.js";
 const startServer = async () => {
   await connectDB();
 
+const PORT = Number(env.port) || 5000;
 
-  app.listen(env.port, () => {
-    logger.info("Server started successfully", {
-      port: env.port,
-      environment: env.nodeEnv,
-    });
+app.listen(PORT, "0.0.0.0", () => {
+  logger.info("Server started successfully", {
+    port: PORT,
+    environment: env.nodeEnv,
   });
+});
+
 };
 
 startServer();

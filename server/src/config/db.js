@@ -4,7 +4,7 @@ import { logger } from "../utils/logger.js";
 
 export const connectDB = async () => {
   try {
-    await mongoose.connect(env.mongoUri);
+    await mongoose.connect(process.env.MONGODB_URI);
 
     logger.info("MongoDB connected successfully", {
       uri: env.mongoUri.replace(/\/\/.*@/, "//***:***@"), // optional masking
