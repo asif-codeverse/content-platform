@@ -6,6 +6,11 @@ import {
   listArticles,
   updateArticle,
 } from "./article.service.js";
+import {
+  getCache,
+  setCache,
+  deleteCache,
+} from "../../services/cache.service.js";
 
 import { generateETag } from "../../utils/etag.js";
 import { logger } from "../../utils/logger.js";
@@ -20,6 +25,8 @@ export const create = async (req, res, next) => {
       content: req.body.content,
       author: req.user.id,
     });
+
+    await deleteCache("articles:published");
 
     return res.status(201).json(article);
   } catch (err) {
@@ -38,6 +45,8 @@ export const update = async (req, res, next) => {
       req.user,
     );
 
+    await deleteCache("articles:published");
+
     return res.json(article);
   } catch (err) {
     next(err);
@@ -47,6 +56,14 @@ export const update = async (req, res, next) => {
 export const listPublished = async (req, res, next) => {
   try {
     const { page, limit, skip, sort } = parseQuery(req.query);
+
+    const cacheKey = "articles:published";
+
+    const cachedData = await getCache(cacheKey);
+
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     const lastModified = await getLatestPublishedUpdate();
 
@@ -72,7 +89,7 @@ export const listPublished = async (req, res, next) => {
 
     res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
 
-    return res.json({
+    const response = {
       success: true,
       data: articles,
       meta: {
@@ -81,7 +98,15 @@ export const listPublished = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    await setCache(
+      cacheKey,
+      response,
+      60,
+    );
+
+    return res.json(response);
   } catch (err) {
     next(err);
   }
@@ -90,6 +115,8 @@ export const listPublished = async (req, res, next) => {
 export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
+
+    await deleteCache("articles:published");
 
     if (process.env.NODE_ENV !== "test") {
       enqueueJob("ARTICLE_PUBLISHED", {
@@ -106,6 +133,7 @@ export const publish = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const article = await softDeleteArticle(req.params.id);
+    await deleteCache("articles:published");
     return res.json(article);
   } catch (err) {
     next(err);
