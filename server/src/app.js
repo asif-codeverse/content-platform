@@ -1,5 +1,10 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+
+import swaggerDocument from "./docs/swagger.js";
 
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -11,6 +16,11 @@ import { httpLogger } from "./middlewares/httpLogger.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
+app.use(helmet());
+app.use(cors({
+    origin: "*"
+}))
+
 
 // Global middlewares (order matters)
 app.use(requestId);
@@ -23,6 +33,8 @@ app.use(cookieParser());
 app.use("/health", healthRoutes);
 app.use("/auth", authRoutes);
 app.use("/articles", articleRoutes);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Error handler (must be last)
 app.use(errorHandler);

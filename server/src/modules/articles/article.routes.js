@@ -16,13 +16,13 @@ import { createArticleSchema } from "./article.validation.js";
 const router = Router();
 
 
-/* Public */
-router.get("/:slug" , getBySlug);
-
 router.get("/", listPublished);
 
 /* Admin / Editor */
 router.get("/all", authenticate, authorize("ADMIN", "EDITOR"), getArticles);
+
+/* Public */
+router.get("/:slug", getBySlug);
 
 /* Protected writes */
 router.post(
