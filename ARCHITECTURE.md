@@ -1,254 +1,364 @@
 # Architecture Overview
 
-This repository is a **monorepo** containing a `client` (Next.js App Router) and a `server` (Express REST API), engineered using a **production-first architecture** with strict separation of concerns.
+This repository is a production-oriented monorepo containing a Next.js frontend and an Express backend.
 
-The system prioritizes:
+The system is intentionally designed around software engineering principles rather than tutorial-driven development.
+
+Core architectural priorities:
 
 * Correctness before convenience
 * Security before feature velocity
-* Deterministic behavior over implicit magic
 * Explicit trust boundaries
-* Reliability under retries and partial failures
-* Evolvability without cross-module coupling
+* Deterministic domain behavior
+* Reliability under retries and failures
+* Separation of concerns
+* Horizontal scalability
+* Evolvability without architectural rewrites
 
-This is not a tutorial scaffold.
-It is structured to behave predictably under load, mutation, retries, and concurrent access.
+The objective is to build a system that remains predictable under load, concurrent access, partial failures, retries, and future feature expansion.
 
 ---
 
 # Architectural Objectives
 
-The system guarantees:
+The platform guarantees:
 
-* Clear layer separation (transport → orchestration → domain → persistence)
-* Stateless authentication with controlled refresh rotation
-* Route-level RBAC + service-level ABAC (ownership enforcement)
-* Deterministic domain mutations
-* Safe asynchronous side-effect isolation
-* Explicit query whitelisting
-* Index-aligned data access
-* HTTP-correct caching semantics
+* Clear layer separation
+* Stateless authentication
+* Refresh token rotation
+* Route-level RBAC
+* Service-level ABAC
+* Explicit query validation
+* Index-aligned database access
+* Redis-backed caching
+* HTTP-compliant cache validation
+* Safe asynchronous processing
+* Structured observability
+* Deployment readiness
 * SSR-aware frontend integration
-* Evolvable modular boundaries
 
 ---
 
 # Repository Structure
 
-```
+```text
 /
-├── client/          # Next.js (App Router, TypeScript)
+├── client/          # Next.js App Router
 └── server/          # Express REST API
 ```
 
-Frontend and backend evolve independently but are versioned together.
+Frontend and backend evolve independently while remaining versioned together.
+
+---
+
+# High-Level System Architecture
+
+```text
+                    ┌─────────────────┐
+                    │     Browser     │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Next.js Client  │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Express API     │
+                    └───────┬─────────┘
+                            │
+          ┌─────────────────┼─────────────────┐
+          ▼                 ▼                 ▼
+   ┌────────────┐   ┌────────────┐   ┌────────────┐
+   │   Redis    │   │ MongoDB    │   │ Job System │
+   │   Cache    │   │ Source     │   │ Background │
+   └────────────┘   │ of Truth   │   │ Processing │
+                    └────────────┘   └────────────┘
+```
+
+MongoDB remains the source of truth.
+
+Redis serves as a performance layer.
+
+Background jobs execute side effects outside the request lifecycle.
 
 ---
 
 # Backend Architecture
 
-The backend is an Express-based REST API structured around:
+The backend follows a layered architecture.
 
-* Thin routing layer
-* Deterministic controllers
-* Pure domain services
-* Controlled persistence access
-* Isolated background processing
+```text
+Router
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Persistence
+```
 
-Controllers orchestrate.
-Services enforce rules.
-Persistence remains encapsulated.
+Responsibilities are strictly separated.
 
----
-
-# Core Entry Points
-
-## app.js
+### Router
 
 Responsible for:
 
+* Route definitions
+* Middleware composition
+* Request entry points
+
+### Controller
+
+Responsible for:
+
+* Request orchestration
+* Input extraction
+* Response formatting
+
+Controllers contain no business rules.
+
+### Service
+
+Responsible for:
+
+* Domain logic
+* Authorization enforcement
+* Validation of business rules
+* State transitions
+
+Services own business behavior.
+
+### Persistence
+
+Responsible for:
+
+* Database access
+* Query execution
+* Data retrieval
+
+Persistence never contains domain rules.
+
+---
+
+# Runtime Flow
+
+```text
+Client
+ ↓
+Rate Limiter
+ ↓
+Request ID
+ ↓
+HTTP Logger
+ ↓
+Authentication
+ ↓
+Authorization (RBAC)
+ ↓
+Controller
+ ↓
+Service (ABAC)
+ ↓
+Database
+ ↓
+Response
+ ↓
+Error Handler
+```
+
+Background jobs execute independently of this flow.
+
+---
+
+# Application Bootstrap
+
+## app.js
+
+Responsibilities:
+
 * Express initialization
 * Global middleware registration
-* Route mounting
+* Route registration
 * Error middleware registration
 
-It does not start the server.
+Does not start the HTTP server.
 
 ---
 
 ## server.js
 
-Responsible for:
+Responsibilities:
 
 * Environment validation
-* Database connection
+* MongoDB connection
+* Redis connection
 * Worker startup
-* HTTP server bootstrap
+* HTTP server startup
 
-Startup is fail-fast:
+Startup is fail-fast.
 
-* Server does not start without DB
-* Worker does not start without queue initialization
-
-This prevents partial runtime states.
-
----
-
-# Source Layout
-
-```
-src/
-├── config/
-├── middlewares/
-├── modules/
-│   └── articles/
-├── jobs/
-├── utils/
-├── app.js
-└── server.js
-```
-
-All runtime code lives under `src/` to isolate tooling from execution logic.
-
----
-
-# Layered Execution Model
-
-```
-Client
- → Express App
- → Rate Limiter
- → Request ID Middleware
- → HTTP Logger
- → Authentication
- → Authorization (RBAC)
- → Router
- → Controller
- → Service (ABAC + domain logic)
- → Database
- → Response
- → Central Error Handler
-```
-
-Background jobs execute outside this request lifecycle.
-
-Each layer owns exactly one responsibility.
+The application does not start unless required dependencies are available.
 
 ---
 
 # Authentication
 
-Stateless JWT-based model.
+The platform uses stateless JWT authentication.
 
-### Access Token
+## Access Token
+
+Properties:
 
 * Short-lived
-* Sent via `Authorization: Bearer`
+* Sent via Authorization header
 * Required for protected routes
-* Stored in frontend memory (not localStorage)
+* Stored in frontend memory
 
-### Refresh Token
+Example:
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+## Refresh Token
+
+Properties:
 
 * Long-lived
 * Stored in HttpOnly cookie
-* Used only for rotation
+* Used only for token rotation
 * Never used for authorization decisions
 
-This design supports horizontal scaling and protects against XSS token theft.
+Benefits:
 
-Passwords:
+* Horizontal scalability
+* Reduced XSS exposure
+* Stateless API layer
 
-* Hashed with bcrypt
+---
+
+## Password Security
+
+Passwords are:
+
+* Hashed using bcrypt
 * Never logged
-* Never returned
+* Never returned in responses
 
 ---
 
 # Authorization Model
 
-Authorization is enforced at two distinct layers.
+Authorization is enforced at two layers.
 
 ---
 
-## 1️⃣ RBAC (Route Boundary)
+## RBAC (Role-Based Access Control)
+
+Applied at route boundaries.
 
 Roles:
 
-* USER
-* EDITOR
-* ADMIN
+```text
+USER
+EDITOR
+ADMIN
+```
 
-Applied at route layer before controller execution.
-
-Prevents unauthorized access from reaching domain logic.
+RBAC prevents unauthorized requests from reaching domain services.
 
 ---
 
-## 2️⃣ ABAC (Ownership Enforcement)
+## ABAC (Attribute-Based Access Control)
 
-Editors may:
+Ownership rules are enforced inside services.
 
-* Update only their own articles
-* Cannot modify others’ resources
+Editors:
+
+* Can modify only their own articles
 
 Admins:
 
-* Override ownership restrictions
+* Can override ownership restrictions
 
-Ownership rules:
+Ownership is verified using database state.
 
-* Enforced inside service layer
-* Based on database state
-* Never rely on client-supplied identifiers
-
-Returns `403 Forbidden` on violation.
-
-Prevents privilege escalation.
+Client-supplied ownership information is never trusted.
 
 ---
 
-# Core Domain: Articles
+# Articles Domain
+
+The Articles module represents the primary business domain.
 
 Responsibilities:
 
-* Draft → Publish lifecycle
+* Draft management
+* Publishing workflow
 * Ownership tracking
 * Soft deletion
 * Slug generation
-* Deterministic state mutation
+* Content retrieval
 
 ---
 
 ## Domain Guarantees
 
-* Default state: `DRAFT`
-* Only `PUBLISHED` visible publicly
-* Logical deletion via `isDeleted`
-* Slug uniqueness enforced at DB level
-* Slug indexed for O(log n) lookup
-* Timestamps enabled for mutation tracking
+Default state:
 
-Domain services:
+```text
+DRAFT
+```
 
-* Mutate state deterministically
-* Never execute side effects directly
+Public visibility:
 
-Side effects are delegated to the job system.
+```text
+PUBLISHED
+```
+
+Deletion strategy:
+
+```text
+Soft Delete
+```
+
+Slug requirements:
+
+* Unique
+* Indexed
+* Stable lookup identifier
+
+Timestamps:
+
+* createdAt
+* updatedAt
 
 ---
 
-# Public vs Admin Access Separation
+# Public vs Administrative Access
 
-Public routes:
+## Public Endpoints
 
-```
+```http
 GET /articles
 GET /articles/:slug
 ```
 
-Admin routes:
+Guarantees:
 
-```
+* Published only
+* Not deleted
+* Cacheable
+
+---
+
+## Administrative Endpoints
+
+```http
 GET /articles/all
 POST /articles
 PATCH /articles/:id
@@ -256,119 +366,225 @@ PATCH /articles/:id/publish
 DELETE /articles/:id
 ```
 
-Public endpoints:
+Guarantees:
 
-* Enforce `status = PUBLISHED`
-* Enforce `isDeleted = false`
-* Are cacheable
-
-Admin endpoints:
-
-* Require authentication
+* Authenticated
+* Authorized
 * Never cached
-* Support controlled filtering
 
-This prevents accidental data exposure.
+---
+
+# Search Module
+
+The Search module enables content discovery.
+
+Endpoint:
+
+```http
+GET /search?q=nodejs
+```
+
+Responsibilities:
+
+* Full-text search
+* Pagination
+* Sorting
+* Validation
+
+Search operates only on published content.
 
 ---
 
 # Query Safety Model
 
-All query parameters pass through `parseQuery()`.
+All query parameters are processed through a dedicated parser.
 
 Guarantees:
 
 * Page validation
 * Limit caps
 * Sort whitelisting
-* Controlled regex search
-* Explicit filter construction
-* No raw `req.query` passed to DB
+* Controlled filters
+* Explicit query construction
 
-This prevents:
+Prevents:
 
-* Injection
+* Query injection
 * Unbounded queries
 * Resource exhaustion
 * Index bypass
 
+Raw request query objects are never sent directly to MongoDB.
+
 ---
 
-# Index Strategy
+# Database Index Strategy
 
-Compound index:
+Indexes align with real query patterns.
 
-```
-{ status, isDeleted, createdAt }
+---
+
+## Compound Index
+
+```text
+status
+isDeleted
+createdAt
 ```
 
 Supports:
 
-* Published filtering
-* Sorting
+* Filtering
 * Pagination
-
-Unique index:
-
-```
-{ slug: 1 }
-```
-
-Execution plans verified using `IXSCAN`.
-
-Indexes align with actual query patterns.
+* Sorting
 
 ---
 
-# HTTP Caching Model
+## Slug Index
 
-Public endpoints implement conditional requests.
+```text
+slug
+```
 
-Mechanism:
+Properties:
 
-* `Last-Modified` derived from latest `updatedAt`
-* `If-Modified-Since` validated
-* Returns `304 Not Modified` when safe
+* Unique
+* Indexed
+
+Supports:
+
+* O(log n) article lookup
+
+---
+
+## Search Index
+
+```text
+title
+content
+```
+
+MongoDB text index used for search functionality.
+
+---
+
+# Redis Caching Layer
+
+Redis acts as a performance optimization layer.
+
+MongoDB remains the source of truth.
+
+---
+
+## Cache Keys
+
+Published article list:
+
+```text
+articles:published:page:{page}:limit:{limit}
+```
+
+Individual article:
+
+```text
+article:{slug}
+```
+
+Examples:
+
+```text
+article:redis-guide
+article:mongodb-basics
+```
+
+---
+
+## Cache Flow
+
+```text
+Request
+ ↓
+Redis
+ ↓
+Hit?
+ ├─ Yes → Return Cache
+ └─ No
+       ↓
+    MongoDB
+       ↓
+    Store Cache
+       ↓
+    Return Response
+```
+
+---
+
+## Cache Invalidation
+
+Triggered when:
+
+* Article updated
+* Article published
+* Article deleted
+
+Affected cache entries are removed automatically.
+
+This prevents stale content.
+
+---
+
+# HTTP Cache Validation
+
+Public endpoints support conditional requests.
+
+Mechanisms:
+
+```http
+Last-Modified
+If-Modified-Since
+```
+
+Possible response:
+
+```http
+304 Not Modified
+```
 
 Headers:
 
-```
+```http
 Cache-Control: public, max-age=60, stale-while-revalidate=30
 ```
 
-Guarantees:
+Benefits:
 
-* Only public endpoints cached
-* Authenticated endpoints never cached
-* Cache validity derived from real data mutations
-* No manual invalidation logic required
-
-Caching correctness is data-driven.
+* Reduced bandwidth
+* Faster client responses
+* Browser cache support
 
 ---
 
 # Background Job System
 
-Provides reliable asynchronous side-effect execution.
+Side effects execute asynchronously.
+
+Domain mutations remain synchronous.
 
 ---
 
 ## Design Principles
 
-* Controllers remain synchronous
-* Services mutate domain only
-* Jobs handle side effects
-* Jobs are idempotent
-* Duplicate executions safely ignored
-* Exponential backoff retry
-* Failure state persisted
+* Side-effect isolation
+* Retry safety
+* Idempotent execution
+* Failure visibility
 
 ---
 
-## Job Structure
+## Structure
 
-```
-src/jobs/
+```text
+jobs/
 ├── queue.js
 ├── worker.js
 ├── jobExecution.model.js
@@ -379,68 +595,304 @@ src/jobs/
 
 ## Execution Flow
 
-1. Controller enqueues job
-2. Queue stores job
-3. Worker picks job
-4. Handler executes side effect
-5. Execution state persisted
-6. Retry applied if needed
-7. Permanent failure recorded
-
-Guarantees:
-
-* At-most-once semantics
-* Retry safety
-* Failure visibility
-* Domain isolation
-
-This approximates event-driven architecture at application scale.
+```text
+Controller
+ ↓
+Enqueue Job
+ ↓
+Worker
+ ↓
+Handler
+ ↓
+Persist Execution State
+ ↓
+Retry If Needed
+```
 
 ---
 
-# Frontend Architecture (Next.js)
+## Guarantees
 
-Frontend uses:
+* Retry support
+* Exponential backoff
+* Duplicate execution protection
+* Failure persistence
 
-* App Router
-* Server Components
-* Dynamic route `[slug]`
-* `generateMetadata()` for SEO
-* ISR (`revalidate`)
-* Proper `notFound()` handling
+---
 
-Public article page:
+# Observability
 
-* Fetches via `/articles/:slug`
-* Uses ISR (60 seconds)
-* Generates dynamic metadata
-* Returns real 404 for invalid slug
+The platform includes structured observability.
 
-Layout metadata uses template pattern:
+---
 
+## Request IDs
+
+Every request receives a unique identifier.
+
+Used for:
+
+* Tracing
+* Debugging
+* Correlation
+
+---
+
+## Logging
+
+Categories:
+
+### HTTP Logs
+
+```text
+Method
+Path
+Status
+Duration
+Request ID
 ```
-title: {
-  default: "Content Platform",
-  template: "%s | Content Platform"
+
+### Error Logs
+
+```text
+Message
+Stack
+Status
+Request ID
+```
+
+### Audit Logs
+
+```text
+User Login
+Article Publish
+Article Delete
+Article Update
+```
+
+---
+
+# Production Hardening
+
+The platform includes production-focused safeguards.
+
+---
+
+## Environment Validation
+
+Environment variables are validated at startup.
+
+Benefits:
+
+* Fail-fast startup
+* Misconfiguration detection
+* Deployment safety
+
+---
+
+## Graceful Shutdown
+
+Handles:
+
+```text
+SIGINT
+SIGTERM
+```
+
+Ensures:
+
+* Redis disconnection
+* MongoDB disconnection
+* Clean process termination
+
+---
+
+## Health Checks
+
+Endpoint:
+
+```http
+GET /health
+```
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "mongodb": "connected",
+  "redis": "connected"
 }
 ```
 
-This ensures correct SEO layering.
+Used by:
+
+* Monitoring
+* Deployment checks
+* Infrastructure validation
+
+---
+
+# Security Model
+
+The platform follows a defense-in-depth strategy.
+
+Components:
+
+* JWT Authentication
+* Refresh Token Rotation
+* RBAC
+* ABAC
+* Input Validation
+* Rate Limiting
+* Helmet
+* CORS
+* HttpOnly Cookies
+* Password Hashing
+
+---
+
+# Frontend Architecture
+
+Frontend uses Next.js App Router.
+
+---
+
+## Public Pages
+
+```text
+Home
+Articles
+Search
+Article Detail
+```
+
+---
+
+## Administrative Pages
+
+```text
+Dashboard
+Create Article
+Edit Article
+Delete Article
+Publish Article
+```
+
+---
+
+## Rendering Strategy
+
+Uses:
+
+* Server Components
+* Dynamic Routes
+* ISR
+* SSR
+
+Example:
+
+```text
+/articles/[slug]
+```
+
+---
+
+## SEO
+
+Features:
+
+* Dynamic metadata
+* OpenGraph tags
+* Sitemap generation
+* Canonical URLs
+
+Metadata generated per article.
+
+---
+
+# CI/CD
+
+GitHub Actions automate quality checks.
+
+Pipeline:
+
+```text
+Install Dependencies
+Lint
+Test
+```
+
+Triggers:
+
+```text
+Push
+Pull Request
+```
+
+Benefits:
+
+* Faster feedback
+* Reduced regressions
+* Deployment confidence
+
+---
+
+# Deployment Architecture
+
+Frontend:
+
+```text
+Vercel
+```
+
+Backend:
+
+```text
+AWS EC2
+```
+
+Database:
+
+```text
+MongoDB Atlas
+```
+
+Cache:
+
+```text
+Redis
+```
+
+Architecture:
+
+```text
+Vercel
+   │
+   ▼
+AWS Backend
+   │
+ ┌─┴─────────┐
+ ▼           ▼
+MongoDB     Redis
+Atlas
+```
 
 ---
 
 # Failure Model Awareness
 
-System accounts for:
+The system explicitly accounts for:
 
-* DB unavailability at boot
+* Database outages
+* Redis outages
+* Token expiration
 * Duplicate job execution
 * Retry exhaustion
-* Unauthorized access attempts
-* Malformed headers
-* Malformed query parameters
+* Unauthorized access
+* Invalid query parameters
 * Invalid slugs
-* Token expiration
+* Invalid headers
 
 Failures are:
 
@@ -454,58 +906,64 @@ Failures are:
 
 Trusted:
 
-* `req.user` (verified JWT)
+```text
+req.user
+```
+
+Only after JWT verification.
+
+---
 
 Untrusted:
 
-* `req.body`
-* `req.query`
-* Client headers
-* Client-provided role claims
-* Slug parameters
+```text
+req.body
+req.query
+req.params
+client headers
+client role claims
+```
 
-All untrusted input validated before use.
+All untrusted data is validated before use.
 
 ---
 
 # System Characteristics
 
-The system is:
+The platform is:
 
-* Stateless at API layer
+* Stateless
 * Ownership-aware
 * Role-aware
-* Index-aligned
-* Deterministic in domain logic
+* Cache-aware
 * Retry-safe
-* Cache-correct
+* Index-aligned
 * SEO-aware
 * Horizontally scalable
 * Side-effect isolated
+* Production-oriented
 
 ---
 
 # Architectural Intent
 
-This architecture is intentionally designed to:
+This architecture is designed to:
 
 * Demonstrate production reasoning
-* Be interview-defensible
-* Scale horizontally
-* Evolve safely
-* Avoid cross-layer leakage
-* Avoid accidental exposure
-* Avoid architectural rewrites
+* Remain interview-defensible
+* Scale safely
+* Support future growth
+* Prevent cross-layer leakage
+* Minimize accidental exposure
+* Avoid costly architectural rewrites
 
 It favors:
 
-Clarity
-Correctness
-Security
-Determinism
-Reliability
-Explicitness
+* Clarity
+* Correctness
+* Security
+* Reliability
+* Explicitness
+* Maintainability
 
-Over implementation speed.
-
----
+over implementation speed.

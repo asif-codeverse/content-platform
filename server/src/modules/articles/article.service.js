@@ -2,9 +2,7 @@ import { Article } from "./article.model.js";
 import slugify from "slugify";
 import { canEditArticle } from "../../utils/authorization.js";
 
-/**
- * Create article (DRAFT by default)
- */
+// Create article (DRAFT by default)
 export const createArticle = async ({ title, content, author }) => {
   const slug = slugify(title, { lower: true, strict: true });
 
@@ -26,6 +24,7 @@ export const createArticle = async ({ title, content, author }) => {
 // update article
 export const updateArticle = async (articleId, data, user) => {
   const article = await Article.findById(articleId);
+  const oldSlug = article.slug;
 
   // Existence check
   if (!article || article.isDeleted) {
@@ -66,16 +65,20 @@ export const updateArticle = async (articleId, data, user) => {
     article.slug = newSlug;
   }
 
+
+
   if (data.content !== undefined) {
     article.content = data.content;
   }
 
-  return article.save();
+  const updatedArticle = await article.save();
+  return {
+    article: updatedArticle,
+    oldSlug,
+  }
 };
 
-/**
- * Publish article (pure domain mutation)
- */
+// Publish article (pure domain mutation)
 export const publishArticle = async (articleId) => {
   const article = await Article.findById(articleId);
 
@@ -87,9 +90,7 @@ export const publishArticle = async (articleId) => {
   return article.save();
 };
 
-/**
- * Soft delete article
- */
+//Soft delete article
 export const softDeleteArticle = async (articleId) => {
   const article = await Article.findById(articleId);
 
@@ -101,9 +102,7 @@ export const softDeleteArticle = async (articleId) => {
   return article.save();
 };
 
-/**
- * List articles with filtering & pagination
- */
+// List articles with filtering & pagination
 export const listArticles = async ({ filters, sort, skip, limit }) => {
   const base = { isDeleted: false, ...filters };
 
@@ -114,9 +113,7 @@ export const listArticles = async ({ filters, sort, skip, limit }) => {
   return { articles, total };
 };
 
-/**
- * Used for HTTP caching (Last-Modified / ETag)
- */
+// Used for HTTP caching (Last-Modified / ETag)
 export const getLatestPublishedUpdate = async () => {
   const latest = await Article.findOne({
     status: "PUBLISHED",

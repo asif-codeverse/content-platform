@@ -36,7 +36,7 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const article = await updateArticle(
+    const { article, oldSlug } = await updateArticle(
       req.params.id,
       {
         title: req.body.title,
@@ -46,6 +46,8 @@ export const update = async (req, res, next) => {
     );
 
     await deleteCache("articles:published");
+    await deleteCache(`article:${oldSlug}`);
+    await deleteCache(`article:${article.slug}`);
 
     return res.json(article);
   } catch (err) {
@@ -57,7 +59,8 @@ export const listPublished = async (req, res, next) => {
   try {
     const { page, limit, skip, sort } = parseQuery(req.query);
 
-    const cacheKey = "articles:published";
+    const cacheKey =
+      `articles:published:page:${page}:limit:${limit}`;
 
     const cachedData = await getCache(cacheKey);
 
@@ -115,6 +118,8 @@ export const listPublished = async (req, res, next) => {
 export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
+
+    await deleteCache("articles:published");
 
     await deleteCache("articles:published");
 
@@ -179,6 +184,20 @@ export const getBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
+    const cacheKey = `article:${slug}`;
+    const cachedArticle = await getCache(cacheKey);
+
+    if (cachedArticle) {
+      logger.info("ARTICLE CACHE HIT", {
+        slug,
+      });
+      return res.json(cachedArticle);
+    }
+
+    logger.info("ARTICLE CACHE MISS", {
+      slug,
+    })
+
     const { articles } = await listArticles({
       filters: {
         slug,
@@ -190,12 +209,25 @@ export const getBySlug = async (req, res, next) => {
     });
 
     if (!articles.length) {
-      return next({ statusCode: 404, message: "Article not found" });
+      return next({
+        statusCode: 404,
+        message: "Article not found",
+      });
     }
-    return res.json({
+
+    const response = {
       success: true,
       data: articles[0],
-    });
+    };
+
+    await setCache(
+      cacheKey,
+      response,
+      300,
+    );
+
+    return res.json(response);
+
   } catch (err) {
     next(err);
   }

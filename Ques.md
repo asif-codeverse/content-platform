@@ -2686,3 +2686,659 @@ content-platform
 This architecture closely resembles real production backend systems.
 
 ---
+
+# 171. What is Redis?
+
+**Answer:**
+
+Redis (Remote Dictionary Server) is an in-memory key-value data store commonly used for caching, session storage, rate limiting, and queues.
+
+Unlike MongoDB, Redis stores data primarily in RAM, making reads and writes extremely fast.
+
+**Example:**
+
+```text
+MongoDB → Persistent Storage
+Redis   → Fast Temporary Storage
+```
+
+Redis is often placed between the application and database to reduce database load.
+
+---
+
+# 172. Why is Redis faster than MongoDB?
+
+**Answer:**
+
+Redis stores data in memory (RAM), while MongoDB primarily reads from disk.
+
+RAM access is significantly faster than disk access.
+
+Because Redis avoids disk lookups for most operations, it can serve requests in milliseconds or microseconds.
+
+This makes Redis ideal for frequently accessed data.
+
+---
+
+# 173. What problem does caching solve?
+
+**Answer:**
+
+Caching reduces repeated expensive operations.
+
+Without caching:
+
+```text
+Client
+ ↓
+Express
+ ↓
+MongoDB
+```
+
+Every request hits the database.
+
+With caching:
+
+```text
+Client
+ ↓
+Express
+ ↓
+Redis
+```
+
+Repeated requests avoid database queries, reducing latency and server load.
+
+---
+
+# 174. What is a Cache Hit?
+
+**Answer:**
+
+A cache hit occurs when requested data already exists in Redis.
+
+Example:
+
+```text
+GET article:nodejs-guide
+```
+
+Redis already contains the article.
+
+The application returns data directly from cache without querying MongoDB.
+
+Cache hits improve response speed.
+
+---
+
+# 175. What is a Cache Miss?
+
+**Answer:**
+
+A cache miss occurs when requested data does not exist in Redis.
+
+Flow:
+
+```text
+Redis
+ ↓
+Not Found
+ ↓
+MongoDB Query
+ ↓
+Store In Redis
+ ↓
+Return Response
+```
+
+The first request usually causes a cache miss.
+
+Subsequent requests become cache hits.
+
+---
+
+# 176. Why should cache entries have TTL?
+
+**Answer:**
+
+TTL (Time To Live) automatically removes cache entries after a specified duration.
+
+Benefits:
+
+* Prevents stale data
+* Frees memory
+* Reduces manual cleanup
+
+Example:
+
+```js
+setCache(key, value, 300);
+```
+
+The cache expires after 300 seconds.
+
+TTL is a common cache invalidation strategy.
+
+---
+
+# 177. What is Cache Invalidation?
+
+**Answer:**
+
+Cache invalidation is the process of removing or updating cached data when the underlying database data changes.
+
+Example:
+
+```text
+Mongo Updated
+Redis Old
+```
+
+Without invalidation, users see stale information.
+
+Cache invalidation keeps Redis synchronized with the database.
+
+---
+
+# 178. Why is Cache Invalidation considered difficult?
+
+**Answer:**
+
+Because cache state must always reflect database state.
+
+Challenges:
+
+* Multiple update paths
+* Concurrent requests
+* Delayed updates
+
+Invalidating too late serves stale data.
+
+Invalidating too early reduces caching benefits.
+
+Correct invalidation requires careful design.
+
+---
+
+# 179. Why cache article pages separately from article lists?
+
+**Answer:**
+
+Article pages and article lists have different access patterns.
+
+Example:
+
+```text
+GET /articles
+GET /articles/:slug
+```
+
+An article may receive thousands of views while the article list changes frequently.
+
+Separate cache keys allow independent invalidation and better performance optimization.
+
+---
+
+# 180. Why is cache key naming important?
+
+**Answer:**
+
+Poor cache keys become difficult to manage as systems grow.
+
+Bad:
+
+```text
+cache1
+cache2
+data
+```
+
+Good:
+
+```text
+article:redis-guide
+articles:published
+user:123
+```
+
+Structured keys improve debugging, invalidation, and maintainability.
+
+---
+
+# 181. Why is `articles:published` a problematic cache key when pagination exists?
+
+**Answer:**
+
+Different pages return different datasets.
+
+Example:
+
+```text
+?page=1
+?page=2
+```
+
+If both use:
+
+```text
+articles:published
+```
+
+page 2 may incorrectly receive page 1 data.
+
+Cache keys must include query parameters that affect results.
+
+Example:
+
+```text
+articles:published:page:1:limit:10
+```
+
+---
+
+# 182. What is a conditional HTTP request?
+
+**Answer:**
+
+A conditional request asks the server whether data has changed before downloading it again.
+
+Example:
+
+```http
+If-Modified-Since
+```
+
+The server compares timestamps and decides whether new data is required.
+
+Conditional requests reduce bandwidth and improve performance.
+
+---
+
+# 183. What is the purpose of the ETag header?
+
+**Answer:**
+
+ETag (Entity Tag) uniquely identifies a specific version of a resource.
+
+Clients store the ETag and send:
+
+```http
+If-None-Match
+```
+
+If the resource has not changed, the server returns:
+
+```http
+304 Not Modified
+```
+
+This avoids retransmitting unchanged data.
+
+---
+
+# 184. What is the difference between Redis caching and HTTP caching?
+
+**Answer:**
+
+Redis caching occurs on the server side.
+
+HTTP caching occurs on the client/browser/CDN side.
+
+Redis:
+
+```text
+Express ↔ Redis
+```
+
+HTTP Cache:
+
+```text
+Browser ↔ Server
+```
+
+Redis reduces database load.
+
+HTTP caching reduces network traffic.
+
+Both can be used together.
+
+---
+
+# 185. Why should public endpoints be cached more aggressively than private endpoints?
+
+**Answer:**
+
+Public endpoints return the same data for everyone.
+
+Example:
+
+```text
+GET /articles
+```
+
+Private endpoints return user-specific information.
+
+Caching private responses risks:
+
+* Data leakage
+* Security issues
+* Incorrect responses
+
+Therefore public resources are safer cache candidates.
+
+---
+
+# 186. What is API Documentation?
+
+**Answer:**
+
+API documentation explains available endpoints, request formats, authentication requirements, and responses.
+
+Good documentation enables developers to integrate with APIs efficiently.
+
+Without documentation, API adoption becomes difficult and error-prone.
+
+---
+
+# 187. Why is Swagger useful in backend projects?
+
+**Answer:**
+
+Swagger automatically generates interactive API documentation.
+
+Benefits:
+
+* Faster testing
+* Better developer experience
+* Self-documenting APIs
+* Easier onboarding
+
+Developers can execute requests directly from the Swagger UI.
+
+---
+
+# 188. Why should API documentation stay synchronized with code?
+
+**Answer:**
+
+Outdated documentation becomes misleading.
+
+Developers may:
+
+* Send wrong payloads
+* Use incorrect endpoints
+* Misunderstand API behavior
+
+Documentation should evolve alongside implementation.
+
+Otherwise it loses reliability.
+
+---
+
+# 189. What is a Health Check Endpoint?
+
+**Answer:**
+
+A health endpoint verifies that the application and critical dependencies are operational.
+
+Example:
+
+```http
+GET /health
+```
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Health checks are used by monitoring systems and load balancers.
+
+---
+
+# 190. Why should health checks verify dependencies?
+
+**Answer:**
+
+An application may be running while dependencies are failing.
+
+Example:
+
+```text
+Server Running
+MongoDB Down
+```
+
+Simple process checks are insufficient.
+
+Health checks should verify:
+
+* Database connectivity
+* Redis connectivity
+* External service availability
+
+This provides an accurate view of system health.
+
+---
+
+# 191. What is cache invalidation?
+
+**Answer:**
+
+Cache invalidation is the process of removing or updating cached data when the underlying database data changes.
+
+Example:
+
+```text
+Article Updated
+↓
+Delete Redis Cache
+↓
+Next Request Fetches Fresh Data
+```
+
+Without invalidation, users may receive outdated information.
+
+---
+
+# 192. Why did we invalidate both old and new slug cache keys?
+
+**Answer:**
+
+When an article title changes, the slug changes.
+
+Example:
+
+```text
+Old Slug:
+redis-guide
+
+New Slug:
+advanced-redis-guide
+```
+
+The old cache key:
+
+```text
+article:redis-guide
+```
+
+must be removed to prevent stale content.
+
+The new cache key:
+
+```text
+article:advanced-redis-guide
+```
+
+is also cleared to ensure future requests use fresh data.
+
+---
+
+# 193. What is a Redis key naming convention?
+
+**Answer:**
+
+A Redis key naming convention is a structured way of organizing cache entries.
+
+Example:
+
+```text
+article:basic-redis
+articles:published:page:1:limit:10
+user:123:profile
+```
+
+Benefits:
+
+* Easier debugging
+* Easier invalidation
+* Better maintainability
+
+---
+
+# 194. Why shouldn't all pages share the same cache key?
+
+**Answer:**
+
+Using one key for all pages causes cache collisions.
+
+Bad:
+
+```text
+articles:published
+```
+
+Page 1 data could be returned when Page 2 is requested.
+
+Good:
+
+```text
+articles:published:page:1:limit:10
+articles:published:page:2:limit:10
+```
+
+---
+
+# 195. What is a cache collision?
+
+**Answer:**
+
+A cache collision occurs when multiple requests incorrectly use the same cache key and overwrite each other's data.
+
+Example:
+
+```text
+Page 1
+↓
+Stored
+
+Page 2
+↓
+Stored using same key
+
+Page 1 request
+↓
+Gets Page 2 data
+```
+
+---
+
+# 196. Why did we use Redis TTL instead of permanent storage?
+
+**Answer:**
+
+TTL automatically removes old cache entries.
+
+Benefits:
+
+* Prevents memory growth
+* Removes stale data
+* Simplifies cache management
+
+Example:
+
+```js
+await setCache(key, data, 300);
+```
+
+The cache expires after 300 seconds.
+
+---
+
+# 197. What is the Cache-Aside Pattern?
+
+**Answer:**
+
+Cache-Aside is the most common caching strategy.
+
+Workflow:
+
+```text
+Request
+↓
+Check Redis
+
+Cache Hit?
+├─ Yes → Return Data
+└─ No
+    ↓
+MongoDB
+    ↓
+Store in Redis
+    ↓
+Return Response
+```
+
+Your project currently uses this pattern.
+
+---
+
+# 198. What is the advantage of Cache-Aside over Write-Through caching?
+
+**Answer:**
+
+Cache-Aside only caches frequently accessed data.
+
+Write-Through caches everything, even data that may never be requested.
+
+Advantages:
+
+* Lower memory usage
+* Simpler implementation
+* Better flexibility
+
+---
+
+# 199. Why is Redis commonly used in production systems?
+
+**Answer:**
+
+Redis provides:
+
+* Extremely fast reads
+* TTL support
+* Atomic operations
+* Pub/Sub support
+* Distributed caching capabilities
+
+Large companies use Redis for:
+
+* Session storage
+* API caching
+* Rate limiting
+* Queue systems
+* Leaderboards
+
+---
+
+# 200. How would you explain your Redis implementation in an interview?
+
+**Answer:**
+
+"I implemented Redis caching using the Cache-Aside pattern. Public article endpoints first check Redis. On cache misses, data is fetched from MongoDB and stored in Redis with a TTL. Cache entries are invalidated whenever articles are created, updated, published, deleted, or when slugs change. I also implemented pagination-aware cache keys and verified cache behavior using Redis CLI commands such as KEYS, GET, and TTL. This reduced unnecessary database queries and improved response times."
+
