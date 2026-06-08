@@ -9,6 +9,7 @@ import swaggerDocument from "./docs/swagger.js";
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import articleRoutes from "./modules/articles/article.routes.js";
+import searchRoutes from "./modules/search/search.routes.js";
 
 import { apiLimiter } from "./middlewares/rateLimit.middleware.js";
 import { requestId } from "./middlewares/requestId.middleware.js";
@@ -33,6 +34,7 @@ app.use(cookieParser());
 app.use("/health", healthRoutes);
 app.use("/auth", authRoutes);
 app.use("/articles", articleRoutes);
+app.use("/search", searchRoutes);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

@@ -40,8 +40,12 @@ const articleSchema = new mongoose.Schema(
 
 articleSchema.index(
   { status: 1, isDeleted: 1, createdAt: -1 },
-  { name: "article_list_index" },
-  { slug: 1 },
+  { name: "article_list_index" }
 );
+articleSchema.index({
+  title:"text",
+  content:"text",
+});
+
 
 export const Article = mongoose.model("Article", articleSchema);

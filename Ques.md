@@ -3342,3 +3342,132 @@ Large companies use Redis for:
 
 "I implemented Redis caching using the Cache-Aside pattern. Public article endpoints first check Redis. On cache misses, data is fetched from MongoDB and stored in Redis with a TTL. Cache entries are invalidated whenever articles are created, updated, published, deleted, or when slugs change. I also implemented pagination-aware cache keys and verified cache behavior using Redis CLI commands such as KEYS, GET, and TTL. This reduced unnecessary database queries and improved response times."
 
+201. What is full-text search?
+
+Answer:
+
+Full-text search allows users to search documents using words or phrases instead of exact field matches.
+
+202. Why use MongoDB text indexes?
+
+Answer:
+
+Text indexes allow MongoDB to perform efficient keyword searches without scanning every document.
+
+203. What is $text in MongoDB?
+
+Answer:
+
+$text performs a search against fields included in a MongoDB text index.
+
+Example:
+
+{
+  $text: {
+    $search: "redis"
+  }
+}
+204. What is textScore?
+
+Answer:
+
+textScore is MongoDB's relevance score indicating how well a document matches a search query.
+
+205. Why sort by textScore?
+
+Answer:
+
+Sorting by textScore ensures the most relevant documents appear first.
+
+206. What happens if no text index exists?
+
+Answer:
+
+MongoDB cannot execute $text queries efficiently and may throw an error requiring a text index.
+
+207. Why separate search into its own module?
+
+Answer:
+
+Search is a content discovery concern, while articles are a content management concern. Separate modules improve maintainability.
+
+208. Why paginate search results?
+
+Answer:
+
+Pagination prevents returning thousands of documents in a single request and improves performance.
+
+209. Why cache search results?
+
+Answer:
+
+Popular searches often repeat. Caching reduces database load and improves response times.
+
+210. When would you move from MongoDB search to Elasticsearch?
+
+Answer:
+
+When you need advanced features such as typo tolerance, fuzzy matching, synonyms, analytics, autocomplete, and large-scale search relevance tuning.
+211. Why cache search results?
+
+Answer:
+
+Popular searches are repeated frequently. Caching prevents repeated database queries and improves response times.
+
+212. What cache key was used for search?
+
+Answer:
+
+Example:
+
+search:redis:page:1:limit:10
+
+The key includes query and pagination information to avoid collisions.
+
+213. Why include page and limit in search cache keys?
+
+Answer:
+
+Different pages contain different results. Without pagination-aware keys, users could receive incorrect cached data.
+
+214. What is MongoDB textScore?
+
+Answer:
+
+textScore is MongoDB's relevance score used to rank search results based on query matching quality.
+
+215. Why sort by textScore?
+
+Answer:
+
+Sorting by textScore ensures the most relevant documents appear first.
+
+216. What is a text index?
+
+Answer:
+
+A text index is a special MongoDB index that enables efficient full-text search across string fields.
+
+217. Why not use regex for search?
+
+Answer:
+
+Regex often causes collection scans and performs poorly on large datasets.
+
+218. What is the difference between search caching and article caching?
+
+Answer:
+
+Article caching stores a specific article, while search caching stores an entire search result set for a query.
+
+219. What production issue exists with cached search results?
+
+Answer:
+
+Search caches can become stale after content updates unless proper invalidation strategies are implemented.
+
+220. Why is Elasticsearch often used instead of MongoDB search?
+
+Answer:
+
+Elasticsearch provides advanced features such as fuzzy matching, typo tolerance, autocomplete, synonym handling, and large-scale search optimization.

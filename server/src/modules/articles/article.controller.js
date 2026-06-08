@@ -10,6 +10,7 @@ import {
   getCache,
   setCache,
   deleteCache,
+  deleteByPattern,
 } from "../../services/cache.service.js";
 
 import { generateETag } from "../../utils/etag.js";
@@ -27,6 +28,7 @@ export const create = async (req, res, next) => {
     });
 
     await deleteCache("articles:published");
+    await deleteByPattern("search:*");
 
     return res.status(201).json(article);
   } catch (err) {
@@ -48,6 +50,7 @@ export const update = async (req, res, next) => {
     await deleteCache("articles:published");
     await deleteCache(`article:${oldSlug}`);
     await deleteCache(`article:${article.slug}`);
+    await deleteByPattern("search:*");
 
     return res.json(article);
   } catch (err) {
@@ -121,7 +124,7 @@ export const publish = async (req, res, next) => {
 
     await deleteCache("articles:published");
 
-    await deleteCache("articles:published");
+    await deleteByPattern("search:*");
 
     if (process.env.NODE_ENV !== "test") {
       enqueueJob("ARTICLE_PUBLISHED", {
@@ -139,6 +142,7 @@ export const remove = async (req, res, next) => {
   try {
     const article = await softDeleteArticle(req.params.id);
     await deleteCache("articles:published");
+    await deleteByPattern("search:*");
     return res.json(article);
   } catch (err) {
     next(err);
