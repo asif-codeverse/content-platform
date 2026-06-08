@@ -3471,3 +3471,124 @@ Search caches can become stale after content updates unless proper invalidation 
 Answer:
 
 Elasticsearch provides advanced features such as fuzzy matching, typo tolerance, autocomplete, synonym handling, and large-scale search optimization.
+
+221. Why use .lean() in Mongoose?
+
+Returns plain JS objects and reduces memory usage.
+
+222. Why validate search query length?
+
+Prevents abuse and expensive queries.
+
+223. Why invalidate search cache after publishing?
+
+Published content changes search results.
+
+224. Why invalidate search cache after deleting?
+
+Deleted content should disappear from results.
+
+225. Why invalidate search cache after updating?
+
+Updated titles/content affect search relevance.
+
+226. Why keep search in a separate module?
+
+Separates content discovery from content management.
+
+227. Why use Redis before Mongo search?
+
+Redis is significantly faster than querying Mongo repeatedly.
+
+228. What is a text index?
+
+A special MongoDB index enabling efficient keyword searches.
+
+229. Why cap page size?
+
+Prevents large responses and resource exhaustion.
+
+230. Explain your search architecture.
+
+"I implemented a dedicated search module using MongoDB text indexes and Redis caching. Search requests are validated, checked against Redis, and only query MongoDB when necessary. Results are ranked using textScore, cached with TTL, and invalidated whenever content changes."
+
+231. What is graceful shutdown?
+
+A controlled process that stops accepting requests, finishes ongoing work, closes resources, and exits safely.
+
+232. What is SIGTERM?
+
+A termination signal commonly sent by Docker, Kubernetes, and Linux process managers.
+
+233. What is SIGINT?
+
+A signal generated when the user presses Ctrl+C.
+
+234. What is an unhandled promise rejection?
+
+A Promise failure that is not caught using catch() or try/catch.
+
+235. Why should applications fail fast?
+
+To detect configuration or dependency problems during startup instead of at runtime.
+
+236. What is a liveness check?
+
+A check that determines whether the process is alive.
+
+237. What is a readiness check?
+
+A check that determines whether the application can actually serve requests.
+
+238. Why close database connections during shutdown?
+
+To release resources cleanly and avoid abrupt termination of ongoing operations.
+
+239. What is startup timeout protection?
+
+A mechanism that prevents the application from hanging indefinitely while waiting for dependencies.
+
+240. Why is process-level error handling important?
+
+Because some failures occur outside Express middleware and can destabilize the entire application.
+
+241. Why use request IDs?
+
+To correlate logs belonging to a single request.
+
+242. Why should error responses be consistent?
+
+Clients can handle errors predictably.
+
+243. What is fail-fast configuration?
+
+Validating required settings before startup.
+
+244. Why close Redis connections during shutdown?
+
+To release resources and finish pending commands.
+
+245. Why close Mongo connections during shutdown?
+
+To terminate database sessions cleanly.
+
+246. What is readiness vs liveness?
+
+Liveness = process alive.
+Readiness = application ready to serve traffic.
+
+247. Why use startup timeouts?
+
+To avoid hanging indefinitely on dependency connections.
+
+248. What is request correlation?
+
+Tracking a request across logs using a unique identifier.
+
+249. Why handle uncaught exceptions?
+
+To avoid running in an unpredictable state.
+
+250. What production features exist in your backend?
+
+Graceful shutdown, readiness checks, liveness checks, Redis caching, fail-fast startup, process-level error handling, structured logging, request correlation, RBAC, ABAC, rate limiting, JWT authentication, Swagger documentation, and background jobs.

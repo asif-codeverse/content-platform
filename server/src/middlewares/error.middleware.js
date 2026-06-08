@@ -16,5 +16,6 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     message: isServerError ? "Internal Server Error" : err.message,
     requestId: req.requestId,
+    timestamp: Date.now(),
   });
 };

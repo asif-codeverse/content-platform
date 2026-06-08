@@ -7,6 +7,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./docs/swagger.js";
 
 import healthRoutes from "./routes/health.routes.js";
+import readinessRoutes from "./routes/rediness.routes.js"
 import authRoutes from "./modules/auth/auth.routes.js";
 import articleRoutes from "./modules/articles/article.routes.js";
 import searchRoutes from "./modules/search/search.routes.js";
@@ -32,6 +33,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/health", healthRoutes);
+app.use("/readiness",readinessRoutes);
 app.use("/auth", authRoutes);
 app.use("/articles", articleRoutes);
 app.use("/search", searchRoutes);
