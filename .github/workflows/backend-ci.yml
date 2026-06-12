@@ -31,3 +31,11 @@ jobs:
       - name: Run Tests
         working-directory: server
         run: npm test
+        env:
+          PORT: 5001
+          MONGODB_URI: ${{ secrets.MONGODB_URI_TEST }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          ACCESS_TOKEN_EXPIRES_IN: 15m
+          REFRESH_TOKEN_EXPIRES_IN: 7d
+          REDIS_URL: redis://localhost:6379
