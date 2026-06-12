@@ -5,9 +5,28 @@ const swaggerDocument = {
         version: "1.0.0",
         description: "Backend API Documentation",
     },
+    tags: [
+        {
+            name: "Authentication",
+            description: "Authentication APIs",
+        },
+        {
+            name: "Articles",
+            description: "Article management APIs",
+        },
+        {
+            name: "Search",
+            description: "Search APIs",
+        },
+        {
+            name: "Health",
+            description: "Health monitoring APIs",
+        },
+    ],
     servers: [
         {
-            url: "/",
+            url: "http://localhost:5001",
+            description: "Local Development",
         },
     ],
     paths: {
@@ -23,8 +42,20 @@ const swaggerDocument = {
                 },
             },
         },
+        "/readiness": {
+            get: {
+                tags: ["Health"],
+                summary: "Readiness Check",
 
-        "/auth/register": {
+                responses: {
+                    200: {
+                        description: "Application Ready",
+                    },
+                },
+            },
+        },
+
+        "/api/v1/auth/register": {
             post: {
                 tags: ["Authentication"],
                 summary: "Register User",
@@ -59,7 +90,7 @@ const swaggerDocument = {
             },
         },
 
-        "/auth/login": {
+        "/api/v1/auth/login": {
             post: {
                 tags: ["Authentication"],
                 summary: "Login User",
@@ -91,7 +122,7 @@ const swaggerDocument = {
             },
         },
 
-        "/auth/refresh": {
+        "/api/v1/auth/refresh": {
             post: {
                 tags: ["Authentication"],
                 summary: "Refresh Access Token",
@@ -104,7 +135,7 @@ const swaggerDocument = {
             },
         },
 
-        "/auth/me": {
+        "/api/v1/auth/me": {
             get: {
                 tags: ["Authentication"],
                 summary: "Current User",
@@ -123,7 +154,7 @@ const swaggerDocument = {
             },
         },
 
-        "/articles": {
+        "/api/v1/articles": {
             get: {
                 tags: ["Articles"],
                 summary: "List Published Articles",
@@ -172,7 +203,7 @@ const swaggerDocument = {
             },
         },
 
-        "/articles/all": {
+        "/api/v1/articles/all": {
             get: {
                 tags: ["Articles"],
                 summary: "List All Articles",
@@ -191,7 +222,7 @@ const swaggerDocument = {
             },
         },
 
-        "/articles/{slug}": {
+        "/api/v1/articles/{slug}": {
             get: {
                 tags: ["Articles"],
                 summary: "Get Article By Slug",
@@ -218,7 +249,7 @@ const swaggerDocument = {
             },
         },
 
-        "/articles/{id}": {
+        "/api/v1/articles/{id}": {
             patch: {
                 tags: ["Articles"],
                 summary: "Update Article",
@@ -295,7 +326,7 @@ const swaggerDocument = {
             },
         },
 
-        "/articles/{id}/publish": {
+        "/api/v1/articles/{id}/publish": {
             patch: {
                 tags: ["Articles"],
                 summary: "Publish Article",
@@ -324,6 +355,29 @@ const swaggerDocument = {
                 },
             },
         },
+        "/api/v1/search": {
+            get: {
+                tags: ["Search"],
+                summary: "Search Articles",
+
+                parameters: [
+                    {
+                        name: "q",
+                        in: "query",
+                        required: true,
+                        schema: {
+                            type: "string",
+                        },
+                    },
+                ],
+
+                responses: {
+                    200: {
+                        description: "Search Results",
+                    },
+                },
+            },
+        },
     },
 
     components: {
@@ -332,6 +386,8 @@ const swaggerDocument = {
                 type: "http",
                 scheme: "bearer",
                 bearerFormat: "JWT",
+                description:
+                    "Enter JWT token without Bearer prefix",
             },
         },
     },

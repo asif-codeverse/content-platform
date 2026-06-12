@@ -26,6 +26,13 @@ export const create = async (req, res, next) => {
       content: req.body.content,
       author: req.user.id,
     });
+    logger.info("ARTICLE_CREATED",
+      {
+        articleId: article._id,
+        authorId: req.user.id,
+        title: article.title,
+      }
+    )
 
     await deleteCache("articles:published");
     await deleteByPattern("search:*");
@@ -45,6 +52,13 @@ export const update = async (req, res, next) => {
         content: req.body.content,
       },
       req.user,
+    );
+    logger.info(
+      "ARTICLE_UPDATED",
+      {
+        articleId: article._id,
+        updatedBy: req.user.id,
+      }
     );
 
     await deleteCache("articles:published");
@@ -121,6 +135,13 @@ export const listPublished = async (req, res, next) => {
 export const publish = async (req, res, next) => {
   try {
     const article = await publishArticle(req.params.id);
+    logger.info(
+      "ARTICLE_PUBLISHED",
+      {
+        articleId: article._id,
+        publishedBy: req.user.id,
+      }
+    );
 
     await deleteCache("articles:published");
 
@@ -141,6 +162,14 @@ export const publish = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const article = await softDeleteArticle(req.params.id);
+    logger.info(
+      "ARTICLE_DELETED",
+      {
+        articleId: article._id,
+        deletedBy: req.user.id,
+      }
+    );
+
     await deleteCache("articles:published");
     await deleteByPattern("search:*");
     return res.json(article);

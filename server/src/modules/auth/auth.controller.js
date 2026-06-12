@@ -5,6 +5,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../../utils/token.js";
+import { logger } from "../../utils/logger.js";
 import { User } from "./auth.model.js";
 
 export const register = async (req, res, next) => {
@@ -22,6 +23,13 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await loginUser(email, password);
+    logger.info(
+      "USER_LOGIN",
+      {
+        userId: user._id,
+        email: user.email,
+      }
+    );
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -59,7 +67,7 @@ export const refresh = async (req, res, next) => {
 
     const accessToken = generateAccessToken(user);
 
-    
+
     res.json({
       accessToken,
     });

@@ -3592,3 +3592,83 @@ To avoid running in an unpredictable state.
 250. What production features exist in your backend?
 
 Graceful shutdown, readiness checks, liveness checks, Redis caching, fail-fast startup, process-level error handling, structured logging, request correlation, RBAC, ABAC, rate limiting, JWT authentication, Swagger documentation, and background jobs.
+
+251. What is audit logging?
+
+Recording important business actions performed inside the system.
+
+252. How is audit logging different from HTTP logging?
+
+HTTP logs track requests; audit logs track business events.
+
+253. Why log article publishing?
+
+To know who published content and when.
+
+254. Where should audit logs be placed?
+
+Usually in controllers or orchestration layers where user context is available.
+
+255. Why not place audit logs inside services?
+
+Services should remain focused on domain logic and avoid infrastructure concerns.
+
+256. What is audit logging?
+
+Recording important business actions for accountability and investigation.
+
+257. Why log article creation?
+
+To track who created content and when.
+
+258. Why log article publishing?
+
+To track publishing actions and content lifecycle changes.
+
+259. What information should audit logs contain?
+
+User identity, action performed, affected resource, and timestamp.
+
+260. Should audit logs replace HTTP logs?
+
+No. They serve different purposes and should coexist.
+
+261. Why version APIs?
+
+To allow future API changes without breaking existing clients.
+
+262. Why use /api/v1?
+
+It creates a stable contract between frontend and backend.
+
+263. What is an audit trail?
+
+A historical record of important actions performed in the system.
+
+264. What information should be stored in audit logs?
+
+User, action, resource, and timestamp.
+
+265. Why are audit logs useful in production?
+
+They help investigate bugs, security incidents, and user actions.
+
+266. Why maintain API documentation?
+
+To provide a clear contract between backend and consumers.
+
+267. What is Swagger/OpenAPI?
+
+A standard specification for describing REST APIs.
+
+268. Why document authentication?
+
+Consumers need to know how to access protected endpoints.
+
+269. Why document query parameters?
+
+Clients must understand available filters and search options.
+
+270. Why keep Swagger synchronized with code?
+
+Outdated documentation causes integration failures.
