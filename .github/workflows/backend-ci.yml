@@ -3,22 +3,19 @@ name: Backend CI
 on:
 push:
 branches:
-- main
-- master
+  - main
+  - master
 
 pull_request:
-branches:
-- main
-- master
+  branches:
+    - main
+    - master
 
 jobs:
 test:
-
-```
 runs-on: ubuntu-latest
 
 steps:
-
   - name: Checkout Code
     uses: actions/checkout@v4
 
@@ -28,10 +25,9 @@ steps:
       node-version: 20
 
   - name: Install Dependencies
-    run: npm install
     working-directory: server
+    run: npm install
 
   - name: Run Tests
-    run: npm test
     working-directory: server
-```
+    run: npm test
