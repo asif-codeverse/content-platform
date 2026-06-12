@@ -11,7 +11,7 @@ export const authenticate = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const payload = jwt.verify(token, env.jwtAccessSecret);
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
 
     // attach user info to request
     req.user = {

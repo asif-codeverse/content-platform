@@ -20,7 +20,8 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 app.use(helmet());
 app.use(cors({
-    origin: "*"
+    origin: ["http://localhost:3000"],
+    credentials: true
 }))
 
 
@@ -33,7 +34,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/health", healthRoutes);
-app.use("/readiness",readinessRoutes);
+app.use("/readiness", readinessRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/articles", articleRoutes);
 app.use("/api/v1/search", searchRoutes);

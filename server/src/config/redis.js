@@ -3,7 +3,7 @@ import { env } from "./env.js";
 import { logger } from "../utils/logger.js";
 
 export const redisClient = createClient({
-    url: env.redisUrl,
+    url: env.REDIS_URL,
 });
 
 redisClient.on("error", (err) => {
@@ -11,7 +11,16 @@ redisClient.on("error", (err) => {
 });
 
 export const connectRedis = async () => {
-    await redisClient.connect();
-
-    logger.info("Redis Connected Successfully");
+    try {
+        await redisClient.connect();
+        logger.info(
+            "Redis connected successfully"
+        );
+    } catch (err) {
+        logger.error(
+            "Redis connection failed",
+            err
+        );
+        throw err;
+    }
 };

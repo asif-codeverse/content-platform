@@ -26,7 +26,9 @@ export const setCache = async (
     ttl = 60,
 ) => {
 
-    console.log("CACHE STORE:", key);
+    logger.info("CACHE STORE:", {
+        key,
+    });
 
     await redisClient.set(
         key,

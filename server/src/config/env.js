@@ -1,32 +1,39 @@
-import dotenv from "dotenv";
+import "dotenv/config";
+import z from "zod";
 
-const envFile =
-  process.env.NODE_ENV === "test"
-    ? ".env.test"
-    : ".env";
+const envSchema = z.object({
+  NODE_ENV: z.enum([
+    "development",
+    "test",
+    "production"
+  ]),
 
-dotenv.config({ path: envFile });
+  PORT: z.coerce.number().int().positive(),
 
-const requiredEnvVars = [
-  "MONGODB_URI",
-  "REDIS_URL",
-  "JWT_ACCESS_SECRET",
-  "JWT_REFRESH_SECRET",
-];
+  MONGODB_URI: z.string().startsWith("mongodb"),
 
-for (const variable of requiredEnvVars) {
-  if (!process.env[variable]) {
-    throw new Error(
-      `Missing required environment variable: ${variable}`
-    );
-  }
+  JWT_ACCESS_SECRET: z.string().min(32),
+
+  JWT_REFRESH_SECRET: z.string().min(32),
+
+  ACCESS_TOKEN_EXPIRES_IN: z.string(),
+
+  REFRESH_TOKEN_EXPIRES_IN: z.string(),
+
+  REDIS_URL: z.url()
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error(
+    "Invalid Environment Variables"
+  );
+  console.error(
+    parsed.error.flatten().fieldErrors
+  );
+
+  process.exit(1);
 }
 
-export const env = {
-  nodeEnv: process.env.NODE_ENV,
-  port: Number(process.env.PORT ?? 5000),
-  mongoUri: process.env.MONGODB_URI,
-  redisUrl: process.env.REDIS_URL,
-  jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
-};
+export const env = parsed.data;

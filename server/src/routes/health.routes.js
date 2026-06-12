@@ -7,7 +7,7 @@ router.get('/', (req, res) => {
     status: "ok",
     version: "1.0.0",
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV,
+    environment: env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
 });

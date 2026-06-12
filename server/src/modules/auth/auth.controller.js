@@ -36,7 +36,7 @@ export const login = async (req, res, next) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       sameSite: "strict",
     });
 
@@ -57,7 +57,7 @@ export const refresh = async (req, res, next) => {
       return res.status(401).json({ message: "Refresh token missing" });
     }
 
-    const payload = jwt.verify(token, env.jwtRefreshSecret);
+    const payload = jwt.verify(token, env.JWT_REFRESH_SECRET);
 
     const user = await User.findById(payload.userId);
 

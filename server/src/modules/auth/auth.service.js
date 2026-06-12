@@ -37,7 +37,7 @@ export const loginUser = async (email, password) => {
 };
 
 export const refreshTokens = async (refreshToken) => {
-  const payload = jwt.verify(refreshToken, env.jwtRefreshSecret);
+  const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET);
 
   const user = await User.findById(payload.userId);
 

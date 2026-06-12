@@ -22,13 +22,13 @@ const startServer = async () => {
     );
 
     logger.info("Starting application", {
-      environment: env.nodeEnv,
-      port: env.port,
+      environment: env.NODE_ENV,
+      port: env.PORT,
     });
-    server = app.listen(env.port, () => {
+    server = app.listen(env.PORT, () => {
       logger.info("Server started successfully", {
-        port: env.port,
-        environment: env.nodeEnv,
+        port: env.PORT,
+        environment: env.NODE_ENV,
       });
     });
   } catch (err) {
@@ -56,6 +56,9 @@ const gracefulShutdown = async (
     `${signal} received. Starting graceful shutdown`
   );
 
+  if (!server) {
+    process.exit(1);
+  }
   server.close(async () => {
 
     logger.info(

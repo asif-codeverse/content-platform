@@ -11,7 +11,7 @@ describe("Articles Public API", () => {
   beforeAll(async () => {
     await connectDB();
 
-    if (!env.mongoUri.includes("test")) {
+    if (!env.MONGODB_URI.includes("test")) {
       throw new Error("Refusing to run tests on non-test database");
     }
   });
