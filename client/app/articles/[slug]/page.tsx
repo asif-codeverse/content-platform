@@ -1,57 +1,66 @@
-import { notFound } from "next/navigation";
+"use client";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/articles/${slug}`,
-    { next: { revalidate: 60 } },
-  );
+import {
+  getArticleBySlug,
+} from "@/services/article.service";
 
-  if (!res.ok) {
-    return {
-      title: "Article Not Found",
-    };
+export default function ArticlePage() {
+
+  const params = useParams();
+
+  const slug =
+    params.slug as string;
+
+  const [article, setArticle] =
+    useState<any>(null);
+
+  useEffect(() => {
+
+    const loadArticle =
+      async () => {
+
+        try {
+
+          const data =
+            await getArticleBySlug(
+              slug
+            );
+
+          console.log(data);
+
+          setArticle(data);
+
+        } catch (err) {
+
+          console.error(err);
+
+        }
+      };
+
+    if (slug) {
+      loadArticle();
+    }
+
+  }, [slug]);
+
+  if (!article) {
+    return <p>Loading...</p>;
   }
-
-  const data = await res.json();
-  const article = data.data;
-
-  return {
-    title: article.title,
-    description: article.content.slice(0, 150),
-  };
-}
-
-export default async function ArticlePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/articles/${slug}`,
-    { next: { revalidate: 60 } },
-  );
-
-  if (!res.ok) {
-    notFound();
-  }
-
-  const data = await res.json();
-  const article = data.data;
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <article>
-        <h1>{article.title}</h1>
-        <p>{article.content}</p>
-      </article>
-    </main>
+    <div className="p-8">
+
+      <h1 className="text-4xl font-bold">
+        {article.title}
+      </h1>
+
+      <p className="mt-6">
+        {article.content}
+      </p>
+
+    </div>
   );
 }

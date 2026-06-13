@@ -1,31 +1,19 @@
-import Link from "next/link";
-import { fetchPublishArticles } from "@/lib/api";
+import Navbar from "@/components/Navbar";
 
-export const metadata = {
-  title : "Content Platform",
-  description : "Read production-level articles built with MERN"
-}
+export default function HomePage() {
+  return (
+    <>
+      <Navbar />
 
-export default async function Home() {
-  const response = await fetchPublishArticles();
-  const articles = response.data;
+      <main className="p-8">
+        <h1 className="text-4xl font-bold">
+          Content Platform
+        </h1>
 
-  return(
-    <main style={{padding:"2rem"}}>
-      <h1>Published Articles</h1>
-  
-    {articles.length === 0 && <p>No Articles Found</p>}
-
-
-    <ul>
-      {articles.map((article)=>(
-        <li key={article._id}>
-          <Link href={`/articles/${article.slug}`}>
-          {article.title}
-          </Link>
-        </li>
-      ))}
-    </ul>
-    </main>
+        <p className="mt-4">
+          Production Ready CMS Platform
+        </p>
+      </main>
+    </>
   );
 }

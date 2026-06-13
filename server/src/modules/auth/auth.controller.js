@@ -38,6 +38,7 @@ export const login = async (req, res, next) => {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -74,4 +75,18 @@ export const refresh = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+export const logout = async (
+  req,
+  res
+) => {
+
+  res.clearCookie(
+    "refreshToken"
+  );
+
+  res.status(200).json({
+    message: "Logged out",
+  });
 };

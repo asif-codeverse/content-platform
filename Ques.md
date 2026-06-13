@@ -3672,3 +3672,719 @@ Clients must understand available filters and search options.
 270. Why keep Swagger synchronized with code?
 
 Outdated documentation causes integration failures.
+
+
+### 271. Why should environment variables be validated at startup?
+
+**Answer:** To ensure all required configuration values are present and correctly formatted before the application starts. This prevents runtime failures caused by missing or invalid configuration.
+
+### 272. What problems can occur if `JWT_ACCESS_SECRET` is missing?
+
+**Answer:** Access tokens cannot be generated or verified correctly. Authentication may fail completely, creating security and application issues.
+
+### 273. Why is Zod useful for environment validation?
+
+**Answer:** Zod validates data types, required fields, and formats at startup. It provides clear error messages when configuration is invalid.
+
+### 274. What is fail-fast architecture?
+
+**Answer:** A design principle where an application immediately stops when critical errors are detected rather than continuing in an unstable state.
+
+### 275. Why should the application exit if critical environment variables are invalid?
+
+**Answer:** Running with invalid configuration can lead to unpredictable behavior, security vulnerabilities, and data corruption.
+
+---
+
+### 276. What is graceful shutdown?
+
+**Answer:** Graceful shutdown is the process of safely stopping an application by finishing ongoing work, closing connections, and releasing resources before exiting.
+
+### 277. Difference between `SIGINT` and `SIGTERM`?
+
+**Answer:**
+
+| Signal  | Meaning                                                                |
+| ------- | ---------------------------------------------------------------------- |
+| SIGINT  | User interruption (Ctrl+C)                                             |
+| SIGTERM | Request from OS, Docker, Kubernetes, PM2, etc. to terminate gracefully |
+
+### 278. Why shouldn't we immediately call `process.exit()`?
+
+**Answer:** Immediate exit can terminate requests abruptly and leave database or Redis connections open.
+
+### 279. What can happen if MongoDB connections are not closed properly?
+
+**Answer:** Connection leaks, incomplete operations, memory waste, and locked resources may occur.
+
+### 280. Why should Redis connections be closed during shutdown?
+
+**Answer:** To release network resources and ensure clean disconnection from Redis servers.
+
+---
+
+### 281. Difference between Health Check and Readiness Check?
+
+**Answer:**
+
+| Check           | Purpose                                               |
+| --------------- | ----------------------------------------------------- |
+| Health Check    | Determines if application is alive                    |
+| Readiness Check | Determines if application is ready to receive traffic |
+
+### 282. Why do Kubernetes and load balancers use health checks?
+
+**Answer:** To avoid sending traffic to unhealthy application instances.
+
+### 283. What should a production health endpoint return?
+
+**Answer:** Application status, uptime, timestamp, version, MongoDB status, Redis status, and environment information.
+
+### 284. Why is checking MongoDB status useful?
+
+**Answer:** It verifies database connectivity before accepting requests.
+
+### 285. Why is checking Redis status useful?
+
+**Answer:** It verifies cache availability and detects Redis outages quickly.
+
+---
+
+### 286. What is an audit log?
+
+**Answer:** A permanent record of important user and system actions.
+
+### 287. Difference between application logs and audit logs?
+
+**Answer:**
+
+| Application Logs  | Audit Logs                  |
+| ----------------- | --------------------------- |
+| Debugging focused | Security/compliance focused |
+| Temporary         | Long-term retention         |
+| Technical events  | User actions                |
+
+### 288. Which actions should always be audited?
+
+**Answer:**
+
+* Login
+* Logout
+* Password reset
+* Role changes
+* Create
+* Update
+* Delete
+* Publish actions
+
+### 289. Why is audit logging important in fintech systems?
+
+**Answer:** It provides accountability, compliance, fraud investigation, and legal traceability.
+
+### 290. What information should be logged during login?
+
+**Answer:**
+
+* User ID
+* Email
+* Timestamp
+* IP Address
+* Success/Failure status
+
+---
+
+
+### 291. Why version APIs?
+
+**Answer:** To introduce changes without breaking existing clients.
+
+### 292. What problem does `/api/v1` solve?
+
+**Answer:** It separates API versions and allows future upgrades while maintaining backward compatibility.
+
+### 293. What happens if API versioning is ignored?
+
+**Answer:** New changes may break existing frontend or third-party integrations.
+
+### 294. How would you introduce `/api/v2`?
+
+**Answer:** Create a new versioned route group while keeping `/api/v1` operational.
+
+### 295. Should old versions be removed immediately?
+
+**Answer:** No. Clients need time to migrate safely.
+
+---
+
+### 296. What is CI/CD?
+
+**Answer:** A process that automates code integration, testing, and deployment.
+
+### 297. What is Continuous Integration?
+
+**Answer:** Automatically building and testing code whenever changes are pushed.
+
+### 298. What is Continuous Deployment?
+
+**Answer:** Automatically deploying tested code to production.
+
+### 299. Why run tests automatically on push?
+
+**Answer:** To catch bugs early and prevent broken code from reaching production.
+
+### 300. Why is GitHub Actions useful?
+
+**Answer:** It automates testing, building, deployment, and workflow management directly from GitHub.
+
+---
+
+### 301. What is `mongodump`?
+
+**Answer:** A MongoDB utility that creates database backups.
+
+### 302. What is `mongorestore`?
+
+**Answer:** A MongoDB utility that restores data from a backup.
+
+### 303. Why are backups important?
+
+**Answer:** To recover from accidental deletion, corruption, outages, or attacks.
+
+### 304. What is the difference between backup and replication?
+
+**Answer:**
+
+| Backup            | Replication               |
+| ----------------- | ------------------------- |
+| Historical copy   | Live copy                 |
+| Disaster recovery | High availability         |
+| Stored separately | Real-time synchronization |
+
+### 305. How often should production backups run?
+
+**Answer:** Usually daily, with more frequent backups for critical systems.
+
+---
+
+### 306. Why use Docker?
+
+**Answer:** To package applications with their dependencies and run consistently across environments.
+
+### 307. What is a Docker image?
+
+**Answer:** A read-only template containing application code and dependencies.
+
+### 308. What is a Docker container?
+
+**Answer:** A running instance of a Docker image.
+
+### 309. Difference between Dockerfile and docker-compose?
+
+**Answer:**
+
+| Dockerfile     | docker-compose              |
+| -------------- | --------------------------- |
+| Builds image   | Runs multiple containers    |
+| Single service | Multi-service orchestration |
+
+### 310. Why use separate containers for API, MongoDB, and Redis?
+
+**Answer:** Better isolation, scalability, maintenance, and fault tolerance.
+
+---
+
+
+### 311. What is Next.js?
+
+**Answer:** A React framework providing SSR, SSG, routing, API routes, and production optimizations.
+
+### 312. Why use Next.js instead of React alone?
+
+**Answer:** It provides routing, SEO support, server rendering, and performance optimizations out of the box.
+
+### 313. What is App Router?
+
+**Answer:** The modern routing system in Next.js based on React Server Components.
+
+### 314. Difference between Pages Router and App Router?
+
+**Answer:**
+
+| Pages Router    | App Router     |
+| --------------- | -------------- |
+| Older system    | New system     |
+| page-based      | folder-based   |
+| Limited layouts | Nested layouts |
+
+### 315. What is the purpose of `layout.tsx`?
+
+**Answer:** To provide shared UI structure across multiple pages.
+
+---
+
+### 316. What is SSR?
+
+**Answer:** Server-Side Rendering generates HTML on the server for every request.
+
+### 317. What is CSR?
+
+**Answer:** Client-Side Rendering generates UI in the browser using JavaScript.
+
+### 318. What is SSG?
+
+**Answer:** Static Site Generation pre-renders pages during build time.
+
+### 319. When should SSR be preferred?
+
+**Answer:** For SEO-critical and frequently changing content.
+
+### 320. When should CSR be preferred?
+
+**Answer:** For highly interactive dashboards and authenticated applications.
+
+---
+
+### 321. Why separate services from components?
+
+**Answer:** To keep business logic separate from UI logic.
+
+### 322. What belongs inside `lib/`?
+
+**Answer:** Shared utilities, helpers, constants, and configuration.
+
+### 323. What belongs inside `services/`?
+
+**Answer:** API calls, backend communication, and business-related operations.
+
+### 324. What belongs inside `components/`?
+
+**Answer:** Reusable UI components.
+
+### 325. Why maintain folder structure consistency?
+
+**Answer:** Improves maintainability, readability, onboarding, and scalability.
+
+---
+
+
+### 326. What is JWT?
+
+**Answer:** A signed JSON token used for authentication and authorization.
+
+### 327. What are the three parts of a JWT?
+
+**Answer:**
+
+1. Header
+2. Payload
+3. Signature
+
+### 328. Why is JWT stateless?
+
+**Answer:** Because the server does not need to store session data for each user.
+
+### 329. What information should never be stored inside JWT payloads?
+
+**Answer:**
+
+* Passwords
+* Secrets
+* Credit card details
+* Sensitive personal data
+
+### 330. Why verify JWT signatures?
+
+**Answer:** To ensure the token has not been tampered with.
+
+---
+
+### 331. Difference between Access Token and Refresh Token?
+
+**Answer:**
+
+| Access Token | Refresh Token              |
+| ------------ | -------------------------- |
+| Short-lived  | Long-lived                 |
+| Access APIs  | Generate new access tokens |
+
+### 332. Why not use only Access Tokens?
+
+**Answer:** Users would need to log in repeatedly.
+
+### 333. Why not use only Refresh Tokens?
+
+**Answer:** Long-lived tokens increase security risks if stolen.
+
+### 334. Why store Refresh Tokens in cookies?
+
+**Answer:** Cookies provide secure storage and automatic transmission.
+
+### 335. Why make Refresh Token cookies HttpOnly?
+
+**Answer:** To prevent JavaScript access and reduce XSS attacks.
+
+---
+
+### 336. What is an Axios interceptor?
+
+**Answer:** Middleware that modifies requests or responses before application code receives them.
+
+### 337. Difference between request and response interceptors?
+
+**Answer:**
+
+| Request Interceptor | Response Interceptor |
+| ------------------- | -------------------- |
+| Runs before request | Runs after response  |
+
+### 338. Why attach Authorization headers automatically?
+
+**Answer:** To avoid repetitive code and ensure consistency.
+
+### 339. Why centralize API calls?
+
+**Answer:** Easier maintenance, logging, authentication, and error handling.
+
+### 340. What problems arise without interceptors?
+
+**Answer:** Duplicate code, inconsistent authentication handling, and harder maintenance.
+
+---
+
+### 341. Explain the complete login flow.
+
+**Answer:**
+
+1. User submits credentials.
+2. Backend validates credentials.
+3. Backend issues Access Token and Refresh Token.
+4. Access Token stored in frontend state.
+5. Refresh Token stored in HttpOnly cookie.
+6. User accesses protected resources.
+
+### 342. Explain the refresh token flow.
+
+**Answer:**
+
+1. Access Token expires.
+2. Frontend sends Refresh Token.
+3. Backend validates Refresh Token.
+4. New Access Token issued.
+5. User continues without re-login.
+
+### 343. What happens when an access token expires?
+
+**Answer:** Protected requests return 401 Unauthorized.
+
+### 344. How does automatic token refresh work?
+
+**Answer:** Axios interceptor detects 401, requests a new access token using the refresh token, then retries the original request.
+
+### 345. What happens if refresh token validation fails?
+
+**Answer:** User is logged out and redirected to login.
+
+---
+
+### 346. Why protect routes on the frontend?
+
+**Answer:** To prevent unauthorized users from viewing protected UI.
+
+### 347. Why can't Next.js middleware access localStorage?
+
+**Answer:** Middleware runs on the server/edge runtime where browser APIs do not exist.
+
+### 348. Why use cookies for middleware checks?
+
+**Answer:** Cookies are available in server-side requests and middleware.
+
+### 349. What happens when a user accesses `/dashboard` without a token?
+
+**Answer:** Middleware redirects the user to the login page.
+
+### 350. Difference between frontend route protection and backend authorization?
+
+**Answer:**
+
+| Frontend Protection | Backend Authorization                       |
+| ------------------- | ------------------------------------------- |
+| Hides UI            | Enforces security                           |
+| User experience     | Actual access control                       |
+| Can be bypassed     | Cannot be bypassed if implemented correctly |
+
+**Important Interview Point:** Frontend route protection improves UX, but **backend authorization is the real security boundary**. Never rely solely on frontend checks.
+
+
+351. Why did you use a Service Layer?
+Answer
+
+Controllers should only handle HTTP concerns:
+
+Request
+Response
+Status Codes
+Headers
+
+Business logic belongs in services.
+
+Bad:
+
+controller
+ ├─ validation
+ ├─ db query
+ ├─ caching
+ ├─ auth
+ └─ response
+
+Good:
+
+controller
+   ↓
+service
+   ↓
+database
+
+Benefits:
+
+Reusable logic
+Easier testing
+Cleaner architecture
+352. Why use Redis Cache?
+Answer
+
+MongoDB queries require:
+
+Application
+ ↓
+Mongo Driver
+ ↓
+MongoDB
+ ↓
+Disk/RAM lookup
+
+Redis:
+
+Application
+ ↓
+Redis Memory
+
+Memory access is much faster.
+
+Example:
+
+Mongo : 300ms
+Redis : 5ms
+353. What is Cache Invalidation?
+Answer
+
+When data changes:
+
+Article Updated
+Article Deleted
+Article Published
+
+Old cache becomes stale.
+
+So:
+
+await redis.del(cacheKey);
+
+This ensures users get fresh data.
+
+354. Why did you design cache keys like this?
+
+Bad:
+
+articles
+
+Problem:
+
+Page 1 data
+Page 2 data
+Page 3 data
+
+all overwrite each other.
+
+Good:
+
+articles:published:page:1:limit:10
+
+Every query gets its own cache entry.
+
+355. What is a Cache Hit?
+Answer
+
+Data exists in Redis.
+
+Client
+ ↓
+Redis
+ ↓
+Response
+
+No database query needed.
+
+356. What is a Cache Miss?
+Answer
+
+Data not found in Redis.
+
+Client
+ ↓
+Redis (miss)
+ ↓
+MongoDB
+ ↓
+Store in Redis
+ ↓
+Response
+357. Why use JWT instead of Sessions?
+JWT
+Stateless
+
+Server stores nothing.
+
+Token contains identity.
+
+Session
+Stateful
+
+Server stores session data.
+
+JWT scales better in distributed systems.
+
+358. What is Refresh Token Rotation?
+Answer
+
+Every refresh generates:
+
+New Access Token
+New Refresh Token
+
+Old refresh token becomes invalid.
+
+Benefits:
+
+Prevents token theft
+Improves security
+359. Why use MongoDB Text Indexes?
+
+Without index:
+
+COLLSCAN
+
+Mongo scans entire collection.
+
+With text index:
+
+IXSCAN
+
+Mongo directly uses index.
+
+Much faster search.
+
+360. Difference Between IXSCAN and COLLSCAN?
+COLLSCAN
+Reads every document
+
+Example:
+
+100000 docs
+
+reads all.
+
+IXSCAN
+Reads only matching index entries
+
+Example:
+
+100000 docs
+↓
+index narrows to 50 docs
+
+Huge performance gain.
+
+361. Why use Request IDs?
+
+Every request gets:
+
+f6237d27-f3ec-4fad-a6dc-8ebafabe62e9
+
+Useful for:
+
+Debugging
+Tracing
+Production monitoring
+Log correlation
+362. What is Graceful Shutdown?
+
+When server receives:
+
+SIGINT
+SIGTERM
+
+Instead of killing immediately:
+
+Finish requests
+Close Mongo
+Close Redis
+Exit
+
+Prevents corruption.
+
+363. What is Health Check?
+
+Endpoint:
+
+GET /health
+
+Checks:
+
+Application status
+Mongo status
+Redis status
+Environment
+
+Used by:
+
+AWS
+Docker
+Kubernetes
+Load Balancers
+364. Why use Docker?
+
+Benefits:
+
+Consistency
+Portability
+Isolation
+Deployment simplicity
+
+Runs same everywhere.
+
+docker compose up
+365. Explain your complete architecture.
+Next.js Frontend
+        ↓
+Axios API Client
+        ↓
+Express Routes
+        ↓
+Controllers
+        ↓
+Services
+        ↓
+MongoDB
+
+Redis Cache
+        ↑
+
+Middleware Layer
+ ├─ Auth
+ ├─ RBAC
+ ├─ Rate Limit
+ ├─ Logging
+ └─ Request ID
+
+
+ 

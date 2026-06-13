@@ -1,33 +1,79 @@
-export interface Article{
-    _id : string;
-    title :string;
-    slug:string;
-    content:string;
-    status:string;
-    createdAt:string;
-    updatedAt:string;
-}
+import axios from "axios";
 
-interface ArticleResponse {
-    success : boolean;
-    data:Article[];
-    meta?:{
-        page:number;
-        limit:number;
-        total:number;
-        totalPages: number;
-    };
-}
+export const api = axios.create({
+  baseURL: "http://localhost:5001/api/v1",
+  withCredentials: true,
+});
 
-export async function fetchPublishArticles(): Promise<ArticleResponse>{
-    const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/articles`,
-        {
-        cache : "no-store" , // backend handles caching
-        }
-    );
+api.interceptors.request.use(
+  (config) => {
 
-    if(!res.ok) throw new Error("Failed to fetch articles");
+    const token =
+      localStorage.getItem(
+        "accessToken"
+      );
 
-    return res.json();
-}
+    if (token) {
+      config.headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    return config;
+  }
+);
+
+api.interceptors.response.use(
+
+  (response) => response,
+
+  async (error) => {
+
+    const originalRequest =
+      error.config;
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
+
+      originalRequest._retry =
+        true;
+
+      try {
+
+        const response =
+          await axios.post(
+            "http://localhost:5001/api/v1/auth/refresh",
+            {},
+            {
+              withCredentials: true,
+            }
+          );
+
+        const newAccessToken =
+          response.data.accessToken;
+
+        localStorage.setItem(
+          "accessToken",
+          newAccessToken
+        );
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
+        return api(originalRequest);
+
+      } catch {
+
+        localStorage.removeItem(
+          "accessToken"
+        );
+
+        window.location.href =
+          "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);

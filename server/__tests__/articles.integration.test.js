@@ -7,6 +7,8 @@ import { Article } from "../src/modules/articles/article.model.js";
 import { User } from "../src/modules/auth/auth.model.js";
 import bcrypt from "bcryptjs";
 
+const API = "/api/v1";
+
 describe("Articles Public API", () => {
   beforeAll(async () => {
     await connectDB();
@@ -29,7 +31,7 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should return 200 for public list endpoint", async () => {
-    const res = await request(app).get("/articles");
+    const res = await request(app).get(`${API}/articles`)
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -48,7 +50,7 @@ describe("Articles Public API", () => {
       slug: "draft-test",
     });
 
-    const res = await request(app).get("/articles");
+    const res = await request(app).get(`${API}/articles`)
 
     const titles = res.body.data.map((a) => a.title);
 
@@ -68,9 +70,7 @@ describe("Articles Public API", () => {
       slug: "publish-test",
     });
 
-    const publishRes = await request(app).patch(
-      `/articles/${article._id}/publish`,
-    );
+    const publishRes = await request(app).patch(`${API}/articles/${article._id}/publish`)
 
     expect(publishRes.statusCode).toBe(401);
   });
@@ -89,7 +89,7 @@ describe("Articles Public API", () => {
       refreshTokenVersion: 0,
     });
 
-    const loginRes = await request(app).post("/auth/login").send({
+    const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "admin@test.com",
       password: "Password123",
     });
@@ -106,12 +106,12 @@ describe("Articles Public API", () => {
     });
 
     const publishRes = await request(app)
-      .patch(`/articles/${article._id}/publish`)
+      .patch(`${API}/articles/${article._id}/publish`)
       .set("Authorization", `Bearer ${token}`);
 
     expect(publishRes.statusCode).toBe(200);
 
-    const publicRes = await request(app).get("/articles");
+    const publicRes = await request(app).get(`${API}/articles`)
 
     const titles = publicRes.body.data.map((a) => a.title);
 
@@ -132,7 +132,7 @@ describe("Articles Public API", () => {
       refreshTokenVersion: 0,
     });
 
-    const loginRes = await request(app).post("/auth/login").send({
+    const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "editor@test.com",
       password: "password123",
     });
@@ -148,7 +148,7 @@ describe("Articles Public API", () => {
     });
 
     const res = await request(app)
-      .patch(`/articles/${article._id}/publish`)
+      .patch(`${API}/articles/${article._id}/publish`)
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(403);
@@ -185,7 +185,7 @@ describe("Articles Public API", () => {
       refreshTokenVersion: 0,
     });
 
-    const editorLogin = await request(app).post("/auth/login").send({
+    const editorLogin = await request(app).post(`${API}/auth/login`).send({
       email: "editor2@test.com",
       password: "password123",
     });
@@ -193,7 +193,7 @@ describe("Articles Public API", () => {
     const editorToken = editorLogin.body.accessToken;
 
     const res = await request(app)
-      .patch(`/articles/${article._id}`)
+      .patch(`${API}/articles/${article._id}`)
       .set("Authorization", `Bearer ${editorToken}`)
       .send({ title: "Hacked Title" });
 
@@ -210,7 +210,7 @@ describe("Articles Public API", () => {
       refreshTokenVersion: 0,
     });
 
-    const loginRes = await request(app).post("/auth/login").send({
+    const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "admin3@test.com",
       password: "password123",
     });
@@ -234,7 +234,7 @@ describe("Articles Public API", () => {
     });
 
     const res = await request(app)
-      .patch(`/articles/${article1._id}`)
+      .patch(`${API}/articles/${article1._id}`)
       .set("Authorization", `Bearer ${token}`)
       .send({ title: "Second Title" });
 
@@ -266,7 +266,7 @@ describe("Articles Public API", () => {
       slug: "published-article",
     });
 
-    const loginRes = await request(app).post("/auth/login").send({
+    const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "editor4@test.com",
       password: "password123",
     });
@@ -274,7 +274,7 @@ describe("Articles Public API", () => {
     const token = loginRes.body.accessToken;
 
     const res = await request(app)
-      .patch(`/articles/${article._id}`)
+      .patch(`${API}/articles/${article._id}`)
       .set("Authorization", `Bearer ${token}`)
       .send({ title: "Changed Title" });
 
