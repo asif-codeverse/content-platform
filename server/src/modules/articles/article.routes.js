@@ -5,6 +5,7 @@ import {
   create,
   getArticles,
   getBySlug,
+  getArticleById,
   listPublished,
   publish,
   remove,
@@ -36,5 +37,11 @@ router.post(
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
 router.delete("/:id", authenticate, authorize("ADMIN"), remove);
 router.patch("/:id", authenticate, authorize("ADMIN", "EDITOR"), update);
+router.get(
+  "/id/:id",
+  authenticate,
+  authorize("ADMIN", "EDITOR"),
+  getArticleById
+);
 
 export default router;

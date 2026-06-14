@@ -160,7 +160,7 @@ export const getArticles = asyncHandler(async (req, res) => {
   const parsed = parseQuery(req.query);
 
   const filters = {
-    status: "PUBLISHED",
+    isDeleted: false,
     ...(parsed.filters || {}),
   };
 
@@ -226,3 +226,29 @@ export const getBySlug = asyncHandler(async (req, res) => {
 
   return res.json(response);
 });
+
+export const getArticleById =
+  asyncHandler(async (req, res) => {
+
+    const { articles } =
+      await listArticles({
+        filters: {
+          _id: req.params.id,
+        },
+        sort: {},
+        skip: 0,
+        limit: 1,
+      });
+
+    if (!articles.length) {
+      throw {
+        statusCode: 404,
+        message: "Article not found",
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: articles[0],
+    });
+  });

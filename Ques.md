@@ -4387,4 +4387,222 @@ Middleware Layer
  └─ Request ID
 
 
- 
+ 366. Why is a CMS useful?
+
+A CMS (Content Management System) allows non-developers to create, edit, publish, and manage content without touching the codebase.
+
+Examples:
+
+Blogs
+News portals
+Documentation sites
+Learning platforms
+367. What is the difference between Draft and Published content?
+
+Draft:
+
+Visible only to admins/editors
+Not shown publicly
+
+Published:
+
+Visible to users
+Included in search
+Included in listings
+368. Why should published content be filtered separately?
+
+Because:
+
+Drafts may contain incomplete information
+Internal notes may exist
+Unreviewed content should not be public
+
+Example:
+
+{
+  status: "PUBLISHED"
+}
+369. Why use RBAC in CMS?
+
+RBAC controls who can perform actions.
+
+Example:
+
+User → Read
+
+Editor → Create/Edit
+
+Admin → Create/Edit/Delete/Publish
+
+Prevents unauthorized modifications.
+
+370. Why have a separate Admin Dashboard?
+
+Public users need:
+
+Read content
+Search content
+
+Admins need:
+
+Create
+Edit
+Delete
+Publish
+Analytics
+
+Different responsibilities require different UIs.
+
+371. Why is Edit functionality important?
+
+Without edit:
+
+Typos remain forever
+Content cannot evolve
+Corrections impossible
+
+Editing supports content lifecycle management.
+
+372. Why soft delete instead of hard delete?
+
+Hard Delete:
+
+Document removed permanently
+
+Soft Delete:
+
+{
+  deletedAt: Date
+}
+
+Benefits:
+
+Recovery possible
+Audit trail preserved
+Safer operations
+373. Why refresh article list after publish/delete?
+
+Frontend state becomes stale.
+
+Example:
+
+Publish article
+Status changes in DB
+
+UI still shows Draft
+
+Reload keeps UI synchronized.
+
+374. Why fetch article by ID for editing?
+
+Slug can change.
+
+Example:
+
+nodejs-basics
+
+After title update:
+
+advanced-nodejs-guide
+
+ID remains constant.
+
+Mongo ObjectId is stable.
+
+375. Why use ObjectId instead of title lookup?
+
+Titles are:
+
+Not unique
+Can change
+May contain spaces
+
+ObjectId:
+
+Unique
+Immutable
+Indexed
+
+Better lookup key.
+
+376. Why create dedicated admin services?
+
+Bad:
+
+Everything in one service file
+
+Good:
+
+article.service.ts
+admin.service.ts
+auth.service.ts
+
+Benefits:
+
+Separation of concerns
+Maintainability
+Scalability
+377. What is optimistic UI?
+
+Update UI before server confirms success.
+
+Example:
+
+Delete article instantly
+Rollback if request fails
+
+Improves perceived performance.
+
+Your implementation currently uses:
+
+Server-first updates
+
+which is simpler and safer.
+
+378. Why use useEffect for initial loading?
+useEffect(() => {
+  loadArticles();
+}, []);
+
+Runs once after component mounts.
+
+Used for:
+
+API requests
+Initial data loading
+379. Why was params.id causing errors in Next.js 16?
+
+Next.js 16 changed:
+
+params
+
+to an async object.
+
+Old:
+
+params.id
+
+New:
+
+const { id } = use(params);
+
+or
+
+const { id } = await params;
+
+depending on component type.
+
+380. What is the complete article lifecycle in your project?
+Create Draft
+        ↓
+Edit
+        ↓
+Publish
+        ↓
+Visible Publicly
+        ↓
+Searchable
+        ↓
+Cache Stored
+        ↓
+Delete (Soft Delete)

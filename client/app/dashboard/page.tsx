@@ -1,28 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
-import { getCurrentUser } from "@/services/auth.service";
-import LogoutButton from "@/components/LogoutButton";
+import Link from "next/link";
 
-export default function Dashboard() {
+export default function DashboardPage() {
 
-  useEffect(() => {
+  return (
+    <main className="p-8">
 
-    const loadUser = async () => {
-      try {
-        const user = await getCurrentUser();
-        console.log(user);
-      } catch (err) {
-        console.error(err);
-      }
-    };
+      <h1 className="text-4xl font-bold">
+        Admin Dashboard
+      </h1>
 
-    loadUser();
+      <div className="mt-8 flex gap-4">
 
-  }, []);
+        <Link
+          href="/dashboard/create"
+          className="border p-3 rounded"
+        >
+          Create Article
+        </Link>
 
-  return (<>
-    <LogoutButton />
-    <h1>Dashboard</h1>
-  </>);
+        <Link
+          href="/dashboard/manage"
+          className="border p-3 rounded"
+        >
+          Manage Articles
+        </Link>
+
+      </div>
+
+    </main>
+  );
 }
