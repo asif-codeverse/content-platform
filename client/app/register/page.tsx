@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { registerUser } from "@/services/auth.service";
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [name, setName] =
     useState("");
 
@@ -31,6 +33,7 @@ export default function RegisterPage() {
       alert(
         "Registration Successful"
       );
+      router.push("/login");
     } catch (err) {
       console.error(err);
       alert("Registration Failed");

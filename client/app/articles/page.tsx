@@ -18,6 +18,9 @@ export default function ArticlesPage() {
   const [articles, setArticles] =
     useState([]);
 
+  const [totalPages, setTotalPages] =
+    useState(1);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -27,32 +30,34 @@ export default function ArticlesPage() {
   useEffect(() => {
 
     const loadArticles =
-  async () => {
+      async () => {
 
-    try {
+        try {
 
-      console.log(
-        "LOADING PAGE:",
-        page
-      );
+          console.log(
+            "LOADING PAGE:",
+            page
+          );
 
-      const data =
-        await getArticles(page);
+          const data =
+            await getArticles(page);
 
-      setArticles(
-        data.data
-      );
+          setArticles(data.data);
 
-    } catch (err) {
+          setTotalPages(
+            data.meta.totalPages
+          );
 
-      console.error(err);
+        } catch (err) {
 
-    } finally {
+          console.error(err);
 
-      setLoading(false);
+        } finally {
 
-    }
-  };
+          setLoading(false);
+
+        }
+      };
 
     loadArticles();
 
@@ -123,6 +128,7 @@ export default function ArticlesPage() {
         <div className="flex gap-4 mt-8">
 
           <button
+            disabled={page === 1}
             onClick={() =>
               setPage(
                 (prev) =>
@@ -137,14 +143,16 @@ export default function ArticlesPage() {
           </button>
 
           <span>
-            Page {page}
+            Page {page} of {totalPages}
           </span>
 
           <button
+            disabled={
+              page >= totalPages
+            }
             onClick={() =>
               setPage(
-                (prev) =>
-                  prev + 1
+                prev => prev + 1
               )
             }
           >

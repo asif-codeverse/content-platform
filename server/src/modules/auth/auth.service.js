@@ -7,16 +7,31 @@ import {
   generateRefreshToken,
 } from "../../utils/token.js";
 
-export const registerUser = async ({ email, password }) => {
-  const existingUser = await User.findOne({ email });
+export const registerUser = async ({
+  name,
+  email,
+  password,
+}) => {
+
+  const existingUser =
+    await User.findOne({ email });
+
   if (existingUser) {
-    throw { statusCode: 409, message: "User already exists" };
+    throw {
+      statusCode: 409,
+      message: "User already exists",
+    };
   }
-  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const hashedPassword =
+    await bcrypt.hash(password, 12);
+
   const user = await User.create({
+    name,
     email,
     password: hashedPassword,
   });
+
   return user;
 };
 

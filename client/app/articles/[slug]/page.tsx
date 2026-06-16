@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import {
   getArticleBySlug,
 } from "@/services/article.service";
+import Navbar from "@/components/Navbar";
 
 export default function ArticlePage() {
 
@@ -16,6 +17,8 @@ export default function ArticlePage() {
 
   const [article, setArticle] =
     useState<any>(null);
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
 
@@ -31,9 +34,12 @@ export default function ArticlePage() {
 
           console.log(data);
 
-          setArticle(data);
+          setArticle(data.data);
 
         } catch (err) {
+          setError(
+            "Article not found"
+          );
 
           console.error(err);
 
@@ -46,21 +52,29 @@ export default function ArticlePage() {
 
   }, [slug]);
 
+  if (error) {
+    return <p>{error}</p>;
+  }
+
   if (!article) {
-    return <p>Loading...</p>;
+    return <p>Loading article...</p>;
   }
 
   return (
-    <div className="p-8">
+    <>
+      <Navbar />
+      <div className="p-8">
 
-      <h1 className="text-4xl font-bold">
-        {article.title}
-      </h1>
 
-      <p className="mt-6">
-        {article.content}
-      </p>
+        <h1 className="text-4xl font-bold">
+          {article.title}
+        </h1>
 
-    </div>
+        <p className="mt-6">
+          {article.content}
+        </p>
+
+      </div>
+    </>
   );
 }

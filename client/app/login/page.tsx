@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { refreshUser } = useAuth();
+
   const [email, setEmail] =
     useState("");
 
@@ -26,7 +31,9 @@ export default function LoginPage() {
         result.accessToken
       );
 
-      alert("Login Success");
+      await refreshUser();
+
+      router.push("/");
     } catch (err) {
       console.error(err);
 

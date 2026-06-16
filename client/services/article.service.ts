@@ -4,11 +4,6 @@ export const getArticles = async (
   page = 1
 ) => {
 
-  console.log(
-    "FETCHING PAGE:",
-    page
-  );
-
   const response =
     await api.get(
       `/articles?page=${page}`

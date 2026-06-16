@@ -24,12 +24,16 @@ export const createArticle = async ({ title, content, author }) => {
 // update article
 export const updateArticle = async (articleId, data, user) => {
   const article = await Article.findById(articleId);
-  const oldSlug = article.slug;
 
   // Existence check
   if (!article || article.isDeleted) {
-    throw { statusCode: 404, message: "Article not found" };
+    throw {
+      statusCode: 404,
+      message: "Article not found",
+    };
   }
+
+  const oldSlug = article.slug;
 
   // ownership (ABAC enforcement)
   if (!canEditArticle(user, article)) {
@@ -57,7 +61,7 @@ export const updateArticle = async (articleId, data, user) => {
     if (existing) {
       throw {
         statusCode: 409,
-        message: "Another article already uses this article",
+        message: "Another article already uses this title",
       };
     }
 
@@ -86,18 +90,31 @@ export const publishArticle = async (articleId) => {
     throw { statusCode: 404, message: "Article not found" };
   }
 
+  if (article.status === "PUBLISHED") {
+    throw {
+      statusCode: 400,
+      message: "Article is already published",
+    };
+  }
+
   article.status = "PUBLISHED";
   return article.save();
 };
 
 //Soft delete article
-export const softDeleteArticle = async (articleId) => {
+export const softDeleteArticle = async (articleId, user) => {
   const article = await Article.findById(articleId);
 
   if (!article || article.isDeleted) {
     throw { statusCode: 404, message: "Article not found" };
   }
 
+  if (!canEditArticle(user, article)) {
+    throw {
+      statusCode: 403,
+      message: "Not allowed to delete this article",
+    };
+  }
   article.isDeleted = true;
   return article.save();
 };
@@ -106,9 +123,15 @@ export const softDeleteArticle = async (articleId) => {
 export const listArticles = async ({ filters, sort, skip, limit }) => {
   const base = { isDeleted: false, ...filters };
 
-  const articles = await Article.find(base).sort(sort).skip(skip).limit(limit);
+  const [articles, total] = await Promise.all([
+    Article.find(base)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
 
-  const total = await Article.countDocuments(base);
+    Article.countDocuments(base),
+  ]);
 
   return { articles, total };
 };

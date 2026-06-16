@@ -4,11 +4,16 @@ import {
     useEffect,
     useState,
 } from "react";
+import {
+    useRouter
+}
+    from "next/navigation";
 
 import {
     getArticleById,
     updateArticle,
 } from "@/services/admin.service";
+
 
 export default function EditPage({
     params,
@@ -17,6 +22,8 @@ export default function EditPage({
         id: string;
     }>;
 }) {
+    const router =
+        useRouter();
 
     const { id } = use(params);
 
@@ -64,6 +71,10 @@ export default function EditPage({
 
             alert(
                 "Article Updated"
+            );
+
+            router.push(
+                "/dashboard/manage"
             );
         };
 

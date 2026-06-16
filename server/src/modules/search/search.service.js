@@ -22,9 +22,7 @@ export const searchArticles = async ({
                 },
             }
         )
-            .select(
-                "title slug content createdAt updatedAt"
-            )
+            .select("title slug content createdAt")
             .sort({
                 score: {
                     $meta: "textScore",
@@ -35,10 +33,18 @@ export const searchArticles = async ({
             .lean(),
 
         Article.countDocuments(filter),
-    ])
+    ]);
+
+    const formattedArticles = articles.map((article) => ({
+        _id: article._id,
+        title: article.title,
+        slug: article.slug,
+        createdAt: article.createdAt,
+        excerpt: article.content.slice(0, 150),
+    }));
 
     return {
-        articles,
+        articles: formattedArticles,
         total,
     };
 };

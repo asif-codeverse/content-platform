@@ -110,6 +110,8 @@ process.on(
     logger.error(
       "Unhandled Promise Rejection",
       {
+        message: reason?.message,
+        stack: reason?.stack,
         reason,
       }
     );

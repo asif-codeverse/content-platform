@@ -20,12 +20,13 @@ export default function ManagePage() {
     const loadArticles =
         async () => {
 
-            const data =
-                await getAdminArticles();
-
-            setArticles(
-                data.data
-            );
+            try {
+                const data =
+                    await getAdminArticles();
+                setArticles(data.data);
+            } catch (err) {
+                console.error(err);
+            }
         };
 
     useEffect(() => {
@@ -81,20 +82,21 @@ export default function ManagePage() {
 
                             <div className="flex gap-3 mt-3">
 
-                                <button
-                                    onClick={() =>
-                                        handlePublish(
-                                            article._id
-                                        )
-                                    }
-                                    className="
+                                {
+                                    article.status === "DRAFT" && (<button
+                                        onClick={() =>
+                                            handlePublish(
+                                                article._id
+                                            )
+                                        }
+                                        className="
                     border
                     px-3
                     py-1
                   "
-                                >
-                                    Publish
-                                </button>
+                                    >
+                                        Publish
+                                    </button>)}
 
                                 <Link
                                     href={`/dashboard/edit/${article._id}`}

@@ -1,7 +1,8 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5001/api/v1",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
 });
 
@@ -68,9 +69,6 @@ api.interceptors.response.use(
         localStorage.removeItem(
           "accessToken"
         );
-
-        window.location.href =
-          "/login";
       }
     }
 
