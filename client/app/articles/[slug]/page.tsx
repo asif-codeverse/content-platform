@@ -1,70 +1,102 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-
-import {
-  getArticleBySlug,
-} from "@/services/article.service";
 import Navbar from "@/components/Navbar";
+import { notFound } from "next/navigation";
 
-export default function ArticlePage() {
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
 
-  const params = useParams();
+async function getArticle(
+  slug: string
+) {
 
-  const slug =
-    params.slug as string;
+  const response =
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/articles/${slug}`,
+      {
+        cache: "no-store",
+      }
+    );
 
-  const [article, setArticle] =
-    useState<any>(null);
-  const [error, setError] =
-    useState("");
-
-  useEffect(() => {
-
-    const loadArticle =
-      async () => {
-
-        try {
-
-          const data =
-            await getArticleBySlug(
-              slug
-            );
-
-          console.log(data);
-
-          setArticle(data.data);
-
-        } catch (err) {
-          setError(
-            "Article not found"
-          );
-
-          console.error(err);
-
-        }
-      };
-
-    if (slug) {
-      loadArticle();
-    }
-
-  }, [slug]);
-
-  if (error) {
-    return <p>{error}</p>;
+  if (!response.ok) {
+    return null;
   }
 
+  const data =
+    await response.json();
+
+  return data.data;
+}
+
+export async function generateMetadata(
+  { params }: Props
+) {
+
+  const { slug } =
+    await params;
+
+  const article =
+    await getArticle(slug);
+
   if (!article) {
-    return <p>Loading article...</p>;
+
+    return {
+      title:
+        "Article Not Found",
+    };
+
+  }
+
+  return {
+
+    title:
+      article.title,
+
+    description:
+      article.content.slice(
+        0,
+        150
+      ),
+
+    openGraph: {
+
+      title:
+        article.title,
+
+      description:
+        article.content.slice(
+          0,
+          150
+        ),
+
+      type:
+        "article",
+
+    },
+
+  };
+}
+
+export default async function ArticlePage(
+  { params }: Props
+) {
+
+  const { slug } =
+    await params;
+
+  const article =
+    await getArticle(slug);
+
+  if (!article) {
+    notFound();
   }
 
   return (
     <>
       <Navbar />
-      <div className="p-8">
 
+      <main className="p-8">
 
         <h1 className="text-4xl font-bold">
           {article.title}
@@ -74,7 +106,7 @@ export default function ArticlePage() {
           {article.content}
         </p>
 
-      </div>
+      </main>
     </>
   );
 }

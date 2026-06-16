@@ -4606,3 +4606,265 @@ Searchable
 Cache Stored
         ↓
 Delete (Soft Delete)
+
+381. Why did we move Article Page from Client Component to Server Component?
+Answer
+
+Originally:
+
+"use client";
+
+The article was fetched inside:
+
+useEffect()
+
+Problems:
+
+HTML source did not contain article content.
+Search engines had to execute JavaScript first.
+SEO metadata couldn't be generated properly.
+Slower initial page load.
+
+Server Component solution:
+
+export default async function ArticlePage()
+
+Benefits:
+
+HTML generated on server.
+Better SEO.
+Faster first paint.
+Supports Metadata API.
+382. What is generateMetadata() in Next.js?
+Answer
+
+generateMetadata() dynamically generates page metadata.
+
+Example:
+
+export async function generateMetadata() {
+  return {
+    title: "Redis Caching",
+    description: "Redis stores data in memory",
+  };
+}
+
+Generated:
+
+<title>Redis Caching</title>
+<meta name="description" ... />
+
+Useful for:
+
+SEO
+Social sharing
+Dynamic article pages
+383. Why use notFound() instead of returning a message?
+Answer
+
+Bad:
+
+return <p>Article Not Found</p>;
+
+Good:
+
+notFound();
+
+Benefits:
+
+Returns real HTTP 404 status.
+Search engines understand page doesn't exist.
+Shows custom not-found.tsx.
+Better UX and SEO.
+Q384. What is sitemap.xml?
+Answer
+
+A sitemap tells search engines:
+
+Which pages exist
+When pages changed
+Crawling priority
+
+Example:
+
+<url>
+  <loc>/articles</loc>
+</url>
+
+Benefits:
+
+Faster indexing
+Better discoverability
+Important for blogs and content platforms
+Q385. What is robots.txt?
+Answer
+
+robots.txt tells crawlers what they can access.
+
+Example:
+
+User-Agent: *
+Allow: /
+
+Meaning:
+
+All bots can crawl everything.
+386. Why add Sitemap URL inside robots.txt?
+Answer
+Sitemap: https://site.com/sitemap.xml
+
+This helps search engines find your sitemap immediately.
+
+Without it:
+
+Google may discover sitemap later.
+
+With it:
+
+Faster crawling and indexing.
+387. What is app/loading.tsx?
+Answer
+
+Displays loading UI while Server Components fetch data.
+
+Example:
+
+export default function Loading() {
+  return <p>Loading...</p>;
+}
+
+Shown automatically by Next.js.
+
+Benefits:
+
+Better UX
+Prevents blank screens
+388. What is app/error.tsx?
+Answer
+
+Error boundary for App Router.
+
+Example:
+
+"use client";
+
+export default function Error() {
+  return <p>Something went wrong</p>;
+}
+
+Catches:
+
+Runtime errors
+Fetch failures
+Component crashes
+389. Why must error.tsx be a Client Component?
+Answer
+
+Because it uses React Error Boundary behavior.
+
+Must contain:
+
+"use client";
+
+Without it:
+
+Error: error.tsx must be a Client Component
+390. What is app/not-found.tsx?
+Answer
+
+Custom 404 page.
+
+Example:
+
+export default function NotFound() {
+  return <h1>404</h1>;
+}
+
+Triggered by:
+
+notFound();
+
+Benefits:
+
+Better UX
+Proper HTTP 404 status
+391. What SEO improvements have been implemented so far?
+Answer
+
+You now have:
+
+Dynamic page titles
+Dynamic descriptions
+Server-rendered articles
+Sitemap
+Robots file
+Custom 404 pages
+Semantic URLs
+
+Example:
+
+/articles/redis-caching
+
+instead of:
+
+/articles?id=123
+392. Why is SSR better for article pages?
+Answer
+
+Client-side:
+
+useEffect()
+
+Search engines may not see content immediately.
+
+Server-side:
+
+await fetch()
+
+HTML already contains article content.
+
+Benefits:
+
+Better SEO
+Faster load
+Better indexing
+393. What is the difference between loading.tsx and error.tsx?
+Answer
+loading.tsx	error.tsx
+During fetch	After failure
+Shows loading UI	Shows error UI
+Temporary state	Failure state
+Q394. Why does sitemap currently contain only two URLs?
+Answer
+
+Current sitemap:
+
+/
+/articles
+
+Because it's static.
+
+Later you will create a dynamic sitemap:
+
+/articles/redis-caching
+/articles/nodejs-basics
+/articles/mongodb-indexing
+
+generated from MongoDB.
+
+395. What is the biggest improvement completed in Days 31–35?
+Answer
+
+The platform evolved from a basic CRUD app into a production-style content platform with:
+
+Authentication
+RBAC
+Refresh Tokens
+Search
+Redis Caching
+SEO
+Metadata
+Sitemap
+Robots
+Error Handling
+Server Components

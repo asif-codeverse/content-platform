@@ -1,113 +1,90 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  searchArticles
-} from "@/services/article.service";
-import Navbar
-  from "@/components/Navbar";
+import { useEffect, useState } from "react";
+
+import { searchArticles } from "@/services/article.service";
 
 export default function SearchPage() {
+  const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState("");
-  const [error, setError] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const query =
+    searchParams.get("q") || "";
 
-  const handleSearch = async () => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
+  const [results, setResults] =
+    useState<any[]>([]);
 
-    try {
-      const data = await searchArticles(query);
+  const [loading, setLoading] =
+    useState(false);
 
-      setResults(data.data || []);
-      setError("");
-    } catch (err) {
-      console.error("Search failed:", err);
+  useEffect(() => {
+    if (!query) return;
 
-      setResults([]);
-      setError("Failed to search articles");
-    }
-  };
+    const runSearch =
+      async () => {
+        try {
+          setLoading(true);
+
+          const data =
+            await searchArticles(query);
+
+          setResults(data.data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    runSearch();
+  }, [query]);
 
   return (
-    <div className="p-8">
-      <Navbar />
+    <main className="p-8">
 
       <h1 className="text-3xl font-bold mb-6">
-        Search Articles
+        Search Results
       </h1>
 
-      <div className="flex gap-2">
+      <p className="mb-6">
+        Query: {query}
+      </p>
 
-        <input
-          value={query}
-          onChange={(e) =>
-            setQuery(
-              e.target.value
-            )
-          }
-          className="border p-2"
-          placeholder="Search..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSearch();
-            }
-          }}
-        />
-
-
-        <button
-          onClick={handleSearch}
-          className="border px-4"
-        >
-          Search
-        </button>
-      </div>
-
-      {error && (
-        <p className="text-red-500 mt-2">
-          {error}
-        </p>
+      {loading && (
+        <p>Searching...</p>
       )}
 
-      <div className="mt-6">
-
-        {results.map(
-          (article) => (
-            <div
-              key={article._id}
-              className="border p-4 mb-4"
-            >
-              <Link
-                href={`/articles/${article.slug}`}
-              >
-                <h2 className="font-bold text-xl">
-                  {article.title}
-                </h2>
-              </Link>
-              <p className="mt-2">
-                {article.content.slice(0, 100)}...
-              </p>
-            </div>
-          )
+      {!loading &&
+        results.length === 0 && (
+          <p>No results found.</p>
         )}
-        {
-          !error &&
-          results.length === 0 &&
-          query &&
-          (
+
+      <div className="flex flex-col gap-4">
+
+        {results.map((article) => (
+
+          <div
+            key={article._id}
+            className="border p-4 rounded"
+          >
+            <Link
+              href={`/articles/${article.slug}`}
+            >
+              <h2 className="font-bold">
+                {article.title}
+              </h2>
+            </Link>
+
             <p>
-              No articles found
+              {article.excerpt}
             </p>
-          )
-        }
+          </div>
+
+        ))}
 
       </div>
 
-    </div>
+    </main>
   );
 }

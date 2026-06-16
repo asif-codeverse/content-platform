@@ -37,6 +37,8 @@ export const search = async (
             limit,
         });
 
+        
+        
         const response = {
             success: true,
             data: articles,
@@ -47,6 +49,7 @@ export const search = async (
                 totalPages: Math.ceil(total / limit),
             },
         };
+
 
         await setCache(
             cacheKey,
