@@ -83,6 +83,7 @@ describe("Articles Public API", () => {
     const hashedPassword = await bcrypt.hash("Password123", 10);
 
     const admin = await User.create({
+      name: "Admin User",
       email: "admin@test.com",
       password: hashedPassword,
       role: "ADMIN",
@@ -123,9 +124,10 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should NOT allow EDITOR to publish article", async () => {
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash("Password123", 10);
 
     const editor = await User.create({
+      name: "Editor User",
       email: "editor@test.com",
       password: hashedPassword,
       role: "EDITOR",
@@ -134,7 +136,7 @@ describe("Articles Public API", () => {
 
     const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "editor@test.com",
-      password: "password123",
+      password: "Password123",
     });
 
     const token = loginRes.body.accessToken;
@@ -159,10 +161,11 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should NOT allow EDITOR to edit another user's article", async () => {
-    const hashedAdminPassword = await bcrypt.hash("password123", 10);
+    const hashedAdminPassword = await bcrypt.hash("Password123", 10);
 
     const admin = await User.create({
-      email: "admin2@test.com",
+      name: "Admin User",
+      email: "admin@test.com",
       password: hashedAdminPassword,
       role: "ADMIN",
       refreshTokenVersion: 0,
@@ -176,18 +179,19 @@ describe("Articles Public API", () => {
       slug: "admin-article",
     });
 
-    const hashedEditorPassword = await bcrypt.hash("password123", 10);
+    const hashedEditorPassword = await bcrypt.hash("Password123", 10);
 
     const editor = await User.create({
+      name: "Editor User",
       email: "editor2@test.com",
-      password: hashedEditorPassword,
+      password:hashedEditorPassword,
       role: "EDITOR",
       refreshTokenVersion: 0,
     });
 
     const editorLogin = await request(app).post(`${API}/auth/login`).send({
       email: "editor2@test.com",
-      password: "password123",
+      password: "Password123",
     });
 
     const editorToken = editorLogin.body.accessToken;
@@ -201,9 +205,10 @@ describe("Articles Public API", () => {
   });
 
   it("should NOT allow updating title to an existing slug", async () => {
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash("Password123", 10);
 
     const admin = await User.create({
+      name: "Admin User",
       email: "admin3@test.com",
       password: hashedPassword,
       role: "ADMIN",
@@ -212,7 +217,7 @@ describe("Articles Public API", () => {
 
     const loginRes = await request(app).post(`${API}/auth/login`).send({
       email: "admin3@test.com",
-      password: "password123",
+      password: "Password123",
     });
 
     const token = loginRes.body.accessToken;
@@ -242,9 +247,10 @@ describe("Articles Public API", () => {
   });
 
   it("should NOT allow EDITOR to modify published article", async () => {
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash("Password123", 10);
 
     const admin = await User.create({
+      name: "Admin User",
       email: "admin4@test.com",
       password: hashedPassword,
       role: "ADMIN",
@@ -252,7 +258,8 @@ describe("Articles Public API", () => {
     });
 
     const editor = await User.create({
-      email: "editor4@test.com",
+      name: "Editor User",
+      email: "editor@test.com",
       password: hashedPassword,
       role: "EDITOR",
       refreshTokenVersion: 0,
@@ -267,8 +274,8 @@ describe("Articles Public API", () => {
     });
 
     const loginRes = await request(app).post(`${API}/auth/login`).send({
-      email: "editor4@test.com",
-      password: "password123",
+      email: "editor@test.com",
+      password: "Password123",
     });
 
     const token = loginRes.body.accessToken;

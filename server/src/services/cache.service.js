@@ -1,8 +1,12 @@
 // Read data from Redis
 import { redisClient } from "../config/redis.js";
 import { logger } from "../utils/logger.js";
+import { env } from "../config/env.js";
 
 export const getCache = async (key) => {
+    if (process.env.NODE_ENV === "test") {
+        return null;
+    }
     const data = await redisClient.get(key);
 
     if (!data) {
@@ -25,6 +29,9 @@ export const setCache = async (
     value,
     ttl = 60,
 ) => {
+    if (process.env.NODE_ENV === "test") {
+        return;
+    }
 
     logger.info("CACHE STORE:", {
         key,
@@ -41,6 +48,9 @@ export const setCache = async (
 
 // Delete cache
 export const deleteCache = async (key) => {
+    if (process.env.NODE_ENV === "test") {
+        return null;
+    }
     await redisClient.del(key);
 };
 
@@ -48,6 +58,9 @@ export const deleteCache = async (key) => {
 export const deleteByPattern = async (
     pattern
 ) => {
+    if (process.env.NODE_ENV === "test") {
+        return null;
+    }
 
     const keys =
         await redisClient.keys(pattern);
