@@ -26,7 +26,7 @@ app.use(compression());
 const allowedOrigins = [
   env.CLIENT_URL,
   env.CLIENT_URL_PROD,
-];
+].filter(Boolean);
 
 app.use(
   cors({

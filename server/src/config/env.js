@@ -27,8 +27,8 @@ const envSchema = z.object({
 
   REFRESH_TOKEN_EXPIRES_IN: z.string(),
 
-  CLIENT_URL: z.url(),
-  CLIENT_URL_PROD: z.url(),
+  CLIENT_URL: z.url().optional(),
+  CLIENT_URL_PROD: z.url().optional(),
 
   REDIS_URL: z.url()
 });
