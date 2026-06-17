@@ -17,14 +17,30 @@ import { apiLimiter } from "./middlewares/rateLimit.middleware.js";
 import { requestId } from "./middlewares/requestId.middleware.js";
 import { httpLogger } from "./middlewares/httpLogger.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import { env } from "./config/env.js";
 
 const app = express();
 app.use(helmet());
 app.use(compression());
-app.use(cors({
-    origin: ["http://localhost:3000"],
-    credentials: true
-}))
+
+const allowedOrigins = [
+    env.CLIENT_URL,
+    env.CLIENT_URL_PROD,
+];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 
 // Global middlewares (order matters)
