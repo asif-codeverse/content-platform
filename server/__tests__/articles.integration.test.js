@@ -184,7 +184,7 @@ describe("Articles Public API", () => {
     const editor = await User.create({
       name: "Editor User",
       email: "editor2@test.com",
-      password:hashedEditorPassword,
+      password: hashedEditorPassword,
       role: "EDITOR",
       refreshTokenVersion: 0,
     });
@@ -286,5 +286,131 @@ describe("Articles Public API", () => {
       .send({ title: "Changed Title" });
 
     expect(res.statusCode).toBe(403);
+  });
+
+  it("should return article by slug", async () => {
+
+    const article = await Article.create({
+      title: "Redis Guide",
+      content: "Redis Content",
+      slug: "redis-guide",
+      status: "PUBLISHED",
+      author: new mongoose.Types.ObjectId(),
+    });
+
+    const res = await request(app)
+      .get(`${API}/articles/redis-guide`);
+
+    expect(res.statusCode).toBe(200);
+
+    expect(
+      res.body.data.title
+    ).toBe("Redis Guide");
+  });
+
+  it("ADMIN should create article", async () => {
+
+    const hashedPassword =
+      await bcrypt.hash(
+        "password123",
+        10
+      );
+
+    await User.create({
+      name: "Admin User",
+      email: "admin@test.com",
+      password: hashedPassword,
+      role: "ADMIN",
+      refreshTokenVersion: 0,
+    });
+
+    const loginRes =
+      await request(app)
+        .post(`${API}/auth/login`)
+        .send({
+          email: "admin@test.com",
+          password: "password123",
+        });
+
+    const token =
+      loginRes.body.accessToken;
+
+    const res =
+      await request(app)
+        .post(`${API}/articles`)
+        .set(
+          "Authorization",
+          `Bearer ${token}`
+        )
+        .send({
+          title: "Test Article",
+          content:
+            "This is a test article content with more than twenty characters.",
+        });
+    console.log(res.body);
+
+    expect(res.statusCode).toBe(201);
+  });
+
+  it("ADMIN should delete article", async () => {
+
+    const hashedPassword =
+      await bcrypt.hash(
+        "password123",
+        10
+      );
+
+    const admin =
+      await User.create({
+        name: "Admin User",
+        email: "admin@test.com",
+        password: hashedPassword,
+        role: "ADMIN",
+        refreshTokenVersion: 0,
+      });
+
+    const loginRes =
+      await request(app)
+        .post(`${API}/auth/login`)
+        .send({
+          email: "admin@test.com",
+          password: "password123",
+        });
+
+    const token =
+      loginRes.body.accessToken;
+
+    const article =
+      await Article.create({
+        title: "Delete Me",
+        content: "Delete Content",
+        slug: "delete-me",
+        status: "DRAFT",
+        author: admin._id,
+      });
+
+    const deleteRes =
+      await request(app)
+        .delete(
+          `${API}/articles/${article._id}`
+        )
+        .set(
+          "Authorization",
+          `Bearer ${token}`
+        );
+
+    expect(
+      deleteRes.statusCode
+    ).toBe(200);
+
+    const deletedArticle =
+      await Article.findById(
+        article._id
+      );
+
+    expect(
+      deletedArticle.isDeleted
+    ).toBe(true);
+
   });
 });

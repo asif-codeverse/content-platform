@@ -143,7 +143,10 @@ export const publish = asyncHandler(async (req, res) => {
 });
 
 export const remove = asyncHandler(async (req, res) => {
-  const article = await softDeleteArticle(req.params.id);
+  const article = await softDeleteArticle(
+    req.params.id,
+    req.user
+  );
 
   logger.info("ARTICLE_DELETED", {
     articleId: article._id,
