@@ -24,20 +24,13 @@ app.use(helmet());
 app.use(compression());
 
 const allowedOrigins = [
-    env.CLIENT_URL,
-    env.CLIENT_URL_PROD,
+  env.CLIENT_URL,
+  env.CLIENT_URL_PROD,
 ];
+
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      callback(new Error("Not allowed by CORS"));
-    },
+    origin: allowedOrigins,
     credentials: true,
   })
 );
