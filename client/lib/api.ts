@@ -44,7 +44,7 @@ api.interceptors.response.use(
 
         const response =
           await axios.post(
-            "http://localhost:5001/api/v1/auth/refresh",
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
             {},
             {
               withCredentials: true,

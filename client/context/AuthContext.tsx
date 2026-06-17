@@ -74,6 +74,11 @@ export function AuthProvider({
 
   useEffect(() => {
 
+    if (!localStorage.getItem("accessToken")) {
+      setLoading(false);
+      return;
+    }
+
     refreshUser();
 
   }, []);

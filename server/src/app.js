@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import compression from "compression";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 
@@ -19,6 +20,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 app.use(helmet());
+app.use(compression());
 app.use(cors({
     origin: ["http://localhost:3000"],
     credentials: true
@@ -33,8 +35,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
-app.use("/health", healthRoutes);
-app.use("/readiness", readinessRoutes);
+app.use("/api/v1/health", healthRoutes);
+app.use("/api/v1/readiness", readinessRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/articles", articleRoutes);
 app.use("/api/v1/search", searchRoutes);

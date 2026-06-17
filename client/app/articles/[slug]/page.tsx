@@ -13,11 +13,12 @@ async function getArticle(
 
   const response =
     await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/articles/${slug}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/articles/${slug}`,
       {
         cache: "no-store",
       }
-    );
+    )
+
 
   if (!response.ok) {
     return null;
