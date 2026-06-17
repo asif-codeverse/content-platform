@@ -4,10 +4,10 @@ import { logger } from "../utils/logger.js";
 
 export const connectDB = async () => {
   try {
-    console.log(
-      "Database:",
-      env.MONGODB_URI
-    );
+    // console.log(
+    //   "Database:",
+    //   env.MONGODB_URI
+    // );
     await mongoose.connect(env.MONGODB_URI);
 
     logger.info("MongoDB connected successfully");

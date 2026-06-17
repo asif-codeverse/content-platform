@@ -28,14 +28,14 @@ export default function RegisterPage() {
           password
         );
 
-      console.log(result);
+      // console.log(result);
 
       alert(
         "Registration Successful"
       );
       router.push("/login");
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       alert("Registration Failed");
     }
   };

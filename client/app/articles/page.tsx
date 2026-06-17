@@ -34,10 +34,10 @@ export default function ArticlesPage() {
 
         try {
 
-          console.log(
-            "LOADING PAGE:",
-            page
-          );
+          // console.log(
+          //   "LOADING PAGE:",
+          //   page
+          // );
 
           const data =
             await getArticles(page);
@@ -50,7 +50,7 @@ export default function ArticlesPage() {
 
         } catch (err) {
 
-          console.error(err);
+          // console.error(err);
 
         } finally {
 

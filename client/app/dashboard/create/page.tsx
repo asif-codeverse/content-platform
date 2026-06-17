@@ -37,7 +37,7 @@ export default function CreatePage() {
 
       } catch (err) {
 
-        console.error(err);
+        // console.error(err);
 
         alert(
           "Creation Failed"

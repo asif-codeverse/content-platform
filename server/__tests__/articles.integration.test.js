@@ -347,7 +347,7 @@ describe("Articles Public API", () => {
           content:
             "This is a test article content with more than twenty characters.",
         });
-    console.log(res.body);
+    // console.log(res.body);
 
     expect(res.statusCode).toBe(201);
   });

@@ -30,7 +30,7 @@ const swaggerDocument = {
         },
     ],
     paths: {
-        "/health": {
+        "/api/v1/health": {
             get: {
                 tags: ["Health"],
                 summary: "Health Check",
@@ -42,7 +42,7 @@ const swaggerDocument = {
                 },
             },
         },
-        "/readiness": {
+        "/api/v1/readiness": {
             get: {
                 tags: ["Health"],
                 summary: "Readiness Check",

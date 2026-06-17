@@ -25,7 +25,7 @@ export default function ManagePage() {
                     await getAdminArticles();
                 setArticles(data.data);
             } catch (err) {
-                console.error(err);
+                // console.error(err);
             }
         };
 
