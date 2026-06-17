@@ -1,8 +1,21 @@
-node_modules
+# Environment files
 .env
 .env.*
+!.env.example
+
+# Dependencies
+node_modules
+
+# Build output
 dist
 .next
 .cache
+
+# Coverage & logs
 coverage
 logs
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
