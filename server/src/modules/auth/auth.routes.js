@@ -1,5 +1,13 @@
 import { Router } from "express";
-import { register, login, refresh, logout, me } from "./auth.controller.js";
+import {
+  register,
+  login,
+  refresh,
+  logout,
+  me,
+  verifyEmail,
+  resendOtp,
+} from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorize } from "../../middlewares/rbac.middleware.js";
 
@@ -8,6 +16,8 @@ import { authorize } from "../../middlewares/rbac.middleware.js";
 const router = Router();
 
 router.post("/register", register);
+router.post("/verify-email", verifyEmail);
+router.post("/resend-verification", resendOtp);
 router.post("/login", login);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
@@ -18,7 +28,5 @@ router.get(
   authorize("USER", "EDITOR", "ADMIN"),
   me,
 );
-
-
 
 export default router;

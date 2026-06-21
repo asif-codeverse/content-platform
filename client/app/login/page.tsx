@@ -34,10 +34,22 @@ export default function LoginPage() {
       await refreshUser();
 
       router.push("/");
-    } catch (err) {
-      // console.error(err);
+    } catch (error: any) {
+
+      if (
+        error.response?.data
+          ?.verificationRequired
+      ) {
+
+        router.push(
+          `/verify-email?email=${email}`
+        );
+
+        return;
+      }
 
       alert("Login Failed");
+
     }
   };
 

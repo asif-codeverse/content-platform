@@ -31,9 +31,11 @@ export default function RegisterPage() {
       // console.log(result);
 
       alert(
-        "Registration Successful"
+        "Verification OTP sent to your email"
       );
-      router.push("/login");
+      router.push(
+        `/verify-email?email=${email}`
+      );
     } catch (err) {
       // console.error(err);
       alert("Registration Failed");

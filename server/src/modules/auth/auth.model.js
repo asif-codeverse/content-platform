@@ -28,6 +28,21 @@ const userSchema = new mongoose.Schema(
       default: "USER",
     },
 
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailOtp: {
+      type: String,
+      default: null,
+    },
+
+    emailOtpExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
     refreshTokenVersion: {
       type: Number,
       default: 0,

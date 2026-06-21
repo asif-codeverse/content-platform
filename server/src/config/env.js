@@ -30,7 +30,10 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().optional(),
   CLIENT_URL_PROD: z.string().url().optional(),
 
-  REDIS_URL: z.url()
+  REDIS_URL: z.url(),
+  
+  EMAIL_USER: z.string().email(),
+  EMAIL_PASS: z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);

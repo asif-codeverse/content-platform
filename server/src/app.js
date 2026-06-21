@@ -12,6 +12,7 @@ import readinessRoutes from "./routes/readiness.routes.js"
 import authRoutes from "./modules/auth/auth.routes.js";
 import articleRoutes from "./modules/articles/article.routes.js";
 import searchRoutes from "./modules/search/search.routes.js";
+import userRoutes from "./modules/users/user.routes.js";
 
 import { apiLimiter } from "./middlewares/rateLimit.middleware.js";
 import { requestId } from "./middlewares/requestId.middleware.js";
@@ -49,6 +50,7 @@ app.use("/api/v1/readiness", readinessRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/articles", articleRoutes);
 app.use("/api/v1/search", searchRoutes);
+app.use("/api/v1/users", userRoutes);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
-import { registerUser, loginUser, refreshTokens } from "./auth.service.js";
+import {
+  registerUser,
+  loginUser,
+  refreshTokens,
+  verifyEmailOtp,
+  resendVerificationOtp,
+} from "./auth.service.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -14,18 +20,76 @@ export const register = async (req, res, next) => {
     const user = await registerUser(req.body);
 
     res.status(201).json({
-      message: "User Registered",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      success: true,
+      message:
+        "Verification OTP sent to your email",
+      email: user.email,
     });
 
   } catch (err) {
     next(err);
   }
+};
+
+export const verifyEmail = async (
+  req,
+  res,
+  next
+) => {
+
+  try {
+
+    const {
+      email,
+      otp,
+    } = req.body;
+
+    await verifyEmailOtp(
+      email,
+      otp
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Email verified successfully",
+    });
+
+  } catch (err) {
+
+    next(err);
+
+  }
+
+};
+
+export const resendOtp = async (
+  req,
+  res,
+  next
+) => {
+
+  try {
+
+    const { email } =
+      req.body;
+
+    await resendVerificationOtp(
+      email
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "OTP sent successfully",
+    });
+
+  } catch (err) {
+
+    next(err);
+
+  }
+
 };
 
 export const login = async (req, res, next) => {

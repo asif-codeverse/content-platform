@@ -76,6 +76,15 @@ export default function DashboardPage() {
           </Link>
         )}
 
+        {user.role === "ADMIN" && (
+          <Link
+            href="/dashboard/users"
+            className="border p-3 rounded"
+          >
+            Manage Users
+          </Link>
+        )}
+
       </div>
 
     </main>

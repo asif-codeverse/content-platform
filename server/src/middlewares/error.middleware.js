@@ -14,7 +14,13 @@ export const errorHandler = (err, req, res, next) => {
 
   res.status(statusCode).json({
     success: false,
-    message: isServerError ? "Internal Server Error" : err.message,
+    message: isServerError
+      ? "Internal Server Error"
+      : err.message,
+
+    verificationRequired:
+      err.verificationRequired,
+
     requestId: req.requestId,
     timestamp: Date.now(),
   });
