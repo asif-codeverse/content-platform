@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -17,14 +17,35 @@ export default function VerifyEmailPage() {
   const [otp, setOtp] =
     useState("");
 
-  const [resending, setResending] =
-    useState(false);
-
   const [loading, setLoading] =
     useState(false);
 
   const [message, setMessage] =
     useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [cooldown, setCooldown] =
+    useState(0);
+
+  useEffect(() => {
+
+    if (cooldown <= 0) return;
+
+    const timer =
+      setInterval(() => {
+
+        setCooldown(
+          (prev) => prev - 1
+        );
+
+      }, 1000);
+
+    return () =>
+      clearInterval(timer);
+
+  }, [cooldown]);
 
   const handleVerify =
     async (
@@ -37,18 +58,18 @@ export default function VerifyEmailPage() {
 
         setLoading(true);
 
-        const response =
-          await axios.post(
+        await axios.post(
 
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`,
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`,
 
-            {
-              email,
-              otp,
-            }
+          {
+            email,
+            otp,
+          }
 
-          );
+        );
 
+        setError("");
         setMessage(
           "Email verified successfully"
         );
@@ -60,10 +81,9 @@ export default function VerifyEmailPage() {
         }, 1500);
 
       } catch (error: any) {
-
-        setMessage(
-          error.response?.data?.message ||
-          "Verification failed"
+        setMessage("");
+        setError(
+          error.response?.data?.message
         );
 
       } finally {
@@ -89,15 +109,16 @@ export default function VerifyEmailPage() {
 
         );
 
-        alert(
+        setCooldown(60);
+        setError("");
+        setMessage(
           "OTP sent successfully"
         );
 
       } catch (error: any) {
-
-        alert(
-          error.response?.data?.message ||
-          "Failed to resend OTP"
+        setMessage("");
+        setError(
+          error.response?.data?.message
         );
 
       }
@@ -139,7 +160,7 @@ export default function VerifyEmailPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || cooldown > 0}
           className="border p-3 w-full"
         >
           {loading
@@ -150,17 +171,28 @@ export default function VerifyEmailPage() {
       </form>
 
       <button
+        disabled={cooldown > 0}
         onClick={handleResend}
-        className="mt-4 border p-3 w-full"
       >
-        Resend OTP
+        {
+          cooldown > 0
+            ? `Resend in ${cooldown}s`
+            : "Resend OTP"
+        }
       </button>
 
       {message && (
-        <p className="mt-4">
+        <p className="text-green-600 mt-4">
           {message}
         </p>
       )}
+      {
+        error && (
+          <p className="text-red-500 mt-4">
+            {error}
+          </p>
+        )
+      }
 
     </main>
 

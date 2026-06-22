@@ -20,15 +20,13 @@ export default function Navbar() {
 
   const handleLogout = async () => {
 
-    await logoutUser();
-
-    localStorage.removeItem(
-      "accessToken"
-    );
-
-    logout();
-
-    router.push("/");
+    try {
+      await logoutUser();
+    } finally {
+      localStorage.removeItem("accessToken");
+      logout();
+      router.push("/");
+    }
 
   };
 

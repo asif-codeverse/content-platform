@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import { notFound } from "next/navigation";
 
 type Props = {
@@ -95,8 +94,6 @@ export default async function ArticlePage(
 
   return (
     <>
-      <Navbar />
-
       <main className="p-8">
 
         <h1 className="text-4xl font-bold">

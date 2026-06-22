@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    lastOtpSentAt: {
+      type: Date,
+    },
+
     refreshTokenVersion: {
       type: Number,
       default: 0,

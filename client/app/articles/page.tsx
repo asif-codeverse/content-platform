@@ -10,9 +10,6 @@ import {
   getArticles,
 } from "@/services/article.service";
 
-import Navbar
-  from "@/components/Navbar";
-
 export default function ArticlesPage() {
 
   const [articles, setArticles] =
@@ -73,7 +70,6 @@ export default function ArticlesPage() {
 
   return (
     <>
-      <Navbar />
 
       <main className="p-8">
 

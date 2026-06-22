@@ -14,27 +14,10 @@ export const registerUser = async ({
   const existingUser =
     await User.findOne({ email });
 
-  const hashedPassword =
-    await bcrypt.hash(password, 12);
-
-  const user =
-    await User.create({
-      name,
-      email,
-      password:
-        hashedPassword,
-
-      emailOtp: otp,
-
-      emailOtpExpiresAt:
-        new Date(
-          Date.now() +
-          10 * 60 * 1000
-        ),
-    });
-
+  // User already exists
   if (existingUser) {
 
+    // Already verified
     if (existingUser.emailVerified) {
       throw {
         statusCode: 409,
@@ -42,13 +25,37 @@ export const registerUser = async ({
       };
     }
 
+    if (
+      existingUser.lastOtpSentAt &&
+      Date.now() -
+      existingUser.lastOtpSentAt.getTime() <
+      60 * 1000
+    ) {
+
+      throw {
+        statusCode: 429,
+        message:
+          "Please wait before requesting another OTP",
+      };
+
+    }
+
+    // Unverified user → generate new OTP
     const otp =
       Math.floor(
         100000 +
         Math.random() * 900000
       ).toString();
 
-    existingUser.emailOtp = otp;
+    const hashedOtp =
+      await bcrypt.hash(
+        otp,
+        10
+      );
+
+    existingUser.emailOtp = hashedOtp;
+    existingUser.lastOtpSentAt =
+      new Date();
 
     existingUser.emailOtpExpiresAt =
       new Date(
@@ -59,12 +66,56 @@ export const registerUser = async ({
     await existingUser.save();
 
     await sendVerificationOtp(
-      existingUser.email,
+      email,
       otp
     );
 
     return existingUser;
   }
+
+  // New user
+  const hashedPassword =
+    await bcrypt.hash(
+      password,
+      12
+    );
+
+  const otp =
+    Math.floor(
+      100000 +
+      Math.random() * 900000
+    ).toString();
+  const hashedOtp =
+    await bcrypt.hash(
+      otp,
+      10
+    );
+
+  const user =
+    await User.create({
+      name,
+      email,
+      password:
+        hashedPassword,
+
+      emailVerified: false,
+
+      emailOtp:
+        hashedOtp,
+
+      emailOtpExpiresAt:
+        new Date(
+          Date.now() +
+          10 * 60 * 1000
+        ),
+      lastOtpSentAt:
+        new Date(),
+    });
+
+  await sendVerificationOtp(
+    user.email,
+    otp
+  );
 
   return user;
 };
@@ -143,15 +194,7 @@ export const verifyEmailOtp = async (
   }
 
   if (
-    user.emailOtp !== otp
-  ) {
-    throw {
-      statusCode: 400,
-      message: "Invalid OTP",
-    };
-  }
-
-  if (
+    !user.emailOtpExpiresAt ||
     user.emailOtpExpiresAt <
     new Date()
   ) {
@@ -160,10 +203,25 @@ export const verifyEmailOtp = async (
       message: "OTP expired",
     };
   }
+  const validOtp =
+    await bcrypt.compare(
+      otp,
+      user.emailOtp
+    );
+
+  if (!validOtp) {
+
+    throw {
+      statusCode: 400,
+      message: "Invalid OTP",
+    };
+
+  }
 
   user.emailVerified = true;
   user.emailOtp = null;
   user.emailOtpExpiresAt = null;
+  user.lastOtpSentAt = null;
 
   await user.save();
 
@@ -191,19 +249,43 @@ export const resendVerificationOtp =
       };
     }
 
+    if (
+      user.lastOtpSentAt &&
+      Date.now() -
+      user.lastOtpSentAt.getTime() <
+      60 * 1000
+    ) {
+
+      throw {
+        statusCode: 429,
+        message:
+          "Please wait before requesting another OTP",
+      };
+
+    }
+
     const otp =
       Math.floor(
         100000 +
         Math.random() * 900000
       ).toString();
+    const hashedOtp =
+      await bcrypt.hash(
+        otp,
+        10
+      );
 
-    user.emailOtp = otp;
+    user.emailOtp =
+      hashedOtp;
 
     user.emailOtpExpiresAt =
       new Date(
         Date.now() +
         10 * 60 * 1000
       );
+
+    user.lastOtpSentAt =
+      new Date();
 
     await user.save();
 

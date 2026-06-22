@@ -15,12 +15,20 @@ export default function LoginPage() {
   const [password, setPassword] =
     useState("");
 
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
   const handleSubmit = async (
     e: React.FormEvent
   ) => {
     e.preventDefault();
 
     try {
+      setLoading(true);
+      setError("");
       const result = await loginUser(
         email,
         password
@@ -48,8 +56,13 @@ export default function LoginPage() {
         return;
       }
 
-      alert("Login Failed");
+      setError(
+        error.response?.data?.message ||
+        "Login Failed"
+      );
 
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,8 +90,21 @@ export default function LoginPage() {
         }
       />
 
-      <button type="submit">
-        Login
+      {
+        error && (
+          <p className="text-red-500">
+            {error}
+          </p>
+        )
+      }
+
+      <button type="submit"
+        disabled={loading}>
+        {
+          loading
+            ? "Logging in..."
+            : "Login"
+        }
       </button>
     </form>
   );

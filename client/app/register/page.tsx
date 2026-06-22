@@ -9,10 +9,19 @@ export default function RegisterPage() {
   const [name, setName] =
     useState("");
 
+  const [loading, setLoading] =
+    useState(false);
+
   const [email, setEmail] =
     useState("");
 
   const [password, setPassword] =
+    useState("");
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
     useState("");
 
   const handleSubmit = async (
@@ -21,7 +30,9 @@ export default function RegisterPage() {
     e.preventDefault();
 
     try {
-      const result =
+      setError("");
+      setMessage("");
+      setLoading(true);
         await registerUser(
           name,
           email,
@@ -30,15 +41,22 @@ export default function RegisterPage() {
 
       // console.log(result);
 
-      alert(
+      setError("");
+      setMessage(
         "Verification OTP sent to your email"
       );
       router.push(
         `/verify-email?email=${email}`
       );
-    } catch (err) {
-      // console.error(err);
-      alert("Registration Failed");
+    } catch (error: any) {
+
+      setError(
+        error.response?.data?.message ||
+        "Registration Failed"
+      );
+
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,8 +92,29 @@ export default function RegisterPage() {
         }
       />
 
-      <button type="submit">
-        Register
+      {
+        error && (
+          <p className="text-red-500">
+            {error}
+          </p>
+        )
+      }
+
+      {
+        message && (
+          <p className="text-green-600">
+            {message}
+          </p>
+        )
+      }
+      <button
+        disabled={loading}
+      >
+        {
+          loading
+            ? "Registering..."
+            : "Register"
+        }
       </button>
     </form>
   );
