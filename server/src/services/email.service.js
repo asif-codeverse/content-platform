@@ -27,3 +27,23 @@ export const sendVerificationOtp =
       `,
         });
     };
+
+export const sendPasswordResetOtp =
+    async (email, otp) => {
+
+        await transporter.sendMail({
+            from: env.EMAIL_USER,
+            to: email,
+            subject:
+                "Password Reset OTP",
+
+            html: `
+        <h2>Password Reset</h2>
+        <p>Your password reset OTP is:</p>
+        <h1>${otp}</h1>
+        <p>Valid for 10 minutes.</p>
+      `,
+        });
+
+    };
+

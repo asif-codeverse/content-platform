@@ -6,6 +6,9 @@ import {
   refreshTokens,
   verifyEmailOtp,
   resendVerificationOtp,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
 } from "./auth.service.js";
 import {
   generateAccessToken,
@@ -183,6 +186,78 @@ export const refresh = async (
   }
 
 };
+
+export const forgotPasswordController =
+  async (req, res, next) => {
+
+    try {
+
+      await forgotPassword(
+        req.body.email
+      );
+
+      return res.json({
+        "success": true,
+        "message": "If an account exists, a reset OTP has been sent"
+      });
+
+    } catch (err) {
+
+      next(err);
+
+    }
+
+  };
+
+export const verifyResetOtpController =
+  async (req, res, next) => {
+
+    try {
+
+      await verifyResetOtp(
+        req.body.email,
+        req.body.otp
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "OTP verified",
+      });
+
+    } catch (err) {
+
+      next(err);
+
+    }
+
+  };
+
+export const resetPasswordController =
+  async (req, res, next) => {
+
+    try {
+
+      await resetPassword(
+        req.body.email,
+        req.body.otp,
+        req.body.password
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "Password reset successful",
+      });
+
+    } catch (err) {
+
+      next(err);
+
+    }
+
+  };
+
 
 export const me = async (
   req,

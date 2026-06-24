@@ -7,6 +7,9 @@ import {
   me,
   verifyEmail,
   resendOtp,
+  forgotPasswordController,
+  verifyResetOtpController,
+  resetPasswordController,
 } from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorize } from "../../middlewares/rbac.middleware.js";
@@ -21,6 +24,9 @@ router.post("/resend-verification", resendOtp);
 router.post("/login", login);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
+router.post("/forgot-password", forgotPasswordController);
+router.post("/verify-reset-otp", verifyResetOtpController);
+router.post("/reset-password", resetPasswordController);
 
 router.get(
   "/me",
