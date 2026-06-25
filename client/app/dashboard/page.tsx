@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
 
+
+
 export default function DashboardPage() {
   const router = useRouter();
 
@@ -15,19 +17,17 @@ export default function DashboardPage() {
   } = useAuth();
 
   useEffect(() => {
-    if (
-      !loading &&
-      user &&
-      user.role !== "ADMIN" &&
-      user.role !== "EDITOR"
-    ) {
-      router.push("/");
+
+    if (!loading && !user) {
+      router.push("/login");
     }
+
   }, [
     user,
     loading,
     router,
   ]);
+
 
   if (loading) {
     return (
@@ -40,12 +40,13 @@ export default function DashboardPage() {
   if (!user) {
     return (
       <div className="p-8">
-        Loading...
+        Redirecting...
       </div>
     );
   }
 
   return (
+
     <main className="p-8">
 
       <h1 className="text-4xl font-bold">
@@ -53,36 +54,103 @@ export default function DashboardPage() {
       </h1>
 
       <p className="mt-2 text-gray-600">
-        Welcome, {user.name}
+        Welcome back, {user.name}
       </p>
 
-      <div className="mt-8 flex gap-4">
+      <p className="text-sm text-gray-500">
+        Role: {user.role}
+      </p>
 
-        {user.role === "ADMIN" && (
-          <Link
-            href="/dashboard/create"
-            className="border p-3 rounded"
-          >
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+
+        <Link
+          href="/dashboard/create"
+          className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+        >
+
+          <h2 className="text-xl font-semibold">
             Create Article
-          </Link>
-        )}
+          </h2>
+
+          <p className="text-gray-600 mt-2">
+            Write a new article.
+          </p>
+
+        </Link>
+
+        <Link
+          href="/dashboard/my"
+          className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+        >
+
+          <h2 className="text-xl font-semibold">
+            My Articles
+          </h2>
+
+          <p className="text-gray-600 mt-2">
+            View and manage your articles.
+          </p>
+
+        </Link>
+
+        {(
+          user.role === "EDITOR" ||
+          user.role === "ADMIN"
+        ) && (
+
+            <Link
+              href="/dashboard/manage"
+              className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+            >
+
+              <h2 className="text-xl font-semibold">
+                Manage Articles
+              </h2>
+
+              <p className="text-gray-600 mt-2">
+                Edit existing articles.
+              </p>
+
+            </Link>
+
+          )}
 
         {user.role === "ADMIN" && (
+
           <Link
-            href="/dashboard/manage"
-            className="border p-3 rounded"
+            href="/dashboard/pending"
+            className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
           >
-            Manage Articles
+
+            <h2 className="text-xl font-semibold">
+              Pending Reviews
+            </h2>
+
+            <p className="text-gray-600 mt-2">
+              Review submitted articles.
+            </p>
+
           </Link>
+
         )}
 
         {user.role === "ADMIN" && (
+
           <Link
             href="/dashboard/users"
-            className="border p-3 rounded"
+            className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
           >
-            Manage Users
+
+            <h2 className="text-xl font-semibold">
+              Manage Users
+            </h2>
+
+            <p className="text-gray-600 mt-2">
+              Update user roles.
+            </p>
+
           </Link>
+
         )}
 
       </div>

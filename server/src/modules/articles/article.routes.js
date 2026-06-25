@@ -10,6 +10,10 @@ import {
   publish,
   remove,
   update,
+  myArticles,
+  submit,
+  pendingArticles,
+  reject,
 } from "./article.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { createArticleSchema } from "./article.validation.js";
@@ -24,6 +28,33 @@ router.get("/all", authenticate, authorize("ADMIN", "EDITOR"), getArticles);
 router.get("/id/:id", authenticate, authorize("ADMIN", "EDITOR"), getArticleById
 );
 
+router.get(
+  "/my",
+  authenticate,
+  authorize(
+    "USER",
+    "EDITOR",
+    "ADMIN",
+  ),
+  myArticles,
+);
+router.patch(
+  "/:id/submit",
+  authenticate,
+  authorize(
+    "USER",
+    "EDITOR",
+    "ADMIN",
+  ),
+  submit,
+);
+router.get(
+  "/pending",
+  authenticate,
+  authorize("ADMIN"),
+  pendingArticles,
+);
+
 /* Public */
 router.get("/:slug", getBySlug);
 
@@ -31,12 +62,22 @@ router.get("/:slug", getBySlug);
 router.post(
   "/",
   authenticate,
-  authorize("ADMIN", "EDITOR"),
+  authorize(
+    "USER",
+    "EDITOR",
+    "ADMIN",
+  ),
   validate(createArticleSchema),
   create,
 );
 
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
+router.patch(
+  "/:id/reject",
+  authenticate,
+  authorize("ADMIN"),
+  reject
+);
 router.delete("/:id", authenticate, authorize("ADMIN"), remove);
 router.patch("/:id", authenticate, authorize("ADMIN", "EDITOR"), update);
 

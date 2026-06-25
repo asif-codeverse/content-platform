@@ -5,6 +5,8 @@ import {
   markJobFailed,
 } from "./jobExecution.model.js";
 import { articlePublishedHandler } from "./handlers/articlePublished.job.js";
+import { articleRejectedHandler } from "./handlers/articleRejected.job.js";
+import { articleSubmitHandler } from "./handlers/articleSubmit.job.js";
 
 export const processJob = async (job) => {
   if (await isJobCompleted(job.jobId)) {
@@ -15,11 +17,24 @@ export const processJob = async (job) => {
   try {
     logger.info("Job Started", { jobId: job.jobId, type: job.type });
 
-    if (job.type === "ARTICLE_PUBLISHED") {
-      await articlePublishedHandler(job.payload);
-    } else {
-      logger.error("Unknown job type", { type: job.type });
-      return;
+    switch (job.type) {
+      case "ARTICLE_PUBLISHED":
+        await articlePublishedHandler(job.payload);
+        break;
+
+      case "ARTICLE_REJECTED":
+        await articleRejectedHandler(job.payload);
+        break;
+
+      case "ARTICLE_SUBMITTED":
+        await articleSubmitHandler(job.payload);
+        break;
+
+      default:
+        logger.error("Unknown job type", {
+          type: job.type,
+        });
+        return;
     }
 
     await markJobCompleted(job);

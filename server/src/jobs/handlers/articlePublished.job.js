@@ -1,12 +1,21 @@
 import { logger } from "../../utils/logger.js";
+import { notifyArticlePublished } from "../../services/notification.service.js";
 
-export const articlePublishedHandler = async ({ articleId }) => {
-  logger.info("Handling ARTICLE_PUBLISHED job", { articleId });
+export const articlePublishedHandler = async ({
+  articleId,
+  message,
+}) => {
 
-  // future:
-  // - clear HTTP cache
-  // - send emails
-  // - update analytics
+  logger.info(
+    "Handling ARTICLE_PUBLISHED job",
+    {
+      articleId,
+    }
+  );
 
-  await new Promise((res) => setTimeout(res, 500));
+  await notifyArticlePublished(
+    articleId,
+    message
+  );
+
 };

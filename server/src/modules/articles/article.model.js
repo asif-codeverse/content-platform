@@ -20,7 +20,12 @@ const articleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["DRAFT", "PUBLISHED"],
+      enum: [
+        "DRAFT",
+        "PENDING",
+        "PUBLISHED",
+        "REJECTED",
+      ],
       default: "DRAFT",
       index: true,
     },
@@ -43,8 +48,8 @@ articleSchema.index(
   { name: "article_list_index" }
 );
 articleSchema.index({
-  title:"text",
-  content:"text",
+  title: "text",
+  content: "text",
 });
 
 

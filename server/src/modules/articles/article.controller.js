@@ -5,6 +5,10 @@ import {
   softDeleteArticle,
   listArticles,
   updateArticle,
+  getMyArticles,
+  submitForReview,
+  getPendingArticles,
+  rejectArticle,
 } from "./article.service.js";
 
 import {
@@ -123,7 +127,9 @@ export const listPublished = asyncHandler(async (req, res) => {
 });
 
 export const publish = asyncHandler(async (req, res) => {
-  const article = await publishArticle(req.params.id);
+  const article = await publishArticle(
+    req.params.id
+  );
 
   logger.info("ARTICLE_PUBLISHED", {
     articleId: article._id,
@@ -136,6 +142,28 @@ export const publish = asyncHandler(async (req, res) => {
   if (env.NODE_ENV !== "test") {
     enqueueJob("ARTICLE_PUBLISHED", {
       articleId: article._id.toString(),
+      message: req.body.message,
+    });
+  }
+
+  return res.json(article);
+});
+
+export const reject = asyncHandler(async (req, res) => {
+  const article = await rejectArticle(req.params.id);
+
+  logger.info("ARTICLE_REJECTED", {
+    articleId: article._id,
+    rejectedBy: req.user.id,
+  });
+
+  await deleteCache("articles:published");
+  await deleteByPattern("search:*");
+
+  if (env.NODE_ENV !== "test") {
+    enqueueJob("ARTICLE_REJECTED", {
+      articleId: article._id.toString(),
+      message: req.body.message,
     });
   }
 
@@ -254,4 +282,80 @@ export const getArticleById =
       success: true,
       data: articles[0],
     });
+  });
+
+export const myArticles =
+  asyncHandler(async (req, res) => {
+
+    const articles =
+      await getMyArticles(
+        req.user.id
+      );
+
+    return res.json({
+      success: true,
+      data: articles,
+    });
+
+  });
+
+
+export const submit =
+  asyncHandler(async (
+    req,
+    res
+  ) => {
+
+    const article =
+      await submitForReview(
+        req.params.id,
+        req.user
+      );
+    enqueueJob(
+      "ARTICLE_SUBMITTED",
+      {
+        articleId:
+          article._id.toString(),
+
+        message:
+          req.body.message || "",
+      }
+    );
+
+    logger.info(
+      "ARTICLE_SUBMITTED",
+      {
+        articleId:
+          article._id,
+        author:
+          req.user.id,
+      }
+    );
+
+    await deleteCache("articles:published");
+    await deleteByPattern("search:*");
+
+    return res.json({
+      success: true,
+      message:
+        "Article submitted for review",
+      data: article,
+    });
+
+  });
+
+export const pendingArticles =
+  asyncHandler(async (
+    req,
+    res
+  ) => {
+
+    const articles =
+      await getPendingArticles();
+
+    return res.json({
+      success: true,
+      data: articles,
+    });
+
   });

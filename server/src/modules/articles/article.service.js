@@ -43,10 +43,16 @@ export const updateArticle = async (articleId, data, user) => {
     };
   }
 
-  if (article.status === "PUBLISHED" && user.role !== "ADMIN") {
+  if (
+    article.status !==
+    "DRAFT"
+    &&
+    user.role !== "ADMIN"
+  ) {
     throw {
       statusCode: 403,
-      message: "Published articles cannot be modified by editor",
+      message:
+        "Only draft articles can be edited",
     };
   }
 
@@ -96,10 +102,52 @@ export const publishArticle = async (articleId) => {
       message: "Article is already published",
     };
   }
+  if (article.status !== "PENDING") {
+    throw {
+      statusCode: 400,
+      message: "Only pending articles can be published",
+    };
+  }
 
   article.status = "PUBLISHED";
   return article.save();
 };
+
+export const rejectArticle =
+  async (articleId) => {
+
+    const article =
+      await Article.findById(
+        articleId
+      );
+
+    if (
+      !article ||
+      article.isDeleted
+    ) {
+      throw {
+        statusCode: 404,
+        message: "Article not found",
+      };
+    }
+
+    if (
+      article.status !==
+      "PENDING"
+    ) {
+      throw {
+        statusCode: 400,
+        message:
+          "Only pending articles can be rejected",
+      };
+    }
+
+    article.status =
+      "DRAFT";
+
+    return article.save();
+
+  };
 
 //Soft delete article
 export const softDeleteArticle = async (articleId, user) => {
@@ -147,3 +195,89 @@ export const getLatestPublishedUpdate = async () => {
 
   return latest?.updatedAt;
 };
+
+
+export const getMyArticles = async (userId) => {
+
+  return Article.find({
+    author: userId,
+    isDeleted: false,
+  })
+    .sort({
+      createdAt: -1,
+    })
+    .lean();
+
+};
+
+
+export const submitForReview =
+  async (
+    articleId,
+    user
+  ) => {
+
+    const article =
+      await Article.findById(
+        articleId
+      );
+
+    if (
+      !article ||
+      article.isDeleted
+    ) {
+      throw {
+        statusCode: 404,
+        message: "Article not found",
+      };
+    }
+
+    if (
+      !canEditArticle(
+        user,
+        article
+      )
+    ) {
+      throw {
+        statusCode: 403,
+        message: "You are not allowed to submit this article.",
+      };
+    }
+
+    if (
+      article.status !==
+      "DRAFT"
+    ) {
+      throw {
+        statusCode: 400,
+        message:
+          "Only draft articles can be submitted",
+      };
+    }
+
+    article.status =
+      "PENDING";
+
+    await article.save();
+
+    return article;
+  };
+
+export const getPendingArticles =
+  async () => {
+
+    return Article.find({
+      status: "PENDING",
+      isDeleted: false,
+    })
+      .populate(
+        "author",
+        "name email role"
+      )
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
+
+  };
+
