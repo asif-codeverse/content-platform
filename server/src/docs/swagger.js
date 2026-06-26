@@ -19,6 +19,10 @@ const swaggerDocument = {
             description: "Search APIs",
         },
         {
+            name: "Upload",
+            description: "File upload APIs",
+        },
+        {
             name: "Health",
             description: "Health monitoring APIs",
         },
@@ -374,6 +378,48 @@ const swaggerDocument = {
                 responses: {
                     200: {
                         description: "Search Results",
+                    },
+                },
+            },
+        },
+        "/api/v1/upload": {
+            post: {
+                tags: ["Upload"],
+                summary: "Upload Image",
+
+                security: [
+                    {
+                        bearerAuth: [],
+                    },
+                ],
+
+                requestBody: {
+                    required: true,
+                    content: {
+                        "multipart/form-data": {
+                            schema: {
+                                type: "object",
+                                required: ["image"],
+                                properties: {
+                                    image: {
+                                        type: "string",
+                                        format: "binary",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+
+                responses: {
+                    200: {
+                        description: "Image uploaded successfully",
+                    },
+                    400: {
+                        description: "No image uploaded",
+                    },
+                    401: {
+                        description: "Unauthorized",
                     },
                 },
             },
