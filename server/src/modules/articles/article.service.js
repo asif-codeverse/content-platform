@@ -1,6 +1,7 @@
 import { Article } from "./article.model.js";
 import slugify from "slugify";
 import { canEditArticle } from "../../utils/authorization.js";
+import mongoose from "mongoose";
 
 // Create article (DRAFT by default)
 export const createArticle = async ({ title, content, author }) => {
@@ -245,13 +246,13 @@ export const submitForReview =
     }
 
     if (
-      article.status !==
-      "DRAFT"
+      article.status !== "DRAFT" &&
+      article.status !== "REJECTED"
     ) {
       throw {
         statusCode: 400,
         message:
-          "Only draft articles can be submitted",
+          "Only draft or rejected articles can be submitted",
       };
     }
 
@@ -281,3 +282,101 @@ export const getPendingArticles =
 
   };
 
+export const getMyArticleById = async (
+  articleId,
+  user
+) => {
+  if (!mongoose.Types.ObjectId.isValid(articleId)) {
+    throw {
+      statusCode: 400,
+      message: "Invalid article id",
+    };
+  }
+
+  const article = await Article.findById(articleId);
+
+  if (!article || article.isDeleted) {
+    throw {
+      statusCode: 404,
+      message: "Article not found",
+    };
+  }
+
+  if (!canEditArticle(user, article)) {
+    throw {
+      statusCode: 403,
+      message: "Not allowed",
+    };
+  }
+
+  return article;
+};
+
+export const updateMyArticle = async (articleId, data, user) => {
+  if (!mongoose.Types.ObjectId.isValid(articleId)) {
+    throw {
+      statusCode: 400,
+      message: "Invalid article id",
+    };
+  }
+  const article = await Article.findById(articleId);
+
+  // Existence check
+  if (!article || article.isDeleted) {
+    throw {
+      statusCode: 404,
+      message: "Article not found",
+    };
+  }
+
+  const oldSlug = article.slug;
+
+  // ownership (ABAC enforcement)
+  if (!canEditArticle(user, article)) {
+    throw {
+      statusCode: 403,
+      message: "Not allowed to modify this article",
+    };
+  }
+
+  if (
+    article.status !== "DRAFT" &&
+    article.status !== "REJECTED"
+  ) {
+    throw {
+      statusCode: 403,
+      message: "Only draft or rejected articles can be edited",
+    };
+  }
+
+  if (data.title !== undefined) {
+    const newSlug = slugify(data.title, { lower: true, strict: true });
+
+    // prevent slug collision
+    const existing = await Article.findOne({
+      slug: newSlug,
+      _id: { $ne: article._id },
+    });
+    if (existing) {
+      throw {
+        statusCode: 409,
+        message: "Another article already uses this title",
+      };
+    }
+
+    article.title = data.title;
+    article.slug = newSlug;
+  }
+
+
+
+  if (data.content !== undefined) {
+    article.content = data.content;
+  }
+
+  const updatedArticle = await article.save();
+  return {
+    article: updatedArticle,
+    oldSlug,
+  }
+};

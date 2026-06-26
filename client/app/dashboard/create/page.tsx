@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import RichTextEditor from "@/components/editor/RichTextEditor";
 import {
   createArticle
 } from "@/services/admin.service";
@@ -23,6 +23,8 @@ export default function CreatePage() {
 
       try {
 
+        console.log(title);
+        console.log(content);
         await createArticle(
           title,
           content
@@ -68,15 +70,9 @@ export default function CreatePage() {
           className="border p-2"
         />
 
-        <textarea
+        <RichTextEditor
           value={content}
-          onChange={(e) =>
-            setContent(
-              e.target.value
-            )
-          }
-          placeholder="Content"
-          className="border p-2 h-40"
+          onChange={setContent}
         />
 
         <button

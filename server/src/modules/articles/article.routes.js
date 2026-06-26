@@ -14,6 +14,8 @@ import {
   submit,
   pendingArticles,
   reject,
+  getMyArticleById,
+  updateMyArticle,
 } from "./article.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { createArticleSchema } from "./article.validation.js";
@@ -22,6 +24,20 @@ const router = Router();
 
 
 router.get("/", listPublished);
+
+router.get(
+  "/my/:id",
+  authenticate,
+  authorize("USER", "EDITOR", "ADMIN"),
+  getMyArticleById
+);
+
+router.patch(
+  "/my/:id",
+  authenticate,
+  authorize("USER", "EDITOR", "ADMIN"),
+  updateMyArticle
+);
 
 /* Admin / Editor */
 router.get("/all", authenticate, authorize("ADMIN", "EDITOR"), getArticles);

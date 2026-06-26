@@ -132,3 +132,48 @@ export const rejectArticle = async (
 
   return response.data;
 };
+
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await api.post(
+    "/upload", formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return response.data.data;
+};
+
+export const getMyArticleById =
+  async (id: string) => {
+
+    const response =
+      await api.get(
+        `/articles/my/${id}`
+      );
+
+    return response.data;
+  };
+
+export const updateMyArticle =
+  async (
+    id: string,
+    title: string,
+    content: string
+  ) => {
+
+    const response =
+      await api.patch(
+        `/articles/my/${id}`,
+        {
+          title,
+          content,
+        }
+      );
+
+    return response.data;
+  };

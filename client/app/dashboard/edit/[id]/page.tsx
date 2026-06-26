@@ -4,16 +4,9 @@ import {
     useEffect,
     useState,
 } from "react";
-import {
-    useRouter
-}
-    from "next/navigation";
-
-import {
-    getArticleById,
-    updateArticle,
-} from "@/services/admin.service";
-
+import { useRouter } from "next/navigation";
+import { getMyArticleById, updateMyArticle, } from "@/services/article.service";
+import RichTextEditor from "@/components/editor/RichTextEditor";
 
 export default function EditPage({
     params,
@@ -39,9 +32,7 @@ export default function EditPage({
             async () => {
 
                 const result =
-                    await getArticleById(
-                        id
-                    );
+                    await getMyArticleById(id);
 
                 setTitle(
                     result.data.title
@@ -63,7 +54,7 @@ export default function EditPage({
 
             e.preventDefault();
 
-            await updateArticle(
+            await updateMyArticle(
                 id,
                 title,
                 content
@@ -74,7 +65,7 @@ export default function EditPage({
             );
 
             router.push(
-                "/dashboard/manage"
+                "/dashboard/my"
             );
         };
 
@@ -102,17 +93,9 @@ export default function EditPage({
           "
                 />
 
-                <textarea
+                <RichTextEditor
                     value={content}
-                    onChange={(e) =>
-                        setContent(e.target.value)
-                    }
-                    rows={10}
-                    className="
-            border
-            p-2
-            rounded
-          "
+                    onChange={setContent}
                 />
 
                 <button

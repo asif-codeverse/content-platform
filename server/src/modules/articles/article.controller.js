@@ -9,6 +9,8 @@ import {
   submitForReview,
   getPendingArticles,
   rejectArticle,
+  getMyArticleById as getMyArticleByIdService,
+  updateMyArticle as updateMyArticleService,
 } from "./article.service.js";
 
 import {
@@ -356,6 +358,52 @@ export const pendingArticles =
     return res.json({
       success: true,
       data: articles,
+    });
+
+  });
+
+export const getMyArticleById =
+  asyncHandler(async (req, res) => {
+
+    const article =
+      await getMyArticleByIdService(
+        req.params.id,
+        req.user
+      );
+
+    return res.json({
+      success: true,
+      data: article,
+    });
+
+  });
+
+export const updateMyArticle =
+  asyncHandler(async (req, res) => {
+
+    const { article, oldSlug } =
+      await updateMyArticleService(
+        req.params.id,
+        {
+          title: req.body.title,
+          content: req.body.content,
+        },
+        req.user
+      );
+
+    logger.info("ARTICLE_UPDATED", {
+      articleId: article._id,
+      updatedBy: req.user.id,
+    });
+
+    await deleteCache("articles:published");
+    await deleteCache(`article:${oldSlug}`);
+    await deleteCache(`article:${article.slug}`);
+    await deleteByPattern("search:*");
+
+    return res.json({
+      success: true,
+      data: article,
     });
 
   });

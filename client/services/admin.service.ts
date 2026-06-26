@@ -5,14 +5,13 @@ export const createArticle = async (
     content: string
 ) => {
 
-    const response =
-        await api.post(
-            "/articles",
-            {
-                title,
-                content,
-            }
-        );
+    const response = await api.post(
+        "/articles",
+        {
+            title,
+            content,
+        }
+    );
 
     return response.data;
 };
