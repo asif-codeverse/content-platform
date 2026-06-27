@@ -1,27 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { getDashboardStats } from "@/services/dashboard.service";
 import { useAuth } from "@/context/AuthContext";
-
-
+import StatsCard from "@/components/StatsCard";
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const {
-    user,
-    loading,
-  } = useAuth();
+  const { user, loading, } = useAuth();
+  const [stats, setStats] = useState({
+    total: 0,
+    draft: 0,
+    pending: 0,
+    published: 0,
+    rejected: 0,
+    totalViews: 0,
+  });
 
   useEffect(() => {
-
-    if (!loading && !user) {
-      router.push("/login");
-    }
-
+    if (!loading && !user) router.push("/login");
+    if (user?.role === "ADMIN") getDashboardStats()
+      .then(setStats)
+      .catch(console.error);
   }, [
     user,
     loading,
@@ -29,24 +32,21 @@ export default function DashboardPage() {
   ]);
 
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        Loading...
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="p-8">
+      Loading...
+    </div>
+  );
 
-  if (!user) {
-    return (
-      <div className="p-8">
-        Redirecting...
-      </div>
-    );
-  }
+
+  if (!user) return (
+    <div className="p-8">
+      Redirecting...
+    </div>
+  );
+
 
   return (
-
     <main className="p-8">
 
       <h1 className="text-4xl font-bold">
@@ -60,6 +60,58 @@ export default function DashboardPage() {
       <p className="text-sm text-gray-500">
         Role: {user.role}
       </p>
+
+      {user.role === "ADMIN" && (
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            lg:grid-cols-3
+            gap-4
+            mt-8
+        "
+        >
+
+          {[
+            {
+              title: "Total Articles",
+              value: stats.total,
+            },
+            {
+              title: "Draft Articles",
+              value: stats.draft,
+            },
+            {
+              title: "Pending Articles",
+              value: stats.pending,
+            },
+            {
+              title: "Published Articles",
+              value: stats.published,
+            },
+            {
+              title: "Rejected Articles",
+              value: stats.rejected,
+            },
+            {
+              title: "Total Views",
+              value: stats.totalViews,
+            },
+          ].map((stat) => (
+
+            <StatsCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+            />
+
+          ))}
+
+        </div>
+
+      )}
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
 

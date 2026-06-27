@@ -16,6 +16,7 @@ import {
   reject,
   getMyArticleById,
   updateMyArticle,
+  getStats,
 } from "./article.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { createArticleSchema } from "./article.validation.js";
@@ -24,6 +25,13 @@ const router = Router();
 
 
 router.get("/", listPublished);
+
+router.get(
+  "/stats",
+  authenticate,
+  authorize("ADMIN"),
+  getStats
+);
 
 router.get(
   "/my/:id",

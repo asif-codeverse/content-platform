@@ -174,6 +174,7 @@ export const listArticles = async ({ filters, sort, skip, limit }) => {
 
   const [articles, total] = await Promise.all([
     Article.find(base)
+      .populate("author", "name email")
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -380,3 +381,104 @@ export const updateMyArticle = async (articleId, data, user) => {
     oldSlug,
   }
 };
+
+export const incrementArticleViews = async (articleId) => {
+
+  return Article.findByIdAndUpdate(
+    articleId, {
+    $inc: {
+      views: 1,
+    },
+  },
+    {
+      returnDocument: 'after',
+    }
+  );
+};
+
+export const getArticleStats =
+  async () => {
+
+    const stats =
+      await Article.aggregate([
+
+        {
+          $match: {
+            isDeleted: false,
+          },
+        },
+
+        {
+          $group: {
+
+            _id: null,
+
+            total: {
+              $sum: 1,
+            },
+
+            draft: {
+              $sum: {
+                $toInt: {
+                  $eq: [
+                    "$status",
+                    "DRAFT",
+                  ],
+                },
+              },
+            },
+
+            pending: {
+              $sum: {
+                $toInt: {
+                  $eq: [
+                    "$status",
+                    "PENDING",
+                  ],
+                },
+              },
+            },
+
+            published: {
+              $sum: {
+                $toInt: {
+                  $eq: [
+                    "$status",
+                    "PUBLISHED",
+                  ],
+                },
+              },
+            },
+
+            rejected: {
+              $sum: {
+                $toInt: {
+                  $eq: [
+                    "$status",
+                    "REJECTED",
+                  ],
+                },
+              },
+            },
+
+            totalViews: {
+              $sum: "$views",
+            },
+
+          },
+        },
+
+      ]);
+
+    return (
+      stats[0] || {
+        total: 0,
+        draft: 0,
+        pending: 0,
+        published: 0,
+        rejected: 0,
+        totalViews: 0,
+      }
+    );
+
+  };

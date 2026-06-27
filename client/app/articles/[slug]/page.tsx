@@ -18,7 +18,6 @@ async function getArticle(
       }
     )
 
-
   if (!response.ok) {
     return null;
   }
@@ -100,9 +99,31 @@ export default async function ArticlePage(
           {article.title}
         </h1>
 
-        <p className="mt-6">
-          {article.content}
-        </p>
+        <div className="mt-3 flex flex-wrap gap-6 text-sm text-gray-500">
+
+          <span>
+            👤 {article.author?.name}
+          </span>
+
+          <span>
+            📅{" "}
+            {new Date(
+              article.createdAt
+            ).toLocaleDateString()}
+          </span>
+
+          <span>
+            👁️ {article.views} Views
+          </span>
+
+        </div>
+
+        <div
+          className="prose max-w-none mt-6"
+          dangerouslySetInnerHTML={{
+            __html: article.content,
+          }}
+        />
 
       </main>
     </>

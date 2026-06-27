@@ -76,3 +76,30 @@ export const deleteByPattern = async (
         deletedKeys: keys.length,
     });
 };
+
+export const incrementCachedArticleViews = async (slug) => {
+    if (env.NODE_ENV === "test") return;
+
+    const key = `article:${slug}`;
+    const cached = await redisClient.get(key);
+
+    if (!cached) return;
+
+    const article = JSON.parse(cached);
+
+    if (article?.data?.views !== undefined) article.data.views += 1;
+
+    await redisClient.set(
+        key,
+        JSON.stringify(article), { EX: 300, }
+    );
+
+    logger.info(
+        "CACHE VIEW UPDATED",
+        {
+            key,
+            views:
+                article.data.views,
+        }
+    );
+};

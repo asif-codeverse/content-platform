@@ -1,6 +1,7 @@
 "use client";
 
 import { Editor } from "@tiptap/react";
+import ImageButton from "./ImageButton";
 
 type Props = { editor: Editor; };
 
@@ -78,6 +79,10 @@ export default function EditorToolbar({
             >
                 Quote
             </button>
+
+            <ImageButton
+                editor={editor}
+            />
 
         </div>
     );

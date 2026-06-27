@@ -109,15 +109,12 @@ export default function ArticlesPage() {
                   </h2>
                 </Link>
 
-                <p
-                  className="mt-2"
-                >
-                  {
-                    article.content
-                      .slice(0, 150)
-                  }
-                  ...
-                </p>
+                <div
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: article.content,
+                  }}
+                />
               </div>
             ))}
         </div>

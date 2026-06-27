@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
-import {
-  createArticle
-} from "@/services/admin.service";
+import { createArticle } from "@/services/admin.service";
+import { useRouter } from "next/navigation";
 
 export default function CreatePage() {
+
+  const router =
+    useRouter();
 
   const [title, setTitle] =
     useState("");
@@ -32,6 +34,9 @@ export default function CreatePage() {
 
         alert(
           "Article Created"
+        );
+        router.push(
+          "/dashboard/my"
         );
 
         setTitle("");

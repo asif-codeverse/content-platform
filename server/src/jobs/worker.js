@@ -7,6 +7,7 @@ import {
 import { articlePublishedHandler } from "./handlers/articlePublished.job.js";
 import { articleRejectedHandler } from "./handlers/articleRejected.job.js";
 import { articleSubmitHandler } from "./handlers/articleSubmit.job.js";
+import { articleViewedHandler } from "./handlers/articleViewed.job.js";
 
 export const processJob = async (job) => {
   if (await isJobCompleted(job.jobId)) {
@@ -28,6 +29,9 @@ export const processJob = async (job) => {
 
       case "ARTICLE_SUBMITTED":
         await articleSubmitHandler(job.payload);
+        break;
+      case "ARTICLE_VIEWED":
+        await articleViewedHandler(job.payload);
         break;
 
       default:
