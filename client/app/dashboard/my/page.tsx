@@ -1,6 +1,10 @@
 "use client";
 
-import { getMyArticles, submitArticle } from "@/services/article.service";
+import {
+    getMyArticles,
+    submitArticle,
+    deleteMyArticle,
+} from "@/services/article.service";
 import { useEffect, useRef, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { useRouter } from "next/navigation";
@@ -58,6 +62,36 @@ export default function MyArticlesPage() {
 
     const viewArticle = (slug: string) => {
         router.push(`/articles/${slug}`);
+    };
+
+    const handleDelete = async (id: string) => {
+        const confirmed = window.confirm("Delete this article?");
+
+        if (!confirmed) return;
+
+        try {
+            await deleteMyArticle(id);
+            setArticles((prev) =>
+                prev.filter(
+                    (article) =>
+                        article._id !== id
+                )
+            );
+            setMessage("Article deleted successfully.");
+        } catch (err) {
+            const apiError =
+                err as {
+                    response?: {
+                        data?: {
+                            message?: string;
+                        };
+                    };
+                };
+            setError(
+                apiError.response?.data?.message ||
+                "Failed to delete article."
+            );
+        }
     };
 
     const handleSubmit = async (id: string) => {
@@ -135,10 +169,19 @@ export default function MyArticlesPage() {
 
                 const submitLabel =
                     article.status === "REJECTED" ? "Submit Again" : "Submit";
+                const canDelete =
+                    article.status === "DRAFT" ||
+                    article.status === "REJECTED";
 
                 const formattedDate = new Date(article.createdAt).toLocaleDateString(
                     "en-IN",
                     { day: "numeric", month: "short", year: "numeric" }
+                );
+                const formattedUpdatedDate = new Date(article.updatedAt).toLocaleDateString(
+                    "en-IN",
+                    {
+                        day: "numeric", month: "short", year: "numeric",
+                    }
                 );
 
                 const isSubmittingThisArticle = submittingId === article._id;
@@ -155,49 +198,122 @@ export default function MyArticlesPage() {
                             <StatusBadge status={article.status} />
                         </p>
 
-                        <p className="text-sm text-gray-500">
-                            Created: {formattedDate}
-                        </p>
+                        <div className="mt-2 text-sm text-gray-500 space-y-1">
 
-                        <div className="flex gap-3 mt-4">
-                            {canSubmit && (
-                                <>
-                                    <button
-                                        type="button"
-                                        className="text-blue-600"
-                                        disabled={isSubmittingThisArticle}
-                                        onClick={() => editArticle(article._id)}
-                                    >
-                                        Edit
-                                    </button>
+                            <p>
+                                👁 Views: <strong>{article.views}</strong>
+                            </p>
 
-                                    <button
-                                        type="button"
-                                        className="text-green-600"
-                                        disabled={isAnySubmissionInProgress}
-                                        onClick={() => {
-                                            setActiveReviewArticleId(article._id);
-                                            setReviewMessage("");
-                                        }}
-                                    >
-                                        {submitLabel}
-                                    </button>
-                                </>
-                            )}
+                            <p>
+                                📅 Created: {formattedDate}
+                            </p>
 
-                            {article.status === "PENDING" && (
-                                <p>Waiting for Admin Review</p>
-                            )}
+                            <p>
+                                ✏ Updated: {formattedUpdatedDate}
+                            </p>
 
-                            {article.status === "PUBLISHED" && (
+                        </div>
+
+
+                        <div className="flex flex-wrap gap-3 mt-4">
+
+                            <button
+                                type="button"
+                                disabled={!canSubmit || isSubmittingThisArticle}
+                                onClick={() => editArticle(article._id)}
+                                className={`
+            px-3
+            py-2
+            rounded
+            text-white
+            ${canSubmit
+                                        ? "bg-blue-600 hover:bg-blue-700"
+                                        : "bg-gray-400 cursor-not-allowed"
+                                    }
+        `}
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!canSubmit || isAnySubmissionInProgress}
+                                onClick={() => {
+                                    if (!canSubmit) return;
+
+                                    setActiveReviewArticleId(article._id);
+                                    setReviewMessage("");
+                                }}
+                                className={`
+            px-3
+            py-2
+            rounded
+            text-white
+            ${canSubmit
+                                        ? "bg-green-600 hover:bg-green-700"
+                                        : "bg-gray-400 cursor-not-allowed"
+                                    }
+        `}
+                            >
+                                {submitLabel}
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!canDelete}
+                                onClick={() => handleDelete(article._id)}
+                                className={`
+            px-3
+            py-2
+            rounded
+            text-white
+            ${canDelete
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : "bg-gray-400 cursor-not-allowed"
+                                    }
+        `}
+                            >
+                                Delete
+                            </button>
+
+                            {article.status === "PUBLISHED" ? (
                                 <button
                                     type="button"
-                                    className="text-indigo-600"
                                     onClick={() => viewArticle(article.slug)}
+                                    className="
+                px-3
+                py-2
+                rounded
+                bg-indigo-600
+                text-white
+                hover:bg-indigo-700
+            "
+                                >
+                                    View
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="
+                px-3
+                py-2
+                rounded
+                bg-gray-400
+                text-white
+                cursor-not-allowed
+            "
                                 >
                                     View
                                 </button>
                             )}
+
+                            {article.status === "PENDING" && (
+                                <span className="self-center text-sm text-gray-500">
+                                    Waiting for Admin Review
+                                </span>
+                            )}
+
                         </div>
 
                         {canSubmit && activeReviewArticleId === article._id && (

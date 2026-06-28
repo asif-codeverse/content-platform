@@ -12,6 +12,7 @@ import {
   getMyArticleById as getMyArticleByIdService,
   updateMyArticle as updateMyArticleService,
   getArticleStats,
+  getMyArticleStats,
 } from "./article.service.js";
 
 import {
@@ -229,13 +230,6 @@ export const getBySlug = asyncHandler(async (req, res) => {
 
   if (cachedArticle) {
     logger.info("ARTICLE CACHE HIT", { slug });
-    if (env.NODE_ENV !== "test") enqueueJob(
-      "ARTICLE_VIEWED",
-      {
-        articleId: cachedArticle.data._id.toString(),
-        slug: cachedArticle.data.slug,
-      }
-    );
 
     return res.json(cachedArticle);
   }
@@ -257,14 +251,6 @@ export const getBySlug = asyncHandler(async (req, res) => {
     message: "Article not found",
   };
 
-  if (env.NODE_ENV !== "test") enqueueJob(
-    "ARTICLE_VIEWED",
-    {
-      articleId: articles[0]._id.toString(),
-      slug: articles[0].slug,
-    }
-  );
-
   const response = {
     success: true,
     data: articles[0],
@@ -272,6 +258,45 @@ export const getBySlug = asyncHandler(async (req, res) => {
   await setCache(cacheKey, response, 300);
 
   return res.json(response);
+});
+
+export const recordView = asyncHandler(async (req, res) => {
+
+  const { slug } = req.params;
+
+  const { articles } = await listArticles({
+    filters: {
+      slug,
+      status: "PUBLISHED",
+    },
+    sort: {},
+    skip: 0,
+    limit: 1,
+  });
+
+  if (!articles.length) {
+    throw {
+      statusCode: 404,
+      message: "Article not found",
+    };
+  }
+
+  if (env.NODE_ENV !== "test") {
+
+    enqueueJob(
+      "ARTICLE_VIEWED",
+      {
+        articleId: articles[0]._id.toString(),
+        slug: articles[0].slug,
+      }
+    );
+
+  }
+
+  return res.json({
+    success: true,
+  });
+
 });
 
 export const getArticleById =
@@ -425,6 +450,16 @@ export const updateMyArticle =
 export const getStats = asyncHandler(async (req, res) => {
 
   const stats = await getArticleStats();
+
+  return res.json({
+    success: true,
+    data: stats,
+  });
+});
+
+export const getMyStats = asyncHandler(async (req, res) => {
+
+  const stats = await getMyArticleStats(req.user.id);
 
   return res.json({
     success: true,

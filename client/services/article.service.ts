@@ -177,3 +177,12 @@ export const updateMyArticle =
 
     return response.data;
   };
+
+export const deleteMyArticle = async (id: string) => {
+  const response = await api.delete(`/articles/my/${id}`);
+  return response.data;
+};
+
+export const recordArticleView = async (slug: string) => {
+  await api.post(`/articles/${slug}/view`);
+};

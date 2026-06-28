@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import ViewTracker from "@/components/articles/ViewTracker";
 
 type Props = {
   params: Promise<{
@@ -94,6 +95,7 @@ export default async function ArticlePage(
   return (
     <>
       <main className="p-8">
+        <ViewTracker slug={slug} />
 
         <h1 className="text-4xl font-bold">
           {article.title}

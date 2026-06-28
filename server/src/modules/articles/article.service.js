@@ -154,16 +154,26 @@ export const rejectArticle =
 export const softDeleteArticle = async (articleId, user) => {
   const article = await Article.findById(articleId);
 
-  if (!article || article.isDeleted) {
-    throw { statusCode: 404, message: "Article not found" };
-  }
+  if (!article || article.isDeleted) throw {
+    statusCode: 404, message: "Article not found"
+  };
 
-  if (!canEditArticle(user, article)) {
-    throw {
-      statusCode: 403,
-      message: "Not allowed to delete this article",
-    };
-  }
+  if (!canEditArticle(user, article)) throw {
+    statusCode: 403,
+    message: "Not allowed to delete this article",
+  };
+
+
+  if (
+    user.role !== "ADMIN" &&
+    article.status !== "DRAFT" &&
+    article.status !== "REJECTED"
+  ) throw {
+    statusCode: 403,
+    message:
+      "Only draft or rejected articles can be deleted",
+  };
+
   article.isDeleted = true;
   return article.save();
 };
@@ -396,89 +406,173 @@ export const incrementArticleViews = async (articleId) => {
   );
 };
 
-export const getArticleStats =
-  async () => {
+export const getArticleStats = async () => {
+  const stats =
+    await Article.aggregate([
 
-    const stats =
-      await Article.aggregate([
-
-        {
-          $match: {
-            isDeleted: false,
-          },
+      {
+        $match: {
+          isDeleted: false,
         },
+      },
 
-        {
-          $group: {
+      {
+        $group: {
 
-            _id: null,
+          _id: null,
 
-            total: {
-              $sum: 1,
-            },
-
-            draft: {
-              $sum: {
-                $toInt: {
-                  $eq: [
-                    "$status",
-                    "DRAFT",
-                  ],
-                },
-              },
-            },
-
-            pending: {
-              $sum: {
-                $toInt: {
-                  $eq: [
-                    "$status",
-                    "PENDING",
-                  ],
-                },
-              },
-            },
-
-            published: {
-              $sum: {
-                $toInt: {
-                  $eq: [
-                    "$status",
-                    "PUBLISHED",
-                  ],
-                },
-              },
-            },
-
-            rejected: {
-              $sum: {
-                $toInt: {
-                  $eq: [
-                    "$status",
-                    "REJECTED",
-                  ],
-                },
-              },
-            },
-
-            totalViews: {
-              $sum: "$views",
-            },
-
+          total: {
+            $sum: 1,
           },
+
+          draft: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "DRAFT",
+                ],
+              },
+            },
+          },
+
+          pending: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "PENDING",
+                ],
+              },
+            },
+          },
+
+          published: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "PUBLISHED",
+                ],
+              },
+            },
+          },
+
+          rejected: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "REJECTED",
+                ],
+              },
+            },
+          },
+
+          totalViews: {
+            $sum: "$views",
+          },
+
         },
+      },
 
-      ]);
+    ]);
 
-    return (
-      stats[0] || {
-        total: 0,
-        draft: 0,
-        pending: 0,
-        published: 0,
-        rejected: 0,
-        totalViews: 0,
-      }
-    );
+  return (
+    stats[0] || {
+      total: 0,
+      draft: 0,
+      pending: 0,
+      published: 0,
+      rejected: 0,
+      totalViews: 0,
+    }
+  );
 
-  };
+};
+
+export const getMyArticleStats = async (authorId) => {
+  const stats =
+    await Article.aggregate([
+
+      {
+        $match: {
+          author: new mongoose.Types.ObjectId(authorId),
+          isDeleted: false,
+        },
+      },
+
+      {
+        $group: {
+          _id: null,
+
+          total: {
+            $sum: 1,
+          },
+
+          draft: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "DRAFT",
+                ],
+              },
+            },
+          },
+
+          pending: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "PENDING",
+                ],
+              },
+            },
+          },
+
+          published: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "PUBLISHED",
+                ],
+              },
+            },
+          },
+
+          rejected: {
+            $sum: {
+              $toInt: {
+                $eq: [
+                  "$status",
+                  "REJECTED",
+                ],
+              },
+            },
+          },
+
+          totalViews: {
+            $sum: "$views",
+          },
+
+        },
+      },
+
+    ]);
+
+  return (
+    stats[0] || {
+      total: 0,
+      draft: 0,
+      pending: 0,
+      published: 0,
+      rejected: 0,
+      totalViews: 0,
+    }
+  );
+
+};
+
