@@ -10,16 +10,9 @@ type Props = {
 export default function ViewTracker({
     slug,
 }: Props) {
-
-    console.log("ViewTracker Render");
-
     useEffect(() => {
-
-        console.log("ViewTracker Effect");
-
         recordArticleView(slug)
             .catch(console.error);
-
     }, [slug]);
 
     return null;

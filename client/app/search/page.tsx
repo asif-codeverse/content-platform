@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { searchArticles } from "@/services/article.service";
+import type { Article } from "@/types/article";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -13,7 +14,7 @@ export default function SearchPage() {
     searchParams.get("q") || "";
 
   const [results, setResults] =
-    useState<any[]>([]);
+    useState<Article[]>([]);
 
   const [loading, setLoading] =
     useState(false);
@@ -30,8 +31,6 @@ export default function SearchPage() {
             await searchArticles(query);
 
           setResults(data.data);
-        } catch (err) {
-          // console.error(err);
         } finally {
           setLoading(false);
         }

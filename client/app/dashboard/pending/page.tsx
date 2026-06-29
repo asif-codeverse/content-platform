@@ -5,15 +5,17 @@ import {
     publishArticle,
     rejectArticle,
 } from "@/services/article.service";
-
+import type { Article } from "@/types/article";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import EmptyState from "@/components/ui/EmptyState";
 import {
     useEffect,
     useState,
 } from "react";
+import axios from "axios";
 
 export default function PendingArticlesPage() {
-    const [articles, setArticles] =
-        useState<any[]>([]);
+    const [articles, setArticles] = useState<Article[]>([]);
 
     const [loading, setLoading] =
         useState(true);
@@ -41,11 +43,23 @@ export default function PendingArticlesPage() {
                 await getPendingArticles();
 
             setArticles(data.data);
-        } catch (err: any) {
-            setError(
-                err.response?.data?.message ||
-                "Failed to load articles"
-            );
+        } catch (err: unknown) {
+
+            if (axios.isAxiosError(err)) {
+
+                setError(
+                    err.response?.data?.message ??
+                    "Something went wrong."
+                );
+
+            } else {
+
+                setError(
+                    "Something went wrong."
+                );
+
+            }
+
         } finally {
             setLoading(false);
         }
@@ -77,12 +91,22 @@ export default function PendingArticlesPage() {
             setSelectedPublish(null);
             setPublishMessage("");
 
-        } catch (err: any) {
+        } catch (err: unknown) {
 
-            setError(
-                err.response?.data?.message ||
-                "Failed to publish article"
-            );
+            if (axios.isAxiosError(err)) {
+
+                setError(
+                    err.response?.data?.message ??
+                    "Something went wrong."
+                );
+
+            } else {
+
+                setError(
+                    "Something went wrong."
+                );
+
+            }
 
         }
 
@@ -108,19 +132,32 @@ export default function PendingArticlesPage() {
             setSelectedReject(null);
             setRejectMessage("");
 
-        } catch (err: any) {
+        } catch (err: unknown) {
 
-            setError(
-                err.response?.data?.message ||
-                "Failed to reject article"
-            );
+            if (axios.isAxiosError(err)) {
+
+                setError(
+                    err.response?.data?.message ??
+                    "Something went wrong."
+                );
+
+            } else {
+
+                setError(
+                    "Something went wrong."
+                );
+
+            }
 
         }
 
     };
 
-    if (loading)
-        return <p>Loading...</p>;
+    if (loading) return (
+        <LoadingSpinner
+            text="Loading pending articles..."
+        />
+    );
 
     if (error)
         return (
@@ -136,7 +173,11 @@ export default function PendingArticlesPage() {
             </h1>
 
             {articles.length === 0 && (
-                <p>No pending articles.</p>
+                <EmptyState
+                    icon="🎉"
+                    title="No Pending Reviews"
+                    description="Everything has been reviewed."
+                />
             )}
 
             {articles.map((article) => (

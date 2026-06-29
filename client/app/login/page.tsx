@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import axios from "axios";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,24 +44,22 @@ export default function LoginPage() {
       await refreshUser();
 
       router.push("/");
-    } catch (error: any) {
+    } catch (err: unknown) {
 
-      if (
-        error.response?.data
-          ?.verificationRequired
-      ) {
+      if (axios.isAxiosError(err)) {
 
-        router.push(
-          `/verify-email?email=${email}`
+        setError(
+          err.response?.data?.message ??
+          "Something went wrong."
         );
 
-        return;
-      }
+      } else {
 
-      setError(
-        error.response?.data?.message ||
-        "Login Failed"
-      );
+        setError(
+          "Something went wrong."
+        );
+
+      }
 
     } finally {
       setLoading(false);

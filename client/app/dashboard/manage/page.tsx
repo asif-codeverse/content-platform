@@ -5,6 +5,7 @@ import {
     useState,
 } from "react";
 import Link from "next/link";
+import type { Article } from "@/types/article";
 
 import {
     getAdminArticles,
@@ -15,7 +16,7 @@ import {
 export default function ManagePage() {
 
     const [articles, setArticles] =
-        useState<any[]>([]);
+        useState<Article[]>([]);
 
     const loadArticles =
         async () => {
@@ -24,9 +25,7 @@ export default function ManagePage() {
                 const data =
                     await getAdminArticles();
                 setArticles(data.data);
-            } catch (err) {
-                // console.error(err);
-            }
+            } finally { }
         };
 
     useEffect(() => {

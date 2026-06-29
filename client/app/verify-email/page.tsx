@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
+import Toast from "@/components/ui/Toast";
 
 export default function VerifyEmailPage() {
 
@@ -80,11 +81,22 @@ export default function VerifyEmailPage() {
 
         }, 1500);
 
-      } catch (error: any) {
-        setMessage("");
-        setError(
-          error.response?.data?.message
-        );
+      } catch (err: unknown) {
+
+        if (axios.isAxiosError(err)) {
+          setMessage("");
+          setError(
+            err.response?.data?.message ??
+            "Something went wrong."
+          );
+
+        } else {
+
+          setError(
+            "Something went wrong."
+          );
+
+        }
 
       } finally {
 
@@ -115,11 +127,23 @@ export default function VerifyEmailPage() {
           "OTP sent successfully"
         );
 
-      } catch (error: any) {
-        setMessage("");
-        setError(
-          error.response?.data?.message
-        );
+      } catch (err: unknown) {
+
+        if (axios.isAxiosError(err)) {
+          setMessage("");
+
+          setError(
+            err.response?.data?.message ??
+            "Something went wrong."
+          );
+
+        } else {
+
+          setError(
+            "Something went wrong."
+          );
+
+        }
 
       }
 
@@ -182,9 +206,10 @@ export default function VerifyEmailPage() {
       </button>
 
       {message && (
-        <p className="text-green-600 mt-4">
-          {message}
-        </p>
+        <Toast
+          message={message}
+          type="success"
+        />
       )}
       {
         error && (

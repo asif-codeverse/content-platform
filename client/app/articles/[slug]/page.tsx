@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import EmptyState from "@/components/ui/EmptyState";
 import ViewTracker from "@/components/articles/ViewTracker";
 
 type Props = {
@@ -89,7 +89,11 @@ export default async function ArticlePage(
     await getArticle(slug);
 
   if (!article) {
-    notFound();
+    <EmptyState
+      icon="🔍"
+      title="Nothing Found"
+      description="Try another keyword."
+    />
   }
 
   return (

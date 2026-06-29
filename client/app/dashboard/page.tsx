@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getDashboardStats, getMyDashboardStats, } from "@/services/dashboard.service";
 import { useAuth } from "@/context/AuthContext";
 import StatsCard from "@/components/StatsCard";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,7 +42,9 @@ export default function DashboardPage() {
 
   if (loading) return (
     <div className="p-8">
-      Loading...
+      <LoadingSpinner
+        text="Loading your articles..."
+      />
     </div>
   );
 

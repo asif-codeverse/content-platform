@@ -1,7 +1,7 @@
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
 export default function Loading() {
-  return (
-    <main className="p-8">
-      Loading...
-    </main>
-  );
+    return (
+        <LoadingSpinner />
+    );
 }

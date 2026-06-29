@@ -4,53 +4,50 @@ import { useState } from "react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import { createArticle } from "@/services/admin.service";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/Toast";
 
 export default function CreatePage() {
 
   const router =
     useRouter();
 
-  const [title, setTitle] =
-    useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
-  const [content, setContent] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit =
-    async (
-      e: React.FormEvent
-    ) => {
+  const [loading, setLoading] = useState(false);
 
-      e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
 
-      try {
+    e.preventDefault();
 
-        console.log(title);
-        console.log(content);
-        await createArticle(
-          title,
-          content
-        );
+    setLoading(true);
+    setMessage("");
+    setError("");
 
-        alert(
-          "Article Created"
-        );
-        router.push(
-          "/dashboard/my"
-        );
+    try {
+      await createArticle(
+        title,
+        content
+      );
 
-        setTitle("");
-        setContent("");
+      setMessage("Article created successfully.");
 
-      } catch (err) {
+      setTitle("");
+      setContent("");
 
-        // console.error(err);
+      setTimeout(() => {
+        router.push("/dashboard/my");
+      }, 1200);
 
-        alert(
-          "Creation Failed"
-        );
-      }
-    };
+    } catch {
+      setError("Failed to create article.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="p-8">
@@ -58,6 +55,16 @@ export default function CreatePage() {
       <h1 className="text-3xl font-bold mb-6">
         Create Article
       </h1>
+
+      <Toast message={message}
+        type="success"
+        onClose={() => setMessage("")}
+      />
+
+      <Toast message={error}
+        type="error"
+        onClose={() => setError("")}
+      />
 
       <form
         onSubmit={handleSubmit}
@@ -81,9 +88,18 @@ export default function CreatePage() {
         />
 
         <button
-          className="border p-2"
+          type="submit"
+          disabled={loading}
+          className="
+        border
+        rounded
+        px-4
+        py-2
+        disabled:opacity-50
+        disabled:cursor-not-allowed
+    "
         >
-          Create
+          {loading ? "Creating..." : "Create Article"}
         </button>
 
       </form>

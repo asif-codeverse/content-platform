@@ -7,6 +7,7 @@ import {
   updateUserRole,
 } from "@/services/user.service";
 
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/context/AuthContext";
 
 type User = {
@@ -73,9 +74,11 @@ export default function UsersPage() {
       fetchUsers();
     };
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
+  if (loading) return (
+    <LoadingSpinner
+      text="Loading users..."
+    />
+  );
 
   return (
     <main className="p-8">

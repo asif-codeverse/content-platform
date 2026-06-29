@@ -5,7 +5,8 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import type { Article } from "@/types/article";
 import {
   getArticles,
 } from "@/services/article.service";
@@ -13,8 +14,7 @@ import {
 export default function ArticlesPage() {
 
   const [articles, setArticles] =
-    useState([]);
-
+    useState<Article[]>([]);
   const [totalPages, setTotalPages] =
     useState(1);
 
@@ -31,11 +31,6 @@ export default function ArticlesPage() {
 
         try {
 
-          // console.log(
-          //   "LOADING PAGE:",
-          //   page
-          // );
-
           const data =
             await getArticles(page);
 
@@ -44,10 +39,6 @@ export default function ArticlesPage() {
           setTotalPages(
             data.meta.totalPages
           );
-
-        } catch (err) {
-
-          // console.error(err);
 
         } finally {
 
@@ -62,9 +53,9 @@ export default function ArticlesPage() {
 
   if (loading) {
     return (
-      <div>
-        Loading...
-      </div>
+      <LoadingSpinner
+        text="Loading articles..."
+      />
     );
   }
 
@@ -90,33 +81,32 @@ export default function ArticlesPage() {
           gap-6
         "
         >
-          {articles.map(
-            (article: any) => (
+          {articles.map((article) => (
 
-              <div
-                key={article._id}
-                className="
+            <div
+              key={article._id}
+              className="
               border
               p-4
               rounded
             "
+            >
+              <Link
+                href={`/articles/${article.slug}`}
               >
-                <Link
-                  href={`/articles/${article.slug}`}
-                >
-                  <h2 className="text-2xl font-bold">
-                    {article.title}
-                  </h2>
-                </Link>
+                <h2 className="text-2xl font-bold">
+                  {article.title}
+                </h2>
+              </Link>
 
-                <div
-                  className="prose max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: article.content,
-                  }}
-                />
-              </div>
-            ))}
+              <div
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: article.content,
+                }}
+              />
+            </div>
+          ))}
         </div>
         <div className="flex gap-4 mt-8">
 

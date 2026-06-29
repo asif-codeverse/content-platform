@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(
-  request: NextRequest
-) {
-
-  const isDashboardRoute =
-    request.nextUrl.pathname.startsWith(
-      "/dashboard"
-    );
-
+export function proxy(_: NextRequest) {
   return NextResponse.next();
 }
 

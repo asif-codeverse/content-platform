@@ -9,6 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { useRouter } from "next/navigation";
 import type { Article } from "@/types/article";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Toast from "@/components/ui/Toast";
 
 export default function MyArticlesPage() {
     const router = useRouter();
@@ -138,7 +141,9 @@ export default function MyArticlesPage() {
     if (loading) {
         return (
             <main className="p-8">
-                <p>Loading articles...</p>
+                <LoadingSpinner
+                    text="Loading your articles..."
+                />
             </main>
         );
     }
@@ -146,11 +151,14 @@ export default function MyArticlesPage() {
     if (articles.length === 0) {
         return (
             <main className="p-8">
-                <h1 className="text-3xl font-bold">My Articles</h1>
-                <p className="mt-6">No articles yet.</p>
-                <p className="text-gray-500">
-                    Start writing your first article to see it here.
-                </p>
+                <h1 className="text-3xl font-bold">
+                    My Articles
+                </h1>
+                <EmptyState
+                    icon="📝"
+                    title="No articles yet"
+                    description="Create your first article to start publishing."
+                />
             </main>
         );
     }
@@ -159,8 +167,18 @@ export default function MyArticlesPage() {
         <main className="p-8">
             <h1 className="text-3xl font-bold mb-6">My Articles</h1>
 
-            {message && <p className="text-green-600 mb-4">{message}</p>}
-            {error && <p className="text-red-600 mb-4">{error}</p>}
+            {message && (
+                <Toast
+                    message={message}
+                    type="success"
+                />
+            )}
+            {error && (
+                <Toast
+                    message={error}
+                    type="error"
+                />
+            )}
 
             {articles.map((article) => {
 

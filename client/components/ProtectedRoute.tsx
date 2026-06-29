@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import LoadingSpinner from "./ui/LoadingSpinner";
 
 export default function ProtectedRoute({
   children,
@@ -19,7 +20,11 @@ export default function ProtectedRoute({
   }, [user, loading, router]);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <LoadingSpinner
+        text="Checking authentication..."
+      />
+    );
   }
 
   if (!user) {

@@ -1,3 +1,5 @@
+import LoadingSpinner from "./ui/LoadingSpinner";
+
 export default function Loader() {
-  return <p>Loading...</p>;
+    return <LoadingSpinner />;
 }

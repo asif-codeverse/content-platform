@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 import {
     forgotPassword,
@@ -79,11 +80,22 @@ export default function ForgotPasswordPage() {
 
                 setStep(2);
 
-            } catch (error: any) {
+            } catch (err: unknown) {
 
-                setError(
-                    error.response?.data?.message
-                );
+                if (axios.isAxiosError(err)) {
+
+                    setError(
+                        err.response?.data?.message ??
+                        "Something went wrong."
+                    );
+
+                } else {
+
+                    setError(
+                        "Something went wrong."
+                    );
+
+                }
 
             } finally {
 
@@ -111,11 +123,22 @@ export default function ForgotPasswordPage() {
             setMessage("OTP resent successfully");
             setCooldown(60);
 
-        } catch (error: any) {
+        } catch (err: unknown) {
 
-            setError(
-                error.response?.data?.message
-            );
+            if (axios.isAxiosError(err)) {
+
+                setError(
+                    err.response?.data?.message ??
+                    "Something went wrong."
+                );
+
+            } else {
+
+                setError(
+                    "Something went wrong."
+                );
+
+            }
 
         } finally {
 
@@ -182,11 +205,22 @@ export default function ForgotPasswordPage() {
 
                 }, 1500);
 
-            } catch (error: any) {
+            } catch (err: unknown) {
 
-                setError(
-                    error.response?.data?.message
-                );
+                if (axios.isAxiosError(err)) {
+
+                    setError(
+                        err.response?.data?.message ??
+                        "Something went wrong."
+                    );
+
+                } else {
+
+                    setError(
+                        "Something went wrong."
+                    );
+
+                }
 
             } finally {
 

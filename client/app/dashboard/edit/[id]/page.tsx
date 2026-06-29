@@ -1,12 +1,19 @@
 "use client";
+
 import {
     use,
     useEffect,
     useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { getMyArticleById, updateMyArticle, } from "@/services/article.service";
+
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import Toast from "@/components/ui/Toast";
+
+import {
+    getMyArticleById,
+    updateMyArticle,
+} from "@/services/article.service";
 
 export default function EditPage({
     params,
@@ -15,16 +22,27 @@ export default function EditPage({
         id: string;
     }>;
 }) {
+
     const router =
         useRouter();
 
-    const { id } = use(params);
+    const { id } =
+        use(params);
 
     const [title, setTitle] =
         useState("");
 
     const [content, setContent] =
         useState("");
+
+    const [message, setMessage] =
+        useState("");
+
+    const [error, setError] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
 
     useEffect(() => {
 
@@ -41,6 +59,7 @@ export default function EditPage({
                 setContent(
                     result.data.content
                 );
+
             };
 
         loadArticle();
@@ -54,27 +73,67 @@ export default function EditPage({
 
             e.preventDefault();
 
-            await updateMyArticle(
-                id,
-                title,
-                content
-            );
+            setLoading(true);
+            setMessage("");
+            setError("");
 
-            alert(
-                "Article Updated"
-            );
+            try {
 
-            router.push(
-                "/dashboard/my"
-            );
+                await updateMyArticle(
+                    id,
+                    title,
+                    content
+                );
+
+                setMessage(
+                    "Article updated successfully."
+                );
+
+                setTimeout(() => {
+
+                    router.push(
+                        "/dashboard/my"
+                    );
+
+                }, 1200);
+
+            } catch {
+
+                setError(
+                    "Failed to update article."
+                );
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
         };
 
     return (
+
         <main className="p-8">
 
             <h1 className="text-3xl font-bold mb-6">
                 Edit Article
             </h1>
+
+            <Toast
+                message={message}
+                type="success"
+                onClose={() =>
+                    setMessage("")
+                }
+            />
+
+            <Toast
+                message={error}
+                type="error"
+                onClose={() =>
+                    setError("")
+                }
+            />
 
             <form
                 onSubmit={handleSubmit}
@@ -84,13 +143,15 @@ export default function EditPage({
                 <input
                     value={title}
                     onChange={(e) =>
-                        setTitle(e.target.value)
+                        setTitle(
+                            e.target.value
+                        )
                     }
                     className="
-            border
-            p-2
-            rounded
-          "
+                        border
+                        p-2
+                        rounded
+                    "
                 />
 
                 <RichTextEditor
@@ -100,17 +161,25 @@ export default function EditPage({
 
                 <button
                     type="submit"
+                    disabled={loading}
                     className="
-            border
-            px-4
-            py-2
-          "
+                        border
+                        rounded
+                        px-4
+                        py-2
+                        disabled:opacity-50
+                        disabled:cursor-not-allowed
+                    "
                 >
-                    Update
+                    {loading
+                        ? "Updating..."
+                        : "Update Article"}
                 </button>
 
             </form>
 
         </main>
+
     );
+
 }

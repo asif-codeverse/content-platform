@@ -3,6 +3,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import EditorToolbar from "./EditorToolbar";
+import Underline from "@tiptap/extension-underline";
+import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import Link from "@tiptap/extension-link";
 
 type Props = {
     value: string;
@@ -17,6 +20,9 @@ export default function RichTextEditor({
     const editor = useEditor({
         extensions: [
             StarterKit,
+            Underline,
+            Link,
+            HorizontalRule,
             Image,
         ],
         content: value,
@@ -25,8 +31,14 @@ export default function RichTextEditor({
         },
         editorProps: {
             attributes: {
-                class:
-                    "max-w-none min-h-[300px] p-4 focus:outline-none",
+                class: `
+            prose
+            prose-lg
+            max-w-none
+            min-h-[400px]
+            p-6
+            focus:outline-none
+        `,
             },
         },
         immediatelyRender: false,
@@ -35,7 +47,12 @@ export default function RichTextEditor({
     if (!editor) return null;
 
     return (
-        <div className="border rounded overflow-hidden">
+        <div className=" border
+                        rounded-lg
+                        shadow-sm
+                        overflow-hidden
+                        bg-white"
+        >
             <EditorToolbar
                 editor={editor}
             />

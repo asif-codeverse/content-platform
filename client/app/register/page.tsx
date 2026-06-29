@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/services/auth.service";
+import axios from "axios";
+import Toast from "@/components/ui/Toast";
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -33,13 +35,11 @@ export default function RegisterPage() {
       setError("");
       setMessage("");
       setLoading(true);
-        await registerUser(
-          name,
-          email,
-          password
-        );
-
-      // console.log(result);
+      await registerUser(
+        name,
+        email,
+        password
+      );
 
       setError("");
       setMessage(
@@ -48,12 +48,22 @@ export default function RegisterPage() {
       router.push(
         `/verify-email?email=${email}`
       );
-    } catch (error: any) {
+    } catch (err: unknown) {
 
-      setError(
-        error.response?.data?.message ||
-        "Registration Failed"
-      );
+      if (axios.isAxiosError(err)) {
+
+        setError(
+          err.response?.data?.message ??
+          "Something went wrong."
+        );
+
+      } else {
+
+        setError(
+          "Something went wrong."
+        );
+
+      }
 
     } finally {
       setLoading(false);
@@ -100,13 +110,12 @@ export default function RegisterPage() {
         )
       }
 
-      {
-        message && (
-          <p className="text-green-600">
-            {message}
-          </p>
-        )
-      }
+      {message && (
+        <Toast
+          message={message}
+          type="success"
+        />
+      )}
       <button
         disabled={loading}
       >
