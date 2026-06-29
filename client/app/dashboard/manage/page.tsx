@@ -6,6 +6,7 @@ import {
 } from "react";
 import Link from "next/link";
 import type { Article } from "@/types/article";
+import Button from "@/components/ui/Button";
 
 import {
     getAdminArticles,
@@ -82,49 +83,26 @@ export default function ManagePage() {
                             <div className="flex gap-3 mt-3">
 
                                 {
-                                    article.status === "DRAFT" && (<button
-                                        onClick={() =>
-                                            handlePublish(
-                                                article._id
-                                            )
-                                        }
-                                        className="
-                    border
-                    px-3
-                    py-1
-                  "
+                                    article.status === "DRAFT" && (<Button
+                                        onClick={() => handlePublish(article._id)}
                                     >
                                         Publish
-                                    </button>)}
+                                    </Button>)}
 
                                 <Link
                                     href={`/dashboard/edit/${article._id}`}
                                 >
-                                    <button
-                                        className="
-      border
-      px-3
-      py-1
-    "
-                                    >
+                                    <Button>
                                         Edit
-                                    </button>
+                                    </Button>
                                 </Link>
 
-                                <button
-                                    onClick={() =>
-                                        handleDelete(
-                                            article._id
-                                        )
-                                    }
-                                    className="
-                    border
-                    px-3
-                    py-1
-                  "
+                                <Button
+                                    className="bg-red-600 hover:bg-red-700"
+                                    onClick={() => handleDelete(article._id)}
                                 >
                                     Delete
-                                </button>
+                                </Button>
 
                             </div>
 

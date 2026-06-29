@@ -45,7 +45,11 @@ router.get("/pending", authenticate, authorize("ADMIN"), pendingArticles);
 
 router.patch("/:id/publish", authenticate, authorize("ADMIN"), publish);
 router.patch("/:id/reject", authenticate, authorize("ADMIN"), reject);
+/* User */
 router.delete("/my/:id", authenticate, authorize("USER", "EDITOR", "ADMIN"), remove);
+
+/* Admin */
+router.delete("/:id", authenticate, authorize("ADMIN"), remove);
 
 /* Protected writes */
 router.post("/", authenticate, authorize("USER", "EDITOR", "ADMIN"), validate(createArticleSchema), create);

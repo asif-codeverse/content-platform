@@ -8,6 +8,7 @@ import {
 import type { Article } from "@/types/article";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
 import {
     useEffect,
     useState,
@@ -208,7 +209,7 @@ export default function PendingArticlesPage() {
 
                     <div className="mt-4">
                         <div className="flex gap-3">
-                            <button
+                            <Button
                                 onClick={() => {
 
                                     setSelectedReject(null);
@@ -220,9 +221,11 @@ export default function PendingArticlesPage() {
                                 }}
                             >
                                 Publish
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
+                                className="bg-red-600 hover:bg-red-700"
+
                                 onClick={() => {
 
                                     setSelectedPublish(null);
@@ -234,7 +237,7 @@ export default function PendingArticlesPage() {
                                 }}
                             >
                                 Reject
-                            </button>
+                            </Button>
 
 
                         </div>
@@ -278,7 +281,7 @@ export default function PendingArticlesPage() {
 
                                         <div className="flex gap-3 mt-4">
 
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() => {
 
@@ -288,9 +291,9 @@ export default function PendingArticlesPage() {
                                                 }}
                                             >
                                                 Cancel
-                                            </button>
+                                            </Button>
 
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() =>
                                                     handlePublish(
@@ -299,7 +302,7 @@ export default function PendingArticlesPage() {
                                                 }
                                             >
                                                 Publish
-                                            </button>
+                                            </Button>
 
                                         </div>
 
@@ -347,7 +350,7 @@ export default function PendingArticlesPage() {
 
                                         <div className="flex gap-3 mt-4">
 
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() => {
 
@@ -357,9 +360,9 @@ export default function PendingArticlesPage() {
                                                 }}
                                             >
                                                 Cancel
-                                            </button>
+                                            </Button>
 
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() =>
                                                     handleReject(
@@ -368,7 +371,7 @@ export default function PendingArticlesPage() {
                                                 }
                                             >
                                                 Reject
-                                            </button>
+                                            </Button>
 
                                         </div>
 

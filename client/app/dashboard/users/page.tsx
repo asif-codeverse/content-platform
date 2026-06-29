@@ -9,6 +9,7 @@ import {
 
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/context/AuthContext";
+import Button from "@/components/ui/Button";
 
 type User = {
   _id: string;
@@ -158,7 +159,7 @@ export default function UsersPage() {
 
                 ) : user.role === "USER" ? (
 
-                  <button
+                  <Button
                     onClick={() =>
                       handleRoleChange(
                         user._id,
@@ -168,11 +169,11 @@ export default function UsersPage() {
                     className="border px-3 py-1 rounded"
                   >
                     Make Editor
-                  </button>
+                  </Button>
 
                 ) : user.role === "EDITOR" ? (
 
-                  <button
+                  <Button
                     onClick={() =>
                       handleRoleChange(
                         user._id,
@@ -182,7 +183,7 @@ export default function UsersPage() {
                     className="border px-3 py-1 rounded"
                   >
                     Remove Editor
-                  </button>
+                  </Button>
 
                 ) : (
                   user.role === "ADMIN" && (

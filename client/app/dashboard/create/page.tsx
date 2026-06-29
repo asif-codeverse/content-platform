@@ -5,6 +5,7 @@ import RichTextEditor from "@/components/editor/RichTextEditor";
 import { createArticle } from "@/services/admin.service";
 import { useRouter } from "next/navigation";
 import Toast from "@/components/ui/Toast";
+import Button from "@/components/ui/Button";
 
 export default function CreatePage() {
 
@@ -82,25 +83,14 @@ export default function CreatePage() {
           className="border p-2"
         />
 
-        <RichTextEditor
-          value={content}
-          onChange={setContent}
-        />
+        <RichTextEditor value={content} onChange={setContent} />
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="
-        border
-        rounded
-        px-4
-        py-2
-        disabled:opacity-50
-        disabled:cursor-not-allowed
-    "
+          loading={loading}
         >
-          {loading ? "Creating..." : "Create Article"}
-        </button>
+          Create Article
+        </Button>
 
       </form>
 

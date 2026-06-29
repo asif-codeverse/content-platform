@@ -27,11 +27,15 @@ export default function DashboardPage() {
 
     if (user.role === "ADMIN") getDashboardStats()
       .then(setStats)
-      .catch(console.error);
+      .catch(() => {
+        // TODO: Show toast when dashboard stats fail to load
+      });
 
     else getMyDashboardStats()
       .then(setStats)
-      .catch(console.error);
+      .catch(() => {
+        // TODO: Show toast when dashboard stats fail to load
+      });
 
   }, [
     user,
@@ -57,19 +61,21 @@ export default function DashboardPage() {
 
 
   return (
-    <main className="p-8">
+    <main className="mx-auto max-w-7xl p-8">
 
-      <h1 className="text-4xl font-bold">
+      <h1 className="text-3xl font-bold tracking-tight">
         Dashboard
       </h1>
 
-      <p className="mt-2 text-gray-600">
-        Welcome back, {user.name}
-      </p>
+      <div className="mt-2">
+        <p className="text-gray-600">
+          Welcome back, <span className="font-semibold">{user.name}</span>
+        </p>
 
-      <p className="text-sm text-gray-500">
-        Role: {user.role}
-      </p>
+        <p className="text-sm text-gray-500">
+          {user.role}
+        </p>
+      </div>
 
       <div
         className="
@@ -77,7 +83,7 @@ export default function DashboardPage() {
             grid-cols-1
             md:grid-cols-2
             lg:grid-cols-3
-            gap-4
+            gap-6
             mt-8
         "
       >
@@ -124,7 +130,15 @@ export default function DashboardPage() {
 
         <Link
           href="/dashboard/create"
-          className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+          className="
+rounded-xl
+border
+p-6
+shadow-sm
+transition
+hover:-translate-y-1
+hover:shadow-md
+"
         >
 
           <h2 className="text-xl font-semibold">
@@ -139,7 +153,15 @@ export default function DashboardPage() {
 
         <Link
           href="/dashboard/my"
-          className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+          className="
+rounded-xl
+border
+p-6
+shadow-sm
+transition
+hover:-translate-y-1
+hover:shadow-md
+"
         >
 
           <h2 className="text-xl font-semibold">
@@ -159,7 +181,15 @@ export default function DashboardPage() {
 
             <Link
               href="/dashboard/manage"
-              className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+              className="
+rounded-xl
+border
+p-6
+shadow-sm
+transition
+hover:-translate-y-1
+hover:shadow-md
+"
             >
 
               <h2 className="text-xl font-semibold">
@@ -178,7 +208,15 @@ export default function DashboardPage() {
 
           <Link
             href="/dashboard/pending"
-            className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+            className="
+rounded-xl
+border
+p-6
+shadow-sm
+transition
+hover:-translate-y-1
+hover:shadow-md
+"
           >
 
             <h2 className="text-xl font-semibold">
@@ -197,7 +235,15 @@ export default function DashboardPage() {
 
           <Link
             href="/dashboard/users"
-            className="border rounded p-6 hover:bg-gray-50 transition cursor-pointer"
+            className="
+rounded-xl
+border
+p-6
+shadow-sm
+transition
+hover:-translate-y-1
+hover:shadow-md
+"
           >
 
             <h2 className="text-xl font-semibold">

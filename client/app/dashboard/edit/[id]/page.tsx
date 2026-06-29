@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import Toast from "@/components/ui/Toast";
+import Button from "@/components/ui/Button";
 
 import {
     getMyArticleById,
@@ -158,23 +159,12 @@ export default function EditPage({
                     value={content}
                     onChange={setContent}
                 />
-
-                <button
+                <Button
                     type="submit"
-                    disabled={loading}
-                    className="
-                        border
-                        rounded
-                        px-4
-                        py-2
-                        disabled:opacity-50
-                        disabled:cursor-not-allowed
-                    "
+                    loading={loading}
                 >
-                    {loading
-                        ? "Updating..."
-                        : "Update Article"}
-                </button>
+                    Update
+                </Button>
 
             </form>
 

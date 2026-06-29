@@ -31,14 +31,8 @@ export default function RichTextEditor({
         },
         editorProps: {
             attributes: {
-                class: `
-            prose
-            prose-lg
-            max-w-none
-            min-h-[400px]
-            p-6
-            focus:outline-none
-        `,
+                class:
+                    "prose prose-lg max-w-none min-h-[400px] p-6 focus:outline-none",
             },
         },
         immediatelyRender: false,

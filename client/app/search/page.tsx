@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import EmptyState from "@/components/ui/EmptyState";
 
 import { searchArticles } from "@/services/article.service";
 import type { Article } from "@/types/article";
@@ -56,7 +57,13 @@ export default function SearchPage() {
 
       {!loading &&
         results.length === 0 && (
-          <p>No results found.</p>
+
+          <EmptyState
+            icon="🔍"
+            title="No Results Found"
+            description="Try searching with different keywords."
+          />
+
         )}
 
       <div className="flex flex-col gap-4">

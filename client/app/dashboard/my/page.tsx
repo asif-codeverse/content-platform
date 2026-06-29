@@ -6,12 +6,12 @@ import {
     deleteMyArticle,
 } from "@/services/article.service";
 import { useEffect, useRef, useState } from "react";
-import StatusBadge from "@/components/StatusBadge";
 import { useRouter } from "next/navigation";
 import type { Article } from "@/types/article";
 import EmptyState from "@/components/ui/EmptyState";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Toast from "@/components/ui/Toast";
+import ArticleCard from "@/components/articles/ArticleCard";
 
 export default function MyArticlesPage() {
     const router = useRouter();
@@ -180,205 +180,24 @@ export default function MyArticlesPage() {
                 />
             )}
 
-            {articles.map((article) => {
+            {articles.map((article) => (
 
-                const canSubmit =
-                    article.status === "DRAFT" || article.status === "REJECTED";
+                <ArticleCard
+                    key={article._id}
+                    article={article}
+                    submittingId={submittingId}
+                    activeReviewArticleId={activeReviewArticleId}
+                    reviewMessage={reviewMessage}
+                    setReviewMessage={setReviewMessage}
+                    setActiveReviewArticleId={setActiveReviewArticleId}
+                    handleSubmit={handleSubmit}
+                    handleDelete={handleDelete}
+                    editArticle={editArticle}
+                    viewArticle={viewArticle}
+                    closeReview={closeReview}
+                />
 
-                const submitLabel =
-                    article.status === "REJECTED" ? "Submit Again" : "Submit";
-                const canDelete =
-                    article.status === "DRAFT" ||
-                    article.status === "REJECTED";
-
-                const formattedDate = new Date(article.createdAt).toLocaleDateString(
-                    "en-IN",
-                    { day: "numeric", month: "short", year: "numeric" }
-                );
-                const formattedUpdatedDate = new Date(article.updatedAt).toLocaleDateString(
-                    "en-IN",
-                    {
-                        day: "numeric", month: "short", year: "numeric",
-                    }
-                );
-
-                const isSubmittingThisArticle = submittingId === article._id;
-
-                const isAnySubmissionInProgress = submittingId !== null;
-
-                const reviewMessageFieldId = `review-message-${article._id}`;
-
-                return (
-                    <div key={article._id} className="border rounded p-4 mb-4">
-                        <h2 className="text-xl font-semibold">{article.title}</h2>
-
-                        <p className="mt-2">
-                            <StatusBadge status={article.status} />
-                        </p>
-
-                        <div className="mt-2 text-sm text-gray-500 space-y-1">
-
-                            <p>
-                                👁 Views: <strong>{article.views}</strong>
-                            </p>
-
-                            <p>
-                                📅 Created: {formattedDate}
-                            </p>
-
-                            <p>
-                                ✏ Updated: {formattedUpdatedDate}
-                            </p>
-
-                        </div>
-
-
-                        <div className="flex flex-wrap gap-3 mt-4">
-
-                            <button
-                                type="button"
-                                disabled={!canSubmit || isSubmittingThisArticle}
-                                onClick={() => editArticle(article._id)}
-                                className={`
-            px-3
-            py-2
-            rounded
-            text-white
-            ${canSubmit
-                                        ? "bg-blue-600 hover:bg-blue-700"
-                                        : "bg-gray-400 cursor-not-allowed"
-                                    }
-        `}
-                            >
-                                Edit
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={!canSubmit || isAnySubmissionInProgress}
-                                onClick={() => {
-                                    if (!canSubmit) return;
-
-                                    setActiveReviewArticleId(article._id);
-                                    setReviewMessage("");
-                                }}
-                                className={`
-            px-3
-            py-2
-            rounded
-            text-white
-            ${canSubmit
-                                        ? "bg-green-600 hover:bg-green-700"
-                                        : "bg-gray-400 cursor-not-allowed"
-                                    }
-        `}
-                            >
-                                {submitLabel}
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={!canDelete}
-                                onClick={() => handleDelete(article._id)}
-                                className={`
-            px-3
-            py-2
-            rounded
-            text-white
-            ${canDelete
-                                        ? "bg-red-600 hover:bg-red-700"
-                                        : "bg-gray-400 cursor-not-allowed"
-                                    }
-        `}
-                            >
-                                Delete
-                            </button>
-
-                            {article.status === "PUBLISHED" ? (
-                                <button
-                                    type="button"
-                                    onClick={() => viewArticle(article.slug)}
-                                    className="
-                px-3
-                py-2
-                rounded
-                bg-indigo-600
-                text-white
-                hover:bg-indigo-700
-            "
-                                >
-                                    View
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    disabled
-                                    className="
-                px-3
-                py-2
-                rounded
-                bg-gray-400
-                text-white
-                cursor-not-allowed
-            "
-                                >
-                                    View
-                                </button>
-                            )}
-
-                            {article.status === "PENDING" && (
-                                <span className="self-center text-sm text-gray-500">
-                                    Waiting for Admin Review
-                                </span>
-                            )}
-
-                        </div>
-
-                        {canSubmit && activeReviewArticleId === article._id && (
-                            <div className="mt-4 border rounded p-4">
-                                <label
-                                    htmlFor={reviewMessageFieldId}
-                                    className="font-semibold"
-                                >
-                                    Message to Admin
-                                </label>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    Optional. Include anything you want the reviewer to know.
-                                </p>
-
-                                <textarea
-                                    id={reviewMessageFieldId}
-                                    value={reviewMessage}
-                                    onChange={(e) => setReviewMessage(e.target.value)}
-                                    rows={4}
-                                    placeholder="Write a message..."
-                                    className="w-full border rounded p-3 mt-3"
-                                ></textarea>
-
-                                <div className="flex gap-3 mt-4">
-                                    <button
-                                        type="button"
-                                        className="text-gray-600"
-                                        disabled={isAnySubmissionInProgress}
-                                        onClick={closeReview}
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="text-green-600"
-                                        disabled={isAnySubmissionInProgress}
-                                        onClick={() => handleSubmit(article._id)}
-                                    >
-                                        {submitLabel}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
+            ))}
         </main>
     );
 }
