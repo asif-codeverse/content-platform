@@ -16,7 +16,9 @@ export default function PublicArticleCard({ article }: Props) {
         year: "numeric",
     });
 
-    const excerpt = article.content
+    const content = article.content ?? "";
+
+    const excerpt = content
         .replace(/<[^>]+>/g, "")
         .slice(0, 180);
 
@@ -88,7 +90,7 @@ export default function PublicArticleCard({ article }: Props) {
                     "
                 >
                     {excerpt}
-                    {article.content.length > 180 && "..."}
+                    {content.length > 180 && "..."}
                 </p>
 
                 <div
