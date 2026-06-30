@@ -1,4 +1,7 @@
+"use client";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { PenSquare } from "lucide-react";
 import {
     ArrowRight,
     FileText,
@@ -9,6 +12,7 @@ import {
 import Button from "@/components/ui/Button";
 
 export default function HomePage() {
+    const { user } = useAuth();
     return (
         <main className="container-page py-20 md:py-32">
             {/* Hero Section */}
@@ -30,7 +34,7 @@ export default function HomePage() {
                     "
                 >
                     <span className="flex h-2 w-2 rounded-full bg-[var(--accent)] mr-2" />
-                    Production Ready CMS Platform
+                    Trusted by Writers & Readers
                 </div>
 
                 <h1
@@ -43,9 +47,9 @@ export default function HomePage() {
                         leading-[1.1]
                     "
                 >
-                    Modern Content
+                    Publish Stories.
                     <br />
-                    Publishing Platform
+                    Share Knowledge.
                 </h1>
 
                 <p
@@ -58,9 +62,9 @@ export default function HomePage() {
                         leading-relaxed
                     "
                 >
-                    Create, manage, review and publish articles with
-                    a beautifully minimal editorial workflow built using Next.js,
-                    Express, MongoDB, and Redis.
+                    Write insightful articles, collaborate through editorial review,
+                    and publish content that reaches readers with a clean, modern
+                    publishing experience.
                 </p>
 
                 <div
@@ -83,9 +87,12 @@ export default function HomePage() {
                         </Button>
                     </Link>
 
-                    <Link href="/dashboard">
-                        <Button variant="secondary" size="lg" className="w-full sm:w-auto rounded-full px-8 bg-transparent hover:bg-[var(--surface-secondary)] shadow-none">
-                            Dashboard
+                    <Link href={user ? "/dashboard/create" : "/login"}>
+                        <Button size="lg" className="w-full sm:w-auto rounded-full px-8">
+                            <span className="flex items-center gap-2">
+                                <PenSquare size={16} />
+                                {user ? "Write an Article" : "Login to Write"}
+                            </span>
                         </Button>
                     </Link>
                 </div>
@@ -123,7 +130,7 @@ export default function HomePage() {
                     </div>
 
                     <h2 className="text-[18px] font-semibold tracking-tight text-[var(--foreground)]">
-                        Rich Article Editor
+                        Powerful Writing Experience
                     </h2>
 
                     <p
@@ -134,8 +141,7 @@ export default function HomePage() {
                             text-[var(--muted-foreground)]
                         "
                     >
-                        Create beautiful articles with a modern rich
-                        text editor and structured publishing workflow designed for professionals.
+                        Write distraction-free with a rich text editor designed for creating beautifully formatted articles.
                     </p>
                 </div>
 
@@ -160,7 +166,7 @@ export default function HomePage() {
                     </div>
 
                     <h2 className="text-[18px] font-semibold tracking-tight text-[var(--foreground)]">
-                        Fast Search
+                        Discover Great Content
                     </h2>
 
                     <p
@@ -171,8 +177,7 @@ export default function HomePage() {
                             text-[var(--muted-foreground)]
                         "
                     >
-                        Discover articles instantly with optimized
-                        search mechanics and a seamless, distraction-free reading experience.
+                        Find articles instantly through fast search and enjoy a smooth, reader-focused browsing experience.
                     </p>
                 </div>
 
@@ -197,7 +202,7 @@ export default function HomePage() {
                     </div>
 
                     <h2 className="text-[18px] font-semibold tracking-tight text-[var(--foreground)]">
-                        Editorial Dashboard
+                        Editorial Workflow
                     </h2>
 
                     <p
@@ -208,8 +213,7 @@ export default function HomePage() {
                             text-[var(--muted-foreground)]
                         "
                     >
-                        Manage articles, permissions, user reviews and publishing
-                        stages from one unified, premium dashboard.
+                        Manage drafts, reviews, publishing, and user permissions from a single streamlined workspace.
                     </p>
                 </div>
             </section>

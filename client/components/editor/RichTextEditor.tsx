@@ -5,7 +5,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
+import ImageResize from "tiptap-extension-resize-image";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 
 import EditorToolbar from "./EditorToolbar";
@@ -28,7 +28,7 @@ export default function RichTextEditor({
         autolink: true,
       }),
       HorizontalRule,
-      Image,
+      ImageResize,
     ],
 
     content: value,
@@ -39,7 +39,7 @@ export default function RichTextEditor({
 
     editorProps: {
       attributes: {
-        class: "ProseMirror prose prose-lg max-w-none min-h-[500px] px-8 py-6 focus:outline-none",
+        class: "ProseMirror prose prose-lg max-w-none min-h-[650px] px-7 py-7 focus:outline-none",
       },
     },
 
@@ -56,13 +56,13 @@ export default function RichTextEditor({
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex items-center justify-between border-t border-[var(--border)] bg-stone-50 px-6 py-3 text-xs text-[var(--muted)]">
+      <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-secondary)] px-8 py-4 text-sm text-[var(--muted)]">
         <span>
-          Supports headings, lists, links, images and code blocks.
+          Rich Text Editor • Headings • Lists • Links • Images • Code Blocks
         </span>
 
-        <span>
-          TipTap Editor
+        <span className="font-medium">
+          Draft
         </span>
       </div>
     </div>

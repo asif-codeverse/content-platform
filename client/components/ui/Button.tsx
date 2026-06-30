@@ -28,15 +28,20 @@ const buttonVariants = cva(
       variant: {
         primary:
           "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[var(--shadow-sm)] hover:bg-[var(--primary)]/90 hover:shadow-[var(--shadow)] hover:-translate-y-[0.5px]",
-        
+
         secondary:
           "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-xs)] hover:bg-[var(--surface-secondary)] hover:border-[var(--border-strong)] hover:-translate-y-[0.5px]",
-        
+
         ghost:
           "bg-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)]",
-        
+
         danger:
           "bg-[var(--danger)] text-white shadow-[var(--shadow-sm)] hover:opacity-90 hover:shadow-[var(--shadow)] hover:-translate-y-[0.5px]",
+        success:
+          "bg-emerald-600 text-white shadow-[var(--shadow-sm)] hover:bg-emerald-700",
+
+        indigo:
+          "bg-indigo-600 text-white shadow-[var(--shadow-sm)] hover:bg-indigo-700",
       },
       size: {
         default: "h-10 px-4",

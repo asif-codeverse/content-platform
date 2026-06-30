@@ -28,7 +28,7 @@ export default function SearchHeader({
       >
         Showing results for{" "}
         <span className="font-semibold text-[var(--foreground)]">
-          "{query}"
+          &ldquo;{query}&rdquo;
         </span>
       </p>
 

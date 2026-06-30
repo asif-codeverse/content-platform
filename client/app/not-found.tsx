@@ -58,7 +58,7 @@ export default function NotFound() {
                 </h1>
 
                 <p className="mt-2 text-[14px] leading-relaxed text-[var(--muted-foreground)]">
-                    The page you're looking for doesn't exist, may have been moved, or the URL is incorrect.
+                    The page you&apos;re looking for can&apos;t be found, may have been moved, or the URL is incorrect.
                 </p>
 
                 <Link href="/" className="mt-8 w-full block">

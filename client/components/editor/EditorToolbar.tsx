@@ -22,19 +22,20 @@ type Props = {
     editor: Editor;
 };
 
+function Divider() {
+    return (
+        <div className="mx-1 h-6 w-px bg-[var(--border)]" />
+    );
+}
+
 export default function EditorToolbar({ editor }: Props) {
     if (!editor) return null;
 
     const buttonClass = (active: boolean) =>
-        `flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200 ${
-            active
-                ? "bg-[var(--foreground)] text-[var(--background)] shadow-sm"
-                : "bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
+        `flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200 ${active
+            ? "bg-[var(--foreground)] text-[var(--background)] shadow-sm"
+            : "bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
         }`;
-
-    const Divider = () => (
-        <div className="mx-1 h-6 w-px bg-[var(--border)]" />
-    );
 
     return (
         <div

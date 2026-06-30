@@ -54,7 +54,25 @@ export default function ImageButton({
 
   return (
     <label
-      className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-white px-4 text-sm font-medium text-stone-700 transition-all hover:bg-stone-100 ${uploading ? "cursor-not-allowed opacity-60" : ""}`}
+      className={`
+    flex
+    h-9
+    items-center
+    justify-center
+    gap-2
+    rounded-[var(--radius-sm)]
+    border
+    border-[var(--border)]
+    px-3
+    text-sm
+    font-medium
+    transition-all
+    duration-200
+    ${uploading
+          ? "cursor-not-allowed bg-[var(--surface-secondary)] text-[var(--muted-foreground)] opacity-70"
+          : "cursor-pointer bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
+        }
+  `}
     >
       {uploading ? (
         <>

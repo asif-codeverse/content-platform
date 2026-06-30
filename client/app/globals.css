@@ -15,8 +15,10 @@
     --border-strong: #D6D3D1;
 
     /* Text */
-    --foreground: #1C1917; /* Primary */
-    --muted-foreground: #78716C; /* Secondary Text */
+    --foreground: #1C1917;
+    /* Primary */
+    --muted-foreground: #78716C;
+    /* Secondary Text */
     --muted: #A8A29E;
 
     /* Primary Accent (Buttons, etc.) */
@@ -34,10 +36,14 @@
     --ring: var(--accent);
 
     /* Border Radius */
-    --radius-sm: 10px; /* Buttons, Inputs */
-    --radius: 16px;    /* Cards, Images */
-    --radius-lg: 20px; /* Sections */
-    --radius-dialog: 18px; /* Dialogs */
+    --radius-sm: 10px;
+    /* Buttons, Inputs */
+    --radius: 16px;
+    /* Cards, Images */
+    --radius-lg: 20px;
+    /* Sections */
+    --radius-dialog: 18px;
+    /* Dialogs */
 
     /* Soft Shadows */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -67,7 +73,8 @@
     --primary: #F8F8F8;
     --primary-foreground: #111111;
 
-    --accent: #2563EB; /* Same brand color */
+    --accent: #2563EB;
+    /* Same brand color */
     --accent-foreground: #FFFFFF;
 
     --ring: var(--accent);
@@ -108,7 +115,12 @@ body {
    Typography
    ========================================================================== */
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--foreground);
     font-weight: 700;
     letter-spacing: -0.03em;
@@ -158,28 +170,39 @@ a {
 
 img {
     display: block;
-    max-width: 100%;
+    max-width: 70%;
+    height: auto;
+    width: auto;
 }
 
 /* ==========================================================================
    Inputs & Buttons
    ========================================================================== */
 
-input, textarea, select, button {
+input,
+textarea,
+select,
+button {
     font: inherit;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
     transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
     outline: none;
     border-color: var(--ring);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-.dark input:focus, .dark textarea:focus, .dark select:focus {
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
 }
 
@@ -270,7 +293,11 @@ button:disabled {
     outline: none;
     color: var(--foreground);
     line-height: 1.8;
-    font-size: 1.125rem; /* Large comfortable typography */
+    font-size: 1.125rem;
+    max-width: 860px;
+    margin-inline: auto;
+    padding-bottom: 6rem;
+    /* Large comfortable typography */
 }
 
 .ProseMirror h1 {
@@ -293,7 +320,8 @@ button:disabled {
 
 .ProseMirror p {
     margin: 1.25rem 0;
-    color: var(--foreground); /* Better readability than muted */
+    color: var(--foreground);
+    /* Better readability than muted */
 }
 
 .ProseMirror ul,
@@ -303,41 +331,92 @@ button:disabled {
 }
 
 .ProseMirror li {
-    margin: 0.5rem 0;
+    margin: .65rem 0;
+    padding-left: .2rem;
+}
+
+.ProseMirror hr {
+    margin: 3rem auto;
+    border: none;
+    height: 1px;
+    background: var(--border);
+    width: 100%;
+}
+
+.ProseMirror a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: opacity .2s;
+}
+
+.ProseMirror a:hover {
+    opacity: .8;
 }
 
 .ProseMirror blockquote {
-    border-left: 3px solid var(--border-strong);
-    padding-left: 1.5rem;
+    background: var(--surface-secondary);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
     margin: 2rem 0;
+    font-size: 1.1rem;
     color: var(--muted-foreground);
     font-style: italic;
-    font-size: 1.25rem;
-    line-height: 1.6;
 }
 
 .ProseMirror pre {
-    background: var(--surface-secondary);
-    color: var(--foreground);
+    max-width: 760px;
+    margin: 2rem auto;
+    background: #1f1f22;
+    color: #f8f8f2;
+    border: 1px solid #333;
+    border-radius: 18px;
     padding: 1.5rem;
-    border-radius: var(--radius);
     overflow-x: auto;
-    border: 1px solid var(--border);
-    margin: 2rem 0;
-    font-size: 0.95rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.ProseMirror pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
 }
 
 .ProseMirror code {
     background: var(--surface-secondary);
     color: var(--foreground);
-    border-radius: 6px;
-    padding: 0.2rem 0.4rem;
-    font-size: 0.9em;
     border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.9em;
+    font-family: var(--font-geist-mono), monospace;
+    font-weight: 500;
 }
 
+.prose img,
 .ProseMirror img {
     border-radius: var(--radius-image);
     margin: 2.5rem auto;
+    box-shadow: var(--shadow-sm);
+    display: block;
+    max-width: 50%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+.ProseMirror img,
+.prose img {
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+}
+
+.ProseMirror img:hover,
+.prose img:hover {
+    transform: scale(1.01);
     box-shadow: var(--shadow);
 }

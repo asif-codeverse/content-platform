@@ -173,7 +173,7 @@ export default function LoginPage() {
                             >
                                 Password
                             </label>
-                            
+
                             <Link
                                 href="/forgot-password"
                                 className="
@@ -236,7 +236,7 @@ export default function LoginPage() {
                         text-[var(--muted-foreground)]
                     "
                 >
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <Link
                         href="/register"
                         className="

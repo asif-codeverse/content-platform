@@ -22,12 +22,7 @@ export default function Table({ children, className = "" }: Props) {
         >
             <div className="overflow-x-auto">
                 <table
-                    className="
-                        w-full
-                        border-collapse
-                        text-left
-                        text-[14px]
-                    "
+                    className="w-full border-collapse text-left text-[14px]"
                 >
                     {children}
                 </table>
