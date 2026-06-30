@@ -1,84 +1,343 @@
 @import "tailwindcss";
-.ProseMirror {
-    min-height: 300px;
-    padding: 1rem;
-    outline: none;
+
+/* ==========================================================================
+   Design Tokens
+   ========================================================================== */
+
+:root {
+    /* Backgrounds */
+    --background: #FAFAF8;
+    --surface: #FFFFFF;
+    --surface-secondary: #F5F5F4;
+
+    /* Borders */
+    --border: #E7E5E4;
+    --border-strong: #D6D3D1;
+
+    /* Text */
+    --foreground: #1C1917; /* Primary */
+    --muted-foreground: #78716C; /* Secondary Text */
+    --muted: #A8A29E;
+
+    /* Primary Accent (Buttons, etc.) */
+    --primary: #1C1917;
+    --primary-foreground: #FFFFFF;
+
+    /* Brand / Accent */
+    --accent: #2563EB;
+    --accent-foreground: #FFFFFF;
+
+    /* Semantic */
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --ring: var(--accent);
+
+    /* Border Radius */
+    --radius-sm: 10px; /* Buttons, Inputs */
+    --radius: 16px;    /* Cards, Images */
+    --radius-lg: 20px; /* Sections */
+    --radius-dialog: 18px; /* Dialogs */
+
+    /* Soft Shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.02);
+
+    /* Motion */
+    --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ProseMirror p {
-    margin: 0.75rem 0;
+/* ==========================================================================
+   Dark Theme
+   ========================================================================== */
+.dark {
+    --background: #111111;
+    --surface: #18181B;
+    --surface-secondary: #222222;
+
+    --border: #2E2E2E;
+    --border-strong: #3F3F46;
+
+    --foreground: #F8F8F8;
+    --muted-foreground: #B0B0B0;
+    --muted: #52525B;
+
+    --primary: #F8F8F8;
+    --primary-foreground: #111111;
+
+    --accent: #2563EB; /* Same brand color */
+    --accent-foreground: #FFFFFF;
+
+    --ring: var(--accent);
+
+    /* Shadows for dark mode (slightly stronger to be visible) */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.ProseMirror img {
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background var(--transition), color var(--transition);
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--foreground);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+}
+
+h1 {
+    font-size: clamp(2.5rem, 4vw, 4rem);
+}
+
+h2 {
+    font-size: clamp(2rem, 3vw, 3rem);
+}
+
+h3 {
+    font-size: 1.75rem;
+}
+
+p {
+    color: var(--muted-foreground);
+    line-height: 1.75;
+}
+
+small {
+    color: var(--muted);
+}
+
+/* ==========================================================================
+   Links & Selection
+   ========================================================================== */
+
+a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition);
+}
+
+::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+}
+
+/* ==========================================================================
+   Images
+   ========================================================================== */
+
+img {
+    display: block;
     max-width: 100%;
-    height: auto;
-    border-radius: 8px;
 }
 
-/* ---------- TipTap Typography ---------- */
+/* ==========================================================================
+   Inputs & Buttons
+   ========================================================================== */
+
+input, textarea, select, button {
+    font: inherit;
+}
+
+input, textarea, select {
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+button {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ==========================================================================
+   Focus
+   ========================================================================== */
+
+:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Layout Helpers
+   ========================================================================== */
+
+.container-page {
+    width: min(1280px, calc(100% - 2rem));
+    margin-inline: auto;
+}
+
+.container-article {
+    width: min(800px, calc(100% - 2rem));
+    margin-inline: auto;
+}
+
+.section-spacing {
+    padding-block: 5rem;
+}
+
+.surface {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.surface-hover {
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.surface-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* ==========================================================================
+   TipTap Editor UI (Editorial)
+   ========================================================================== */
+
+.ProseMirror {
+    min-height: 420px;
+    outline: none;
+    color: var(--foreground);
+    line-height: 1.8;
+    font-size: 1.125rem; /* Large comfortable typography */
+}
 
 .ProseMirror h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 1.2rem 0;
+    font-size: 2.75rem;
+    margin: 2.5rem 0 1.25rem;
+    font-weight: 800;
 }
 
 .ProseMirror h2 {
-    font-size: 1.6rem;
+    font-size: 2.25rem;
+    margin: 2rem 0 1rem;
     font-weight: 700;
-    margin: 1rem 0;
 }
 
 .ProseMirror h3 {
-    font-size: 1.3rem;
+    font-size: 1.75rem;
+    margin: 1.5rem 0 0.75rem;
     font-weight: 600;
-    margin: .8rem 0;
 }
 
 .ProseMirror p {
-    margin: .8rem 0;
+    margin: 1.25rem 0;
+    color: var(--foreground); /* Better readability than muted */
 }
 
-.ProseMirror ul {
-    list-style-type: disc;
-    padding-left: 2rem;
-    margin: 1rem 0;
-}
-
+.ProseMirror ul,
 .ProseMirror ol {
-    list-style-type: decimal;
     padding-left: 2rem;
-    margin: 1rem 0;
+    margin: 1.25rem 0;
 }
 
 .ProseMirror li {
-    margin: .25rem 0;
+    margin: 0.5rem 0;
 }
 
 .ProseMirror blockquote {
-    border-left: 4px solid #d1d5db;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #6b7280;
+    border-left: 3px solid var(--border-strong);
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    color: var(--muted-foreground);
     font-style: italic;
+    font-size: 1.25rem;
+    line-height: 1.6;
 }
 
 .ProseMirror pre {
-    background: #111827;
-    color: white;
-    padding: 1rem;
-    border-radius: .5rem;
+    background: var(--surface-secondary);
+    color: var(--foreground);
+    padding: 1.5rem;
+    border-radius: var(--radius);
     overflow-x: auto;
+    border: 1px solid var(--border);
+    margin: 2rem 0;
+    font-size: 0.95rem;
 }
 
 .ProseMirror code {
-    background: #989898;
-    padding: 2px 4px;
-    border-radius: 4px;
+    background: var(--surface-secondary);
+    color: var(--foreground);
+    border-radius: 6px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.9em;
+    border: 1px solid var(--border);
 }
 
 .ProseMirror img {
-    max-width: 100%;
-    border-radius: .5rem;
-    margin: 1rem auto;
+    border-radius: var(--radius-image);
+    margin: 2.5rem auto;
+    box-shadow: var(--shadow);
 }

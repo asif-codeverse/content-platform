@@ -1,175 +1,213 @@
 "use client";
 
 import {
-    use,
-    useEffect,
-    useState,
+  use,
+  useEffect,
+  useState,
 } from "react";
+
 import { useRouter } from "next/navigation";
 
 import RichTextEditor from "@/components/editor/RichTextEditor";
-import Toast from "@/components/ui/Toast";
-import Button from "@/components/ui/Button";
 
 import {
-    getMyArticleById,
-    updateMyArticle,
+  getMyArticleById,
+  updateMyArticle,
 } from "@/services/article.service";
 
+import Button from "@/components/ui/Button";
+import Toast from "@/components/ui/Toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import PageHeader from "@/components/ui/PageHeader";
+
 export default function EditPage({
-    params,
+  params,
 }: {
-    params: Promise<{
-        id: string;
-    }>;
+  params: Promise<{
+    id: string;
+  }>;
 }) {
+  const router = useRouter();
 
-    const router =
-        useRouter();
+  const { id } = use(params);
 
-    const { id } =
-        use(params);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
-    const [title, setTitle] =
-        useState("");
+  const [pageLoading, setPageLoading] =
+    useState(true);
 
-    const [content, setContent] =
-        useState("");
+  const [loading, setLoading] =
+    useState(false);
 
-    const [message, setMessage] =
-        useState("");
+  const [message, setMessage] =
+    useState("");
 
-    const [error, setError] =
-        useState("");
+  const [error, setError] =
+    useState("");
 
-    const [loading, setLoading] =
-        useState(false);
+  useEffect(() => {
+    const loadArticle = async () => {
+      try {
+        const result =
+          await getMyArticleById(id);
 
-    useEffect(() => {
+        setTitle(result.data.title);
+        setContent(result.data.content);
+      } catch {
+        setError(
+          "Failed to load article."
+        );
+      } finally {
+        setPageLoading(false);
+      }
+    };
 
-        const loadArticle =
-            async () => {
+    loadArticle();
+  }, [id]);
 
-                const result =
-                    await getMyArticleById(id);
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
 
-                setTitle(
-                    result.data.title
-                );
+    setLoading(true);
+    setMessage("");
+    setError("");
 
-                setContent(
-                    result.data.content
-                );
+    try {
+      await updateMyArticle(
+        id,
+        title,
+        content
+      );
 
-            };
+      setMessage(
+        "Article updated successfully."
+      );
 
-        loadArticle();
+      setTimeout(() => {
+        router.push("/dashboard/my");
+      }, 1200);
+    } catch {
+      setError(
+        "Failed to update article."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    }, [id]);
-
-    const handleSubmit =
-        async (
-            e: React.FormEvent
-        ) => {
-
-            e.preventDefault();
-
-            setLoading(true);
-            setMessage("");
-            setError("");
-
-            try {
-
-                await updateMyArticle(
-                    id,
-                    title,
-                    content
-                );
-
-                setMessage(
-                    "Article updated successfully."
-                );
-
-                setTimeout(() => {
-
-                    router.push(
-                        "/dashboard/my"
-                    );
-
-                }, 1200);
-
-            } catch {
-
-                setError(
-                    "Failed to update article."
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-
-        };
-
+  if (pageLoading) {
     return (
-
-        <main className="p-8">
-
-            <h1 className="text-3xl font-bold mb-6">
-                Edit Article
-            </h1>
-
-            <Toast
-                message={message}
-                type="success"
-                onClose={() =>
-                    setMessage("")
-                }
-            />
-
-            <Toast
-                message={error}
-                type="error"
-                onClose={() =>
-                    setError("")
-                }
-            />
-
-            <form
-                onSubmit={handleSubmit}
-                className="flex flex-col gap-4"
-            >
-
-                <input
-                    value={title}
-                    onChange={(e) =>
-                        setTitle(
-                            e.target.value
-                        )
-                    }
-                    className="
-                        border
-                        p-2
-                        rounded
-                    "
-                />
-
-                <RichTextEditor
-                    value={content}
-                    onChange={setContent}
-                />
-                <Button
-                    type="submit"
-                    loading={loading}
-                >
-                    Update
-                </Button>
-
-            </form>
-
-        </main>
-
+      <LoadingSpinner text="Loading article..." />
     );
+  }
 
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Edit Article"
+        description="Update your article before publishing."
+      />
+
+      <Toast
+        message={message}
+        type="success"
+        onClose={() =>
+          setMessage("")
+        }
+      />
+
+      <Toast
+        message={error}
+        type="error"
+        onClose={() =>
+          setError("")
+        }
+      />
+
+      <form
+        onSubmit={handleSubmit}
+        className="
+          space-y-6
+          rounded-[var(--radius-lg)]
+          border
+          border-[var(--border)]
+          bg-[var(--surface)]
+          p-8
+          shadow-[var(--shadow-sm)]
+        "
+      >
+        <div className="space-y-2">
+          <label
+            htmlFor="title"
+            className="
+              text-sm
+              font-medium
+            "
+          >
+            Article Title
+          </label>
+
+          <input
+            id="title"
+            value={title}
+            onChange={(e) =>
+              setTitle(e.target.value)
+            }
+            placeholder="Article title..."
+            className="
+              w-full
+              rounded-[var(--radius)]
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+              px-4
+              py-3
+              outline-none
+              transition
+              focus:border-blue-500
+              focus:ring-4
+              focus:ring-blue-100
+            "
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="
+              text-sm
+              font-medium
+            "
+          >
+            Content
+          </label>
+
+          <div
+            className="
+              overflow-hidden
+              rounded-[var(--radius)]
+              border
+              border-[var(--border)]
+            "
+          >
+            <RichTextEditor
+              value={content}
+              onChange={setContent}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            loading={loading}
+          >
+            Update Article
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
 }

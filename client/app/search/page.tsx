@@ -1,96 +1,66 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import EmptyState from "@/components/ui/EmptyState";
+import { useSearchParams } from "next/navigation";
 
-import { searchArticles } from "@/services/article.service";
 import type { Article } from "@/types/article";
 
+import { searchArticles } from "@/services/article.service";
+
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import PageTransition from "@/components/motion/PageTransition";
+
+import SearchHeader from "@/components/search/SearchHeader";
+import SearchResults from "@/components/search/SearchResults";
+import SearchEmpty from "@/components/search/SearchEmpty";
+
 export default function SearchPage() {
-  const searchParams = useSearchParams();
+    const searchParams = useSearchParams();
+    const query = searchParams.get("q") || "";
 
-  const query =
-    searchParams.get("q") || "";
+    const [results, setResults] = useState<Article[]>([]);
+    const [loading, setLoading] = useState(false);
 
-  const [results, setResults] =
-    useState<Article[]>([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  useEffect(() => {
-    if (!query) return;
-
-    const runSearch =
-      async () => {
-        try {
-          setLoading(true);
-
-          const data =
-            await searchArticles(query);
-
-          setResults(data.data);
-        } finally {
-          setLoading(false);
+    useEffect(() => {
+        if (!query.trim()) {
+            setResults([]);
+            return;
         }
-      };
 
-    runSearch();
-  }, [query]);
+        const runSearch = async () => {
+            try {
+                setLoading(true);
+                const data = await searchArticles(query);
+                setResults(data.data);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  return (
-    <main className="p-8">
+        runSearch();
+    }, [query]);
 
-      <h1 className="text-3xl font-bold mb-6">
-        Search Results
-      </h1>
+    if (loading) {
+        return (
+            <div className="container-page py-20">
+                <LoadingSpinner text="Searching articles..." />
+            </div>
+        );
+    }
 
-      <p className="mb-6">
-        Query: {query}
-      </p>
+    return (
+        <PageTransition>
+            <div className="container-page py-16 md:py-20 space-y-10">
+                <SearchHeader query={query} total={results.length} />
 
-      {loading && (
-        <p>Searching...</p>
-      )}
-
-      {!loading &&
-        results.length === 0 && (
-
-          <EmptyState
-            icon="🔍"
-            title="No Results Found"
-            description="Try searching with different keywords."
-          />
-
-        )}
-
-      <div className="flex flex-col gap-4">
-
-        {results.map((article) => (
-
-          <div
-            key={article._id}
-            className="border p-4 rounded"
-          >
-            <Link
-              href={`/articles/${article.slug}`}
-            >
-              <h2 className="font-bold">
-                {article.title}
-              </h2>
-            </Link>
-
-            <p>
-              {article.excerpt}
-            </p>
-          </div>
-
-        ))}
-
-      </div>
-
-    </main>
-  );
+                {!query ? (
+                    <SearchEmpty query="anything" />
+                ) : results.length === 0 ? (
+                    <SearchEmpty query={query} />
+                ) : (
+                    <SearchResults articles={results} />
+                )}
+            </div>
+        </PageTransition>
+    );
 }

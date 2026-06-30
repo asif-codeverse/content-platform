@@ -1,22 +1,37 @@
 "use client";
 
 import {
+    useEffect,
+    useState,
+} from "react";
+
+import axios from "axios";
+
+import {
+    CheckCircle2,
+    XCircle,
+    CalendarDays,
+    User,
+} from "lucide-react";
+
+import {
     getPendingArticles,
     publishArticle,
     rejectArticle,
 } from "@/services/article.service";
+
 import type { Article } from "@/types/article";
+
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
-import {
-    useEffect,
-    useState,
-} from "react";
-import axios from "axios";
+import Toast from "@/components/ui/Toast";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/StatusBadge";
 
 export default function PendingArticlesPage() {
-    const [articles, setArticles] = useState<Article[]>([]);
+    const [articles, setArticles] =
+        useState<Article[]>([]);
 
     const [loading, setLoading] =
         useState(true);
@@ -45,22 +60,14 @@ export default function PendingArticlesPage() {
 
             setArticles(data.data);
         } catch (err: unknown) {
-
             if (axios.isAxiosError(err)) {
-
                 setError(
                     err.response?.data?.message ??
                     "Something went wrong."
                 );
-
             } else {
-
-                setError(
-                    "Something went wrong."
-                );
-
+                setError("Something went wrong.");
             }
-
         } finally {
             setLoading(false);
         }
@@ -76,7 +83,6 @@ export default function PendingArticlesPage() {
         setError("");
 
         try {
-
             await publishArticle(
                 id,
                 publishMessage
@@ -91,26 +97,16 @@ export default function PendingArticlesPage() {
 
             setSelectedPublish(null);
             setPublishMessage("");
-
         } catch (err: unknown) {
-
             if (axios.isAxiosError(err)) {
-
                 setError(
                     err.response?.data?.message ??
                     "Something went wrong."
                 );
-
             } else {
-
-                setError(
-                    "Something went wrong."
-                );
-
+                setError("Something went wrong.");
             }
-
         }
-
     };
 
     const handleReject = async (
@@ -126,264 +122,285 @@ export default function PendingArticlesPage() {
 
             setArticles((prev) =>
                 prev.filter(
-                    article => article._id !== id
+                    (article) =>
+                        article._id !== id
                 )
             );
 
             setSelectedReject(null);
             setRejectMessage("");
-
         } catch (err: unknown) {
-
             if (axios.isAxiosError(err)) {
-
                 setError(
                     err.response?.data?.message ??
                     "Something went wrong."
                 );
-
             } else {
-
-                setError(
-                    "Something went wrong."
-                );
-
+                setError("Something went wrong.");
             }
-
         }
-
     };
 
-    if (loading) return (
-        <LoadingSpinner
-            text="Loading pending articles..."
-        />
-    );
-
-    if (error)
+    if (loading) {
         return (
-            <p className="text-red-500">
-                {error}
-            </p>
+            <LoadingSpinner text="Loading pending articles..." />
         );
+    }
 
     return (
-        <main className="max-w-4xl mx-auto p-8">
-            <h1 className="text-3xl font-bold mb-6">
-                Pending Articles
-            </h1>
+        <div className="space-y-8">
+            <PageHeader
+                title="Pending Reviews"
+                description="Review submitted articles before publishing."
+            />
+
+            <Toast
+                message={error}
+                type="error"
+                onClose={() => setError("")}
+            />
 
             {articles.length === 0 && (
                 <EmptyState
-                    icon="🎉"
                     title="No Pending Reviews"
                     description="Everything has been reviewed."
+                    icon="🎉"
                 />
             )}
 
-            {articles.map((article) => (
-                <div
-                    key={article._id}
-                    className="border rounded-lg p-5 mb-5"
-                >
-                    <h2 className="text-xl font-semibold">
-                        {article.title}
-                    </h2>
+            <div className="space-y-6">
+                {articles.map((article) => (
+                    <article
+                        key={article._id}
+                        className="
+              rounded-[var(--radius-lg)]
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+              p-6
+              shadow-[var(--shadow-sm)]
+            "
+                    >
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-semibold tracking-tight">
+                                    {article.title}
+                                </h2>
 
-                    <p className="mt-2">
-                        <strong>Author:</strong>{" "}
-                        {article.author?.name}
-                    </p>
+                                <div
+                                    className="
+                    mt-4
+                    flex
+                    flex-wrap
+                    gap-5
+                    text-sm
+                    text-[var(--muted)]
+                  "
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <User size={16} />
+                                        {article.author?.name}
+                                    </span>
 
-                    <p>
-                        <strong>Status:</strong>{" "}
-                        {article.status}
-                    </p>
+                                    <span className="flex items-center gap-2">
+                                        <CalendarDays size={16} />
+                                        {new Date(
+                                            article.createdAt
+                                        ).toLocaleDateString("en-IN")}
+                                    </span>
+                                </div>
+                            </div>
 
-                    <p>
-                        <strong>Created:</strong>{" "}
-                        {new Date(
-                            article.createdAt
-                        ).toLocaleDateString()}
-                    </p>
+                            <StatusBadge
+                                status={article.status}
+                            />
+                        </div>
 
-                    <div className="mt-4">
-                        <div className="flex gap-3">
+                        <div className="mt-8 flex flex-wrap gap-3">
                             <Button
+                                variant="success"
                                 onClick={() => {
-
                                     setSelectedReject(null);
                                     setRejectMessage("");
 
-                                    setSelectedPublish(article._id);
+                                    setSelectedPublish(
+                                        article._id
+                                    );
                                     setPublishMessage("");
-
                                 }}
                             >
-                                Publish
+                                <span className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} />
+                                    Publish
+                                </span>
                             </Button>
 
                             <Button
-                                className="bg-red-600 hover:bg-red-700"
-
+                                variant="danger"
                                 onClick={() => {
-
                                     setSelectedPublish(null);
                                     setPublishMessage("");
 
-                                    setSelectedReject(article._id);
+                                    setSelectedReject(
+                                        article._id
+                                    );
                                     setRejectMessage("");
-
                                 }}
                             >
-                                Reject
+                                <span className="flex items-center gap-2">
+                                    <XCircle size={16} />
+                                    Reject
+                                </span>
                             </Button>
-
-
                         </div>
 
-                        <div>
-                            {
-                                selectedPublish === article._id && (
+                        {selectedPublish ===
+                            article._id && (
+                                <div
+                                    className="
+                  mt-6
+                  rounded-[var(--radius)]
+                  border
+                  border-[var(--border)]
+                  bg-[var(--surface-secondary)]
+                  p-5
+                "
+                                >
+                                    <h3 className="font-semibold">
+                                        Message to Author
+                                    </h3>
 
-                                    <div className="mt-4 border rounded p-4">
+                                    <p className="mt-2 text-sm text-[var(--muted)]">
+                                        Optional. This message
+                                        will be included with the
+                                        approval email.
+                                    </p>
 
-                                        <h3 className="font-semibold">
-                                            Message to Author
-                                        </h3>
+                                    <textarea
+                                        value={publishMessage}
+                                        onChange={(e) =>
+                                            setPublishMessage(
+                                                e.target.value
+                                            )
+                                        }
+                                        rows={4}
+                                        placeholder="Write a message..."
+                                        className="
+                    mt-4
+                    w-full
+                    rounded-[var(--radius)]
+                    border
+                    border-[var(--border)]
+                    bg-[var(--surface)]
+                    p-3
+                    outline-none
+                    focus:border-blue-500
+                    focus:ring-4
+                    focus:ring-blue-100
+                  "
+                                    />
 
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            Optional. The author will receive this message by email.
-                                        </p>
+                                    <div className="mt-5 flex gap-3">
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => {
+                                                setSelectedPublish(
+                                                    null
+                                                );
+                                                setPublishMessage("");
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
 
-                                        <textarea
-
-                                            value={publishMessage}
-
-                                            onChange={(e) =>
-                                                setPublishMessage(
-                                                    e.target.value
+                                        <Button
+                                            variant="success"
+                                            onClick={() =>
+                                                handlePublish(
+                                                    article._id
                                                 )
                                             }
-
-                                            rows={4}
-
-                                            placeholder="Write a message..."
-
-                                            className="
-                    w-full
-                    border
-                    rounded
-                    p-2
-                    mt-3
-                "
-                                        />
-
-                                        <div className="flex gap-3 mt-4">
-
-                                            <Button
-                                                type="button"
-                                                onClick={() => {
-
-                                                    setSelectedPublish(null);
-                                                    setPublishMessage("");
-
-                                                }}
-                                            >
-                                                Cancel
-                                            </Button>
-
-                                            <Button
-                                                type="button"
-                                                onClick={() =>
-                                                    handlePublish(
-                                                        article._id
-                                                    )
-                                                }
-                                            >
-                                                Publish
-                                            </Button>
-
-                                        </div>
-
+                                        >
+                                            Publish
+                                        </Button>
                                     </div>
+                                </div>
+                            )}
 
-                                )
-                            }
+                        {selectedReject ===
+                            article._id && (
+                                <div
+                                    className="
+                  mt-6
+                  rounded-[var(--radius)]
+                  border
+                  border-[var(--border)]
+                  bg-[var(--surface-secondary)]
+                  p-5
+                "
+                                >
+                                    <h3 className="font-semibold">
+                                        Reason for Rejection
+                                    </h3>
 
+                                    <p className="mt-2 text-sm text-[var(--muted)]">
+                                        Optional. This message
+                                        will be sent to the author.
+                                    </p>
 
-                            {
-                                selectedReject === article._id && (
+                                    <textarea
+                                        value={rejectMessage}
+                                        onChange={(e) =>
+                                            setRejectMessage(
+                                                e.target.value
+                                            )
+                                        }
+                                        rows={4}
+                                        placeholder="Write a message..."
+                                        className="
+                    mt-4
+                    w-full
+                    rounded-[var(--radius)]
+                    border
+                    border-[var(--border)]
+                    bg-[var(--surface)]
+                    p-3
+                    outline-none
+                    focus:border-red-500
+                    focus:ring-4
+                    focus:ring-red-100
+                  "
+                                    />
 
-                                    <div className="mt-4 border rounded p-4">
+                                    <div className="mt-5 flex gap-3">
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => {
+                                                setSelectedReject(
+                                                    null
+                                                );
+                                                setRejectMessage("");
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
 
-                                        <h3 className="font-semibold">
-                                            Reason for rejection
-                                        </h3>
-
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            Optional. The author will receive this message by email.
-                                        </p>
-
-                                        <textarea
-
-                                            value={rejectMessage}
-
-                                            onChange={(e) =>
-                                                setRejectMessage(
-                                                    e.target.value
+                                        <Button
+                                            variant="danger"
+                                            onClick={() =>
+                                                handleReject(
+                                                    article._id
                                                 )
                                             }
-
-                                            rows={4}
-
-                                            placeholder="Write a message..."
-
-                                            className="
-                    w-full
-                    border
-                    rounded
-                    p-2
-                    mt-3
-                "
-                                        />
-
-                                        <div className="flex gap-3 mt-4">
-
-                                            <Button
-                                                type="button"
-                                                onClick={() => {
-
-                                                    setSelectedReject(null);
-                                                    setRejectMessage("");
-
-                                                }}
-                                            >
-                                                Cancel
-                                            </Button>
-
-                                            <Button
-                                                type="button"
-                                                onClick={() =>
-                                                    handleReject(
-                                                        article._id
-                                                    )
-                                                }
-                                            >
-                                                Reject
-                                            </Button>
-
-                                        </div>
-
+                                        >
+                                            Reject
+                                        </Button>
                                     </div>
-
-                                )
-                            }
-                        </div>
-
-                    </div>
-                </div>
-            ))}
-        </main>
+                                </div>
+                            )}
+                    </article>
+                ))}
+            </div>
+        </div>
     );
 }

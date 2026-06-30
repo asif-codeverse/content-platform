@@ -3,13 +3,24 @@
 import { useEffect, useState } from "react";
 
 import {
+  Shield,
+  UserCog,
+  UserMinus,
+} from "lucide-react";
+
+import {
   getUsers,
   updateUserRole,
 } from "@/services/user.service";
 
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/context/AuthContext";
+
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
+import Table from "@/components/ui/Table";
 
 type User = {
   _id: string;
@@ -19,190 +30,151 @@ type User = {
 };
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [users, setUsers] =
-    useState<User[]>([]);
+  const { user: currentUser } = useAuth();
 
-  const [loading, setLoading] =
-    useState(true);
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
 
-  const { user: currentUser } =
-    useAuth();
+      const response = await getUsers();
 
-  const fetchUsers =
-    async () => {
-
-      try {
-
-        const response =
-          await getUsers();
-
-        setUsers(
-          response.data
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-    };
+      setUsers(response.data);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const handleRoleChange =
-    async (
-      userId: string,
-      role: string
-    ) => {
+  const handleRoleChange = async (
+    userId: string,
+    role: string
+  ) => {
+    const confirmed = window.confirm(
+      `Change role to ${role}?`
+    );
 
-      const confirmed =
-        window.confirm(
-          `Change role to ${role}?`
-        );
+    if (!confirmed) return;
 
-      if (!confirmed) {
-        return;
-      }
+    await updateUserRole(userId, role);
 
-      await updateUserRole(
-        userId,
-        role
-      );
+    fetchUsers();
+  };
 
-      fetchUsers();
-    };
-
-  if (loading) return (
-    <LoadingSpinner
-      text="Loading users..."
-    />
-  );
+  if (loading) {
+    return (
+      <LoadingSpinner text="Loading users..." />
+    );
+  }
 
   return (
-    <main className="p-8">
+    <div className="space-y-8">
+      <PageHeader
+        title="Manage Users"
+        description="Manage user roles and platform permissions."
+      />
 
-      <h1 className="text-3xl font-bold mb-6">
-        Manage Users
-      </h1>
+      {users.length === 0 ? (
+        <EmptyState
+          title="No Users Found"
+          description="There are no registered users."
+        />
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th className="text-right">
+                Actions
+              </th>
+            </tr>
+          </thead>
 
-      <table className="w-full border">
+          <tbody>
+            {users.map((user) => (
+              <tr key={user._id}>
+                <td className="font-medium">
+                  {user.name}
+                </td>
 
-        <thead>
+                <td>{user.email}</td>
 
-          <tr className="border">
+                <td>
+                  <StatusBadge
+                    status={user.role}
+                  />
+                </td>
 
-            <th className="text-left p-3">
-              Name
-            </th>
-
-            <th className="text-left p-3">
-              Email
-            </th>
-
-            <th className="text-left p-3">
-              Current Role
-            </th>
-
-            <th className="text-left p-3">
-              Role Management
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          {users.map((user) => (
-
-            <tr
-              key={user._id}
-              className="border"
-            >
-
-              <td className="p-3">{user.name}</td>
-
-              <td className="p-3">{user.email}</td>
-
-              <td className="p-3">
-
-                {user.role === "ADMIN" && (
-                  <span className="font-bold ">
-                    ADMIN
-                  </span>
-                )}
-
-                {user.role === "EDITOR" && (
-                  <span>
-                    EDITOR
-                  </span>
-                )}
-
-                {user.role === "USER" && (
-                  <span>
-                    USER
-                  </span>
-                )}
-
-              </td>
-
-              <td className="p-3">
-
-                {currentUser?._id === user._id ? (
-
-                  <span>
-                    Your Account
-                  </span>
-
-                ) : user.role === "USER" ? (
-
-                  <Button
-                    onClick={() =>
-                      handleRoleChange(
-                        user._id,
-                        "EDITOR"
-                      )
-                    }
-                    className="border px-3 py-1 rounded"
-                  >
-                    Make Editor
-                  </Button>
-
-                ) : user.role === "EDITOR" ? (
-
-                  <Button
-                    onClick={() =>
-                      handleRoleChange(
-                        user._id,
-                        "USER"
-                      )
-                    }
-                    className="border px-3 py-1 rounded"
-                  >
-                    Remove Editor
-                  </Button>
-
-                ) : (
-                  user.role === "ADMIN" && (
-                    <span>
+                <td className="text-right">
+                  {currentUser?._id ===
+                    user._id ? (
+                    <span
+                      className="
+                        text-sm
+                        font-medium
+                        text-[var(--muted)]
+                      "
+                    >
+                      Your Account
+                    </span>
+                  ) : user.role === "USER" ? (
+                    <Button
+                      variant="success"
+                      onClick={() =>
+                        handleRoleChange(
+                          user._id,
+                          "EDITOR"
+                        )
+                      }
+                    >
+                      <span className="flex items-center gap-2">
+                        <UserCog size={16} />
+                        Make Editor
+                      </span>
+                    </Button>
+                  ) : user.role ===
+                    "EDITOR" ? (
+                    <Button
+                      variant="danger"
+                      onClick={() =>
+                        handleRoleChange(
+                          user._id,
+                          "USER"
+                        )
+                      }
+                    >
+                      <span className="flex items-center gap-2">
+                        <UserMinus size={16} />
+                        Remove Editor
+                      </span>
+                    </Button>
+                  ) : (
+                    <span
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        text-sm
+                        font-medium
+                      "
+                    >
+                      <Shield size={16} />
                       System Admin
                     </span>
-                  )
-                )}
-
-              </td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
-    </main>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+    </div>
   );
 }

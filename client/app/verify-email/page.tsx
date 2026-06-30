@@ -1,226 +1,206 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import { MailCheck } from "lucide-react";
+
+import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 
 export default function VerifyEmailPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const email = searchParams.get("email") || "";
 
-  const router = useRouter();
+    const [otp, setOtp] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [cooldown, setCooldown] = useState(0);
 
-  const searchParams =
-    useSearchParams();
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setInterval(() => {
+            setCooldown((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [cooldown]);
 
-  const email =
-    searchParams.get("email") || "";
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-  const [otp, setOtp] =
-    useState("");
+        try {
+            setLoading(true);
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`,
+                { email, otp }
+            );
 
-  const [loading, setLoading] =
-    useState(false);
+            setError("");
+            setMessage("Email verified successfully.");
 
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const [cooldown, setCooldown] =
-    useState(0);
-
-  useEffect(() => {
-
-    if (cooldown <= 0) return;
-
-    const timer =
-      setInterval(() => {
-
-        setCooldown(
-          (prev) => prev - 1
-        );
-
-      }, 1000);
-
-    return () =>
-      clearInterval(timer);
-
-  }, [cooldown]);
-
-  const handleVerify =
-    async (
-      e: React.FormEvent
-    ) => {
-
-      e.preventDefault();
-
-      try {
-
-        setLoading(true);
-
-        await axios.post(
-
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`,
-
-          {
-            email,
-            otp,
-          }
-
-        );
-
-        setError("");
-        setMessage(
-          "Email verified successfully"
-        );
-
-        setTimeout(() => {
-
-          router.push("/login");
-
-        }, 1500);
-
-      } catch (err: unknown) {
-
-        if (axios.isAxiosError(err)) {
-          setMessage("");
-          setError(
-            err.response?.data?.message ??
-            "Something went wrong."
-          );
-
-        } else {
-
-          setError(
-            "Something went wrong."
-          );
-
+            setTimeout(() => {
+                router.push("/login");
+            }, 1500);
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                setMessage("");
+                setError(err.response?.data?.message ?? "Something went wrong.");
+            } else {
+                setError("Something went wrong.");
+            }
+        } finally {
+            setLoading(false);
         }
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
     };
 
-  const handleResend =
-    async () => {
+    const handleResend = async () => {
+        try {
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/resend-verification`,
+                { email }
+            );
 
-      try {
-
-        await axios.post(
-
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/resend-verification`,
-
-          {
-            email,
-          }
-
-        );
-
-        setCooldown(60);
-        setError("");
-        setMessage(
-          "OTP sent successfully"
-        );
-
-      } catch (err: unknown) {
-
-        if (axios.isAxiosError(err)) {
-          setMessage("");
-
-          setError(
-            err.response?.data?.message ??
-            "Something went wrong."
-          );
-
-        } else {
-
-          setError(
-            "Something went wrong."
-          );
-
+            setCooldown(60);
+            setError("");
+            setMessage("OTP sent successfully.");
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                setMessage("");
+                setError(err.response?.data?.message ?? "Something went wrong.");
+            } else {
+                setError("Something went wrong.");
+            }
         }
-
-      }
-
     };
 
-  return (
-
-    <main className="max-w-md mx-auto p-8">
-
-      <h1 className="text-3xl font-bold mb-4">
-        Verify Email
-      </h1>
-
-      <p className="mb-4 text-gray-600">
-        Enter the OTP sent to
-        <br />
-        <strong>{email}</strong>
-      </p>
-
-      <form
-        onSubmit={handleVerify}
-        className="space-y-4"
-      >
-
-        <input
-          type="text"
-          maxLength={6}
-          inputMode="numeric"
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) =>
-            setOtp(
-              e.target.value
-            )
-          }
-          className="w-full border p-3"
-        />
-
-        <button
-          type="submit"
-          disabled={loading || cooldown > 0}
-          className="border p-3 w-full"
+    return (
+        <main
+            className="
+                flex
+                min-h-screen
+                items-center
+                justify-center
+                bg-[var(--background)]
+                px-6
+                py-12
+            "
         >
-          {loading
-            ? "Verifying..."
-            : "Verify Email"}
-        </button>
+            <div
+                className="
+                    w-full
+                    max-w-[400px]
+                    rounded-[var(--radius-lg)]
+                    border
+                    border-[var(--border)]
+                    bg-[var(--surface)]
+                    p-8
+                    md:p-10
+                    shadow-[var(--shadow-sm)]
+                "
+            >
+                <div className="mb-8 text-center flex flex-col items-center">
+                    <div
+                        className="
+                            mb-6
+                            flex
+                            h-12
+                            w-12
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-[var(--surface-secondary)]
+                            border
+                            border-[var(--border)]
+                            text-[var(--foreground)]
+                        "
+                    >
+                        <MailCheck size={20} strokeWidth={2} />
+                    </div>
 
-      </form>
+                    <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                        Verify Email
+                    </h1>
 
-      <button
-        disabled={cooldown > 0}
-        onClick={handleResend}
-      >
-        {
-          cooldown > 0
-            ? `Resend in ${cooldown}s`
-            : "Resend OTP"
-        }
-      </button>
+                    <p className="mt-2 text-[14px] text-[var(--muted-foreground)]">
+                        Enter the 6-digit verification code sent to
+                    </p>
 
-      {message && (
-        <Toast
-          message={message}
-          type="success"
-        />
-      )}
-      {
-        error && (
-          <p className="text-red-500 mt-4">
-            {error}
-          </p>
-        )
-      }
+                    <p className="mt-1 text-[14px] font-medium text-[var(--foreground)]">
+                        {email}
+                    </p>
+                </div>
 
-    </main>
+                <Toast message={error} type="error" onClose={() => setError("")} />
+                <Toast message={message} type="success" onClose={() => setMessage("")} />
 
-  );
+                <form onSubmit={handleVerify} className="space-y-5">
+                    <div className="space-y-2">
+                        <label
+                            htmlFor="otp"
+                            className="text-[13px] font-medium text-[var(--foreground)]"
+                        >
+                            Verification Code
+                        </label>
 
+                        <input
+                            id="otp"
+                            type="text"
+                            maxLength={6}
+                            inputMode="numeric"
+                            placeholder="123456"
+                            value={otp}
+                            onChange={(e) =>
+                                setOtp(e.target.value.replace(/\D/g, ""))
+                            }
+                            className="
+                                w-full
+                                rounded-[var(--radius-sm)]
+                                border
+                                border-[var(--border)]
+                                bg-[var(--background)]
+                                px-4
+                                py-3
+                                text-center
+                                text-lg
+                                tracking-[0.5em]
+                                outline-none
+                                transition-all
+                                duration-200
+                                placeholder:text-[var(--muted)]
+                                hover:border-[var(--border-strong)]
+                                focus:border-[var(--border)]
+                                focus:bg-[var(--surface)]
+                                focus:ring-2
+                                focus:ring-[var(--ring)]
+                                focus:ring-offset-1
+                                focus:ring-offset-[var(--background)]
+                            "
+                            required
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        loading={loading}
+                        disabled={otp.length !== 6}
+                        className="w-full mt-2 h-11 text-[15px]"
+                    >
+                        Verify Email
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={cooldown > 0}
+                        onClick={handleResend}
+                        className="w-full"
+                    >
+                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+                    </Button>
+                </form>
+            </div>
+        </main>
+    );
 }

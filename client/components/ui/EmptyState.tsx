@@ -1,29 +1,85 @@
+import type { ReactNode } from "react";
+import { Search } from "lucide-react";
+
 type Props = {
-  title: string;
-  description: string;
-  icon?: string;
+    title: string;
+    description: string;
+    icon?: string | ReactNode;
+    action?: ReactNode;
 };
 
 export default function EmptyState({
-  title,
-  description,
-  icon = "📄",
+    title,
+    description,
+    icon,
+    action,
 }: Props) {
-  return (
-    <div className="py-16 text-center">
+    const renderedIcon =
+        typeof icon === "string" ? (
+            <span className="text-3xl md:text-4xl">{icon}</span>
+        ) : (
+            icon ?? <Search size={24} strokeWidth={2} />
+        );
 
-      <div className="text-5xl">
-        {icon}
-      </div>
+    return (
+        <div
+            className="
+                flex
+                flex-col
+                items-center
+                justify-center
+                rounded-[var(--radius-lg)]
+                border
+                border-dashed
+                border-[var(--border)]
+                bg-[var(--surface)]
+                px-8
+                py-24
+                text-center
+            "
+        >
+            <div
+                className="
+                    mb-6
+                    flex
+                    h-14
+                    w-14
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[var(--surface-secondary)]
+                    text-[var(--muted-foreground)]
+                    border
+                    border-[var(--border)]
+                "
+            >
+                {renderedIcon}
+            </div>
 
-      <h2 className="mt-4 text-2xl font-semibold">
-        {title}
-      </h2>
+            <h2
+                className="
+                    text-xl
+                    font-semibold
+                    tracking-tight
+                    text-[var(--foreground)]
+                "
+            >
+                {title}
+            </h2>
 
-      <p className="mt-2 text-gray-500">
-        {description}
-      </p>
+            <p
+                className="
+                    mt-2
+                    max-w-sm
+                    text-[15px]
+                    leading-relaxed
+                    text-[var(--muted-foreground)]
+                "
+            >
+                {description}
+            </p>
 
-    </div>
-  );
+            {action && <div className="mt-8">{action}</div>}
+        </div>
+    );
 }

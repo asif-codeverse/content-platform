@@ -7,7 +7,15 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      {children}
+      <section
+        className="
+          container-page
+          py-10
+          space-y-8
+        "
+      >
+        {children}
+      </section>
     </ProtectedRoute>
   );
 }

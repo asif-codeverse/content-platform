@@ -1,3 +1,5 @@
+import { Loader2 } from "lucide-react";
+
 type Props = {
     text?: string;
     className?: string;
@@ -11,7 +13,7 @@ export default function LoadingSpinner({
         <div
             className={`
                 flex
-                min-h-[300px]
+                min-h-[320px]
                 flex-col
                 items-center
                 justify-center
@@ -19,11 +21,26 @@ export default function LoadingSpinner({
                 ${className}
             `}
         >
-            {/* spinner */}
+            <Loader2
+                size={28}
+                className="
+                    animate-spin
+                    text-[var(--muted-foreground)]
+                "
+                strokeWidth={2}
+            />
 
-            <p className="text-gray-500">
-                {text}
-            </p>
+            {text && (
+                <p
+                    className="
+                        text-[13px]
+                        font-medium
+                        text-[var(--muted-foreground)]
+                    "
+                >
+                    {text}
+                </p>
+            )}
         </div>
     );
 }

@@ -1,117 +1,184 @@
 "use client";
 
-import {
-    useEffect,
-    useState,
-} from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Article } from "@/types/article";
-import Button from "@/components/ui/Button";
 
 import {
-    getAdminArticles,
-    publishArticle,
-    deleteArticle,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
+
+import type { Article } from "@/types/article";
+
+import {
+  deleteArticle,
+  getAdminArticles,
+  publishArticle,
 } from "@/services/admin.service";
 
+import Button from "@/components/ui/Button";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/StatusBadge";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+
 export default function ManagePage() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    const [articles, setArticles] =
-        useState<Article[]>([]);
+  const [deleteId, setDeleteId] =
+    useState<string | null>(null);
 
-    const loadArticles =
-        async () => {
+  const loadArticles = async () => {
+    try {
+      setLoading(true);
 
-            try {
-                const data =
-                    await getAdminArticles();
-                setArticles(data.data);
-            } finally { }
-        };
+      const data = await getAdminArticles();
 
-    useEffect(() => {
-        loadArticles();
-    }, []);
+      setArticles(data.data);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handlePublish =
-        async (id: string) => {
+  useEffect(() => {
+    loadArticles();
+  }, []);
 
-            await publishArticle(id);
+  const handlePublish = async (id: string) => {
+    await publishArticle(id);
 
-            loadArticles();
-        };
+    loadArticles();
+  };
 
-    const handleDelete =
-        async (id: string) => {
+  const handleDelete = async () => {
+    if (!deleteId) return;
 
-            await deleteArticle(id);
+    await deleteArticle(deleteId);
 
-            loadArticles();
-        };
+    setDeleteId(null);
 
+    loadArticles();
+  };
+
+  if (loading) {
     return (
-        <main className="p-8">
+      <LoadingSpinner text="Loading articles..." />
+    );
+  }
 
-            <h1 className="text-3xl font-bold mb-6">
-                Manage Articles
-            </h1>
+  if (!articles.length) {
+    return (
+      <>
+        <PageHeader
+          title="Manage Articles"
+          description="Review and manage all articles."
+        />
 
-            <div className="flex flex-col gap-4">
+        <EmptyState
+          title="No Articles Found"
+          description="There are no articles available."
+        />
+      </>
+    );
+  }
 
-                {articles.map(
-                    (article) => (
+  return (
+    <>
+      <PageHeader
+        title="Manage Articles"
+        description="Review, edit and publish platform content."
+      />
 
-                        <div
-                            key={article._id}
-                            className="
-                border
-                p-4
-                rounded
-              "
-                        >
+      <div className="space-y-6">
+        {articles.map((article) => (
+          <div
+            key={article._id}
+            className="
+              rounded-[var(--radius-lg)]
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+              p-6
+              shadow-[var(--shadow-sm)]
+              transition-all
+              duration-300
+              hover:shadow-[var(--shadow)]
+            "
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  className="
+                    text-xl
+                    font-semibold
+                    tracking-tight
+                  "
+                >
+                  {article.title}
+                </h2>
 
-                            <h2 className="font-bold">
-                                {article.title}
-                            </h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  ID: {article._id}
+                </p>
+              </div>
 
-                            <p>
-                                Status:
-                                {" "}
-                                {article.status}
-                            </p>
-
-                            <div className="flex gap-3 mt-3">
-
-                                {
-                                    article.status === "DRAFT" && (<Button
-                                        onClick={() => handlePublish(article._id)}
-                                    >
-                                        Publish
-                                    </Button>)}
-
-                                <Link
-                                    href={`/dashboard/edit/${article._id}`}
-                                >
-                                    <Button>
-                                        Edit
-                                    </Button>
-                                </Link>
-
-                                <Button
-                                    className="bg-red-600 hover:bg-red-700"
-                                    onClick={() => handleDelete(article._id)}
-                                >
-                                    Delete
-                                </Button>
-
-                            </div>
-
-                        </div>
-                    )
-                )}
-
+              <StatusBadge
+                status={article.status}
+              />
             </div>
 
-        </main>
-    );
+            <div className="mt-6 flex flex-wrap gap-3">
+              {article.status === "DRAFT" && (
+                <Button
+                  onClick={() =>
+                    handlePublish(article._id)
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <Upload size={16} />
+                    Publish
+                  </span>
+                </Button>
+              )}
+
+              <Link
+                href={`/dashboard/edit/${article._id}`}
+              >
+                <Button variant="secondary">
+                  <span className="flex items-center gap-2">
+                    <Pencil size={16} />
+                    Edit
+                  </span>
+                </Button>
+              </Link>
+
+              <Button
+                variant="danger"
+                onClick={() =>
+                  setDeleteId(article._id)
+                }
+              >
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  Delete
+                </span>
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete Article"
+        description="This action cannot be undone."
+        confirmText="Delete"
+        onCancel={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+      />
+    </>
+  );
 }

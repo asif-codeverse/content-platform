@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+
 import Navbar from "./Navbar";
 
 export default function AppShell({
@@ -8,22 +9,32 @@ export default function AppShell({
 }: {
   children: React.ReactNode;
 }) {
-
-  const pathname =
-    usePathname();
+  const pathname = usePathname();
 
   const hideNavbar =
-    pathname.startsWith("/verify-email") ||
     pathname === "/login" ||
-    pathname === "/register";
+    pathname === "/register" ||
+    pathname.startsWith("/verify-email");
 
   return (
-    <>
-      {!hideNavbar && (
-        <Navbar />
-      )}
+    <div
+      className="
+        min-h-screen
+        bg-[var(--background)]
+        text-[var(--foreground)]
+      "
+    >
+      {!hideNavbar && <Navbar />}
 
-      {children}
-    </>
+      <main
+        className={
+          hideNavbar
+            ? "min-h-screen"
+            : "pt-24 pb-12"
+        }
+      >
+        {children}
+      </main>
+    </div>
   );
 }
