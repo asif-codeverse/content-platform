@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
             );
 
             setError("");
-            setMessage("Email verified successfully.");
+            setMessage("Email verified successfully. Redirecting to sign in...");
 
             setTimeout(() => {
                 router.push("/login");
@@ -64,7 +64,9 @@ export default function VerifyEmailPage() {
 
             setCooldown(60);
             setError("");
-            setMessage("OTP sent successfully.");
+            setMessage(
+                "A new verification code has been sent. If you don't see it, please check your Spam or Junk folder."
+            );
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 setMessage("");
@@ -120,7 +122,7 @@ export default function VerifyEmailPage() {
                     </div>
 
                     <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                        Verify Email
+                        Verify Your Email
                     </h1>
 
                     <p className="mt-2 text-[14px] text-[var(--muted-foreground)]">
@@ -130,7 +132,33 @@ export default function VerifyEmailPage() {
                     <p className="mt-1 text-[14px] font-medium text-[var(--foreground)]">
                         {email}
                     </p>
+
+                    <div
+                        className="
+        mt-6
+        w-full
+        rounded-[var(--radius)]
+        border
+        border-[var(--border)]
+        bg-[var(--surface-secondary)]
+        p-4
+        text-left
+    "
+                    >
+                        <h2 className="text-sm font-semibold text-[var(--foreground)]">
+                            Can't find the email?
+                        </h2>
+
+                        <ul className="mt-3 space-y-2 text-sm text-[var(--muted-foreground)]">
+                            <li>• Check your Spam or Junk folder.</li>
+                            <li>• Delivery may take up to 2 minutes.</li>
+                            <li>• Verify that the email address above is correct.</li>
+                            <li>• You can request a new code after 60 seconds.</li>
+                        </ul>
+                    </div>
                 </div>
+
+
 
                 <Toast message={error} type="error" onClose={() => setError("")} />
                 <Toast message={message} type="success" onClose={() => setMessage("")} />
@@ -197,7 +225,7 @@ export default function VerifyEmailPage() {
                         onClick={handleResend}
                         className="w-full"
                     >
-                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend Code"}
                     </Button>
                 </form>
             </div>
