@@ -6,6 +6,7 @@ import {
 
 import EmptyState from "@/components/ui/EmptyState";
 import ViewTracker from "@/components/articles/ViewTracker";
+import { articleTypography } from "@/lib/articleTypography";
 
 type Props = {
     params: Promise<{
@@ -134,29 +135,7 @@ export default async function ArticlePage({ params }: Props) {
                 </header>
 
                 <div
-                    className="
-                        prose
-                        prose-lg
-                        md:prose-xl
-                        max-w-none
-                        prose-headings:tracking-tighter
-                        prose-headings:text-[var(--foreground)]
-                        prose-headings:font-bold
-                        prose-p:leading-[1.8]
-                        prose-p:text-[var(--foreground)]
-                        prose-a:text-[var(--accent)]
-                        prose-strong:text-[var(--foreground)]
-                        prose-blockquote:border-l-[var(--border-strong)]
-                        prose-blockquote:text-[var(--muted-foreground)]
-                        prose-blockquote:font-style-italic
-                        prose-img:rounded-[var(--radius-image)]
-                        prose-img:shadow-[var(--shadow-sm)]
-                        prose-pre:bg-[var(--surface-secondary)]
-                        prose-pre:border
-                        prose-pre:border-[var(--border)]
-                        prose-code:text-[var(--foreground)]
-                        dark:prose-invert
-                    "
+                    className={`${articleTypography} article-content`}
                     dangerouslySetInnerHTML={{
                         __html: article.content,
                     }}

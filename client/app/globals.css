@@ -420,3 +420,22 @@ button:disabled {
     transform: scale(1.01);
     box-shadow: var(--shadow);
 }
+
+.article-content code::before,
+.article-content code::after {
+    content: none;
+}
+
+.article-content img {
+    display: block;
+    margin-inline: auto;
+}
+
+.article-content table {
+    width: 100%;
+}
+
+.article-content th,
+.article-content td {
+    vertical-align: middle;
+}
