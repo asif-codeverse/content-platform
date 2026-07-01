@@ -83,11 +83,10 @@ export const registerUser = async ({
 
     } catch (error) {
 
-      logger.error("Email send failed", {
+      logger.error("Brevo Email Error", {
         message: error.message,
-        code: error.code,
-        response: error.response,
-        responseCode: error.responseCode,
+        status: error.response?.status,
+        data: error.response?.data,
       });
 
       logger.info(
@@ -501,7 +500,11 @@ export const resendVerificationOtp =
 
     } catch (error) {
 
-      logger.error(error);
+      logger.error("Brevo Email Error", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
 
       logger.info(
         "EMAIL_VERIFICATION_OTP",

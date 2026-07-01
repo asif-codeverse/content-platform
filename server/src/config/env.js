@@ -32,15 +32,15 @@ const envSchema = z.object({
 
   REDIS_URL: z.string().url(),
 
-  EMAIL_USER:
-    process.env.NODE_ENV === "test"
-      ? z.string().optional()
-      : z.string().email(),
-
-  EMAIL_PASS:
+  BREVO_API_KEY:
     process.env.NODE_ENV === "test"
       ? z.string().optional()
       : z.string(),
+
+  EMAIL_FROM:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string().email(),
 
   CLOUDINARY_CLOUD_NAME:
     process.env.NODE_ENV === "test"
