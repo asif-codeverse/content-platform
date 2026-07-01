@@ -1,5 +1,4 @@
 "use client";
-
 import {
     useEffect,
     useState,
@@ -12,6 +11,7 @@ import {
     XCircle,
     CalendarDays,
     User,
+    ClipboardCheck
 } from "lucide-react";
 
 import {
@@ -147,6 +147,34 @@ export default function PendingArticlesPage() {
         );
     }
 
+    if (articles.length === 0) {
+        return (
+            <div className="space-y-8">
+                <PageHeader
+                    title="Pending Reviews"
+                    description="Review submitted articles before publishing."
+                />
+
+                <Toast
+                    message={error}
+                    type="error"
+                    onClose={() => setError("")}
+                />
+
+                <EmptyState
+                    title="No Pending Reviews"
+                    description="There are no articles waiting for review."
+                    icon={
+                        <ClipboardCheck
+                            size={28}
+                            strokeWidth={2}
+                        />
+                    }
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
             <PageHeader
@@ -160,13 +188,6 @@ export default function PendingArticlesPage() {
                 onClose={() => setError("")}
             />
 
-            {articles.length === 0 && (
-                <EmptyState
-                    title="No Pending Reviews"
-                    description="Everything has been reviewed."
-                    icon="🎉"
-                />
-            )}
 
             <div className="space-y-6">
                 {articles.map((article) => (
