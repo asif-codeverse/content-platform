@@ -5,7 +5,7 @@ import { connectDB } from "../src/config/db.js";
 import { env } from "../src/config/env.js";
 import { Article } from "../src/modules/articles/article.model.js";
 import { User } from "../src/modules/auth/auth.model.js";
-import bcrypt from "bcryptjs";
+import { createAuthenticatedUser } from "../test-utils/auth.helper.js";
 
 const API = "/api/v1";
 
@@ -80,28 +80,18 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should allow ADMIN to publish and make article public", async () => {
-    const hashedPassword = await bcrypt.hash("Password123", 10);
-
-    const admin = await User.create({
-      name: "Admin User",
-      email: "admin@test.com",
-      password: hashedPassword,
-      role: "ADMIN",
-      refreshTokenVersion: 0,
-    });
-
-    const loginRes = await request(app).post(`${API}/auth/login`).send({
-      email: "admin@test.com",
-      password: "Password123",
-    });
-
-    const token = loginRes.body.accessToken;
+    const { user: admin, accessToken: token } =
+      await createAuthenticatedUser({
+        name: "Admin User",
+        email: "admin@test.com",
+        role: "ADMIN",
+      });
     expect(token).toBeDefined();
 
     const article = await Article.create({
       title: "Publish Flow Test",
       content: "Will become public",
-      status: "DRAFT",
+      status: "PENDING",
       author: admin._id,
       slug: "publish-flow-test",
     });
@@ -124,22 +114,13 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should NOT allow EDITOR to publish article", async () => {
-    const hashedPassword = await bcrypt.hash("Password123", 10);
 
-    const editor = await User.create({
-      name: "Editor User",
-      email: "editor@test.com",
-      password: hashedPassword,
-      role: "EDITOR",
-      refreshTokenVersion: 0,
-    });
-
-    const loginRes = await request(app).post(`${API}/auth/login`).send({
-      email: "editor@test.com",
-      password: "Password123",
-    });
-
-    const token = loginRes.body.accessToken;
+    const { user: editor, accessToken: token } =
+      await createAuthenticatedUser({
+        name: "Editor User",
+        email: "editor@test.com",
+        role: "EDITOR",
+      });
 
     const article = await Article.create({
       title: "Editor Draft",
@@ -161,15 +142,20 @@ describe("Articles Public API", () => {
   // ---------------------------------------
 
   it("should NOT allow EDITOR to edit another user's article", async () => {
-    const hashedAdminPassword = await bcrypt.hash("Password123", 10);
 
-    const admin = await User.create({
-      name: "Admin User",
-      email: "admin@test.com",
-      password: hashedAdminPassword,
-      role: "ADMIN",
-      refreshTokenVersion: 0,
-    });
+    const { user: admin } =
+      await createAuthenticatedUser({
+        name: "Admin User",
+        email: "admin@test.com",
+        role: "ADMIN",
+      });
+
+    const { accessToken: editorToken } =
+      await createAuthenticatedUser({
+        name: "Editor User",
+        email: "editor2@test.com",
+        role: "EDITOR",
+      });
 
     const article = await Article.create({
       title: "Admin Article",
@@ -179,48 +165,25 @@ describe("Articles Public API", () => {
       slug: "admin-article",
     });
 
-    const hashedEditorPassword = await bcrypt.hash("Password123", 10);
-
-    const editor = await User.create({
-      name: "Editor User",
-      email: "editor2@test.com",
-      password: hashedEditorPassword,
-      role: "EDITOR",
-      refreshTokenVersion: 0,
-    });
-
-    const editorLogin = await request(app).post(`${API}/auth/login`).send({
-      email: "editor2@test.com",
-      password: "Password123",
-    });
-
-    const editorToken = editorLogin.body.accessToken;
-
     const res = await request(app)
       .patch(`${API}/articles/${article._id}`)
       .set("Authorization", `Bearer ${editorToken}`)
-      .send({ title: "Hacked Title" });
+      .send({
+        title: "Hacked Title",
+      });
 
     expect(res.statusCode).toBe(403);
   });
 
   it("should NOT allow updating title to an existing slug", async () => {
-    const hashedPassword = await bcrypt.hash("Password123", 10);
 
-    const admin = await User.create({
-      name: "Admin User",
-      email: "admin3@test.com",
-      password: hashedPassword,
-      role: "ADMIN",
-      refreshTokenVersion: 0,
-    });
-
-    const loginRes = await request(app).post(`${API}/auth/login`).send({
-      email: "admin3@test.com",
-      password: "Password123",
-    });
-
-    const token = loginRes.body.accessToken;
+    const { user: admin, accessToken: token } =
+      await createAuthenticatedUser({
+        name: "Admin User",
+        email: "admin3@test.com",
+        password: "Password123",
+        role: "ADMIN",
+      });
 
     const article1 = await Article.create({
       title: "First Title",
@@ -247,23 +210,23 @@ describe("Articles Public API", () => {
   });
 
   it("should NOT allow EDITOR to modify published article", async () => {
-    const hashedPassword = await bcrypt.hash("Password123", 10);
-
-    const admin = await User.create({
+    await createAuthenticatedUser({
       name: "Admin User",
       email: "admin4@test.com",
-      password: hashedPassword,
+      password: "Password123",
       role: "ADMIN",
-      refreshTokenVersion: 0,
     });
 
-    const editor = await User.create({
-      name: "Editor User",
-      email: "editor@test.com",
-      password: hashedPassword,
-      role: "EDITOR",
-      refreshTokenVersion: 0,
-    });
+    const {
+      user: editor,
+      accessToken: token,
+    } =
+      await createAuthenticatedUser({
+        name: "Editor User",
+        email: "editor@test.com",
+        password: "Password123",
+        role: "EDITOR",
+      });
 
     const article = await Article.create({
       title: "Published Article",
@@ -272,13 +235,6 @@ describe("Articles Public API", () => {
       author: editor._id,
       slug: "published-article",
     });
-
-    const loginRes = await request(app).post(`${API}/auth/login`).send({
-      email: "editor@test.com",
-      password: "Password123",
-    });
-
-    const token = loginRes.body.accessToken;
 
     const res = await request(app)
       .patch(`${API}/articles/${article._id}`)
@@ -310,30 +266,13 @@ describe("Articles Public API", () => {
 
   it("ADMIN should create article", async () => {
 
-    const hashedPassword =
-      await bcrypt.hash(
-        "password123",
-        10
-      );
-
-    await User.create({
-      name: "Admin User",
-      email: "admin@test.com",
-      password: hashedPassword,
-      role: "ADMIN",
-      refreshTokenVersion: 0,
-    });
-
-    const loginRes =
-      await request(app)
-        .post(`${API}/auth/login`)
-        .send({
-          email: "admin@test.com",
-          password: "password123",
-        });
-
-    const token =
-      loginRes.body.accessToken;
+    const { accessToken: token } =
+      await createAuthenticatedUser({
+        name: "Admin User",
+        email: "admin@test.com",
+        password: "Password123",
+        role: "ADMIN",
+      });
 
     const res =
       await request(app)
@@ -354,31 +293,13 @@ describe("Articles Public API", () => {
 
   it("ADMIN should delete article", async () => {
 
-    const hashedPassword =
-      await bcrypt.hash(
-        "password123",
-        10
-      );
-
-    const admin =
-      await User.create({
+    const { user: admin, accessToken: token } =
+      await createAuthenticatedUser({
         name: "Admin User",
         email: "admin@test.com",
-        password: hashedPassword,
+        password: "password123",
         role: "ADMIN",
-        refreshTokenVersion: 0,
       });
-
-    const loginRes =
-      await request(app)
-        .post(`${API}/auth/login`)
-        .send({
-          email: "admin@test.com",
-          password: "password123",
-        });
-
-    const token =
-      loginRes.body.accessToken;
 
     const article =
       await Article.create({

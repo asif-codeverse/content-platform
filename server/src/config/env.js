@@ -32,12 +32,30 @@ const envSchema = z.object({
 
   REDIS_URL: z.string().url(),
 
-  EMAIL_USER: z.string().email(),
-  EMAIL_PASS: z.string(),
+  EMAIL_USER:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string().email(),
 
-  CLOUDINARY_CLOUD_NAME: z.string(),
-  CLOUDINARY_API_KEY: z.string(),
-  CLOUDINARY_API_SECRET: z.string(),
+  EMAIL_PASS:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string(),
+
+  CLOUDINARY_CLOUD_NAME:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string(),
+
+  CLOUDINARY_API_KEY:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string(),
+
+  CLOUDINARY_API_SECRET:
+    process.env.NODE_ENV === "test"
+      ? z.string().optional()
+      : z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);

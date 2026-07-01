@@ -10,7 +10,6 @@ import {
 import { logger } from "../../utils/logger.js";
 
 
-
 const generateOtp = () =>
   Math.floor(
     100000 +
