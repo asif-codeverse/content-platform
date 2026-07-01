@@ -1,2562 +1,487 @@
-# Content Platform Architecture
+# Architectural Documentation
 
-## Overview
+## 1. Overview
 
-Content Platform is a production-oriented content management system built using a modern full-stack architecture consisting of a Next.js frontend, an Express.js backend, MongoDB Atlas, Redis, and an asynchronous job processing layer.
+The Content Platform is a production-grade, headless content management system (CMS) tailored specifically for complex editorial workflows. Built on a modernized Node.js and React stack, it provides a highly decoupled, stateless architecture designed to support digital publishers. 
 
-The repository follows a monorepo structure and is intentionally designed around software engineering principles rather than tutorial-driven implementation patterns.
+The primary business problem this system solves is the friction between editorial authoring and robust technical delivery. By completely decoupling the presentation layer (Next.js) from the business logic and persistence layer (Express.js, MongoDB), the platform allows editorial teams to draft, review, and publish rich media content while engineering teams can scale the distribution of that content horizontally. 
 
-The architecture emphasizes:
-
-* Correctness before convenience
-* Security before feature velocity
-* Explicit trust boundaries
-* Predictable domain behavior
-* Reliability under retries and failures
-* Horizontal scalability
-* Layered separation of concerns
-* Evolvability without architectural rewrites
-
-The objective is to build a system that remains maintainable and predictable under increasing traffic, concurrent access, partial failures, and future feature expansion.
+This document serves as the comprehensive engineering blueprint for the platform. It outlines the architectural decisions, structural topologies, and technical trade-offs that dictate how the system operates in a production environment. 
 
 ---
 
-# Architectural Objectives
+## 2. Design Goals
 
-The platform guarantees:
+The architecture of the Content Platform is driven by several strict engineering goals:
 
-* Stateless authentication
-* Refresh token rotation
-* Route-level RBAC
-* Service-level ABAC
-* Explicit query validation
-* Cache-aware data access
-* Index-aligned MongoDB queries
-* Redis-backed performance optimization
-* Structured observability
-* Safe asynchronous processing
-* SEO-aware frontend delivery
-* Production deployment readiness
+1. **Read-Heavy Performance Over Optimization for Writes**: Content platforms typically exhibit a 99:1 read-to-write ratio. The system aggressively prioritizes read performance through multi-tier caching (Redis) and client-side caching (ETags) over write speed.
+2. **Horizontal Scalability via Statelessness**: The backend retains absolutely no session state. Authentication relies on cryptographically signed JSON Web Tokens (JWTs), ensuring that API requests can be routed to any healthy Express pod in a round-robin fashion without requiring sticky sessions.
+3. **Explicit Trust Boundaries**: Client payloads are intrinsically distrusted. The system operates on a "verify, then trust" model, utilizing strict schema validations (Zod) at the absolute edge of the request lifecycle.
+4. **Resilience Under Load**: Non-critical operations (like dispatching transactional emails or incrementing article view counters) must never block the main Node.js event loop. Background task processing is utilized extensively to maintain consistent response times.
+5. **Developer Experience (DX)**: The codebase must remain highly approachable. Complex, over-engineered paradigms (like microservices for a small domain or heavy message brokers like Kafka) are actively avoided in favor of a clean, layered monolithic approach.
 
 ---
 
-# Repository Structure
+## 3. Architectural Principles
+
+### Defense in Depth
+Security is not treated as a peripheral feature but is baked into the middleware pipeline. The system employs IP-based rate limiting to thwart brute-force attacks, Helmet.js for secure HTTP header injection, and HTTP-Only cookies to protect refresh tokens from cross-site scripting (XSS) exfiltration. 
+
+### Separation of Concerns (Layered Architecture)
+The backend enforces strict separation between routing, validation, business logic, and data access. Controllers are entirely devoid of database queries, and services remain agnostic to HTTP requests or responses. This allows core business logic to be invoked by either an HTTP controller or an asynchronous background worker interchangeably.
+
+### Fail Fast
+When invalid payloads, unauthorized access attempts, or malformed queries hit the backend, the system immediately returns standardized, deterministic error responses. Errors are caught centrally by a custom error-handling middleware, logged via Winston with associated request correlation IDs, and safely presented to the client.
+
+---
+
+## 4. Repository Structure
+
+The platform is housed in a monorepo, delineating the client and server application scopes while allowing full-stack developers to easily trace features across the network boundary.
 
 ```text
-/
-├── client/
-│   ├── app/
-│   ├── components/
-│   ├── context/
-│   ├── services/
-│   └── lib/
+content-platform/
+├── client/                     # Next.js 16 Presentation Layer
+│   ├── app/                    # Next.js App Router (Server & Client Components)
+│   ├── components/             # Reusable UI primitives and complex widgets
+│   ├── context/                # React Contexts (e.g., Theme, Auth state)
+│   ├── hooks/                  # Custom React hooks for localized logic
+│   ├── lib/                    # Shared utilities and formatters
+│   ├── services/               # Axios instances and API wrapper functions
+│   └── types/                  # Global TypeScript interfaces
 │
-└── server/
-    ├── src/
-    │   ├── modules/
-    │   ├── middlewares/
-    │   ├── config/
-    │   ├── jobs/
-    │   ├── services/
-    │   └── utils/
-    │
-    └── __tests__/
+├── server/                     # Express.js Application Boundary
+│   ├── src/
+│   │   ├── config/             # Environment schemas and database connectors
+│   │   ├── docs/               # Swagger UI initialization and schemas
+│   │   ├── jobs/               # Asynchronous workers and queue management
+│   │   ├── middlewares/        # Express request interceptors
+│   │   ├── modules/            # Domain-driven feature clusters
+│   │   │   ├── articles/       # Editorial models, services, and routes
+│   │   │   ├── auth/           # Identity lifecycle management
+│   │   │   ├── search/         # Discovery and text indexing logic
+│   │   │   ├── upload/         # Cloudinary media ingestion
+│   │   │   └── users/          # Administration and role assignment
+│   │   ├── services/           # Agnostic external integrations (Email, Cache)
+│   │   └── utils/              # Helper utilities (Logger, Parsers)
+│   ├── __tests__/              # Jest integration testing suites
+│   └── test-utils/             # MongoDB Memory Server initialization
+│
+├── docs/                       # High-level technical documentation
+└── .github/workflows/          # GitHub Actions for CI/CD and Docker builds
 ```
 
-The frontend and backend evolve independently while remaining versioned together.
-
----
-
-# High-Level System Architecture
-
-```text
-                    ┌────────────────────┐
-                    │      Browser       │
-                    └──────────┬─────────┘
-                               │
-                               ▼
-                    ┌────────────────────┐
-                    │  Next.js Frontend  │
-                    └──────────┬─────────┘
-                               │
-                               ▼
-                    ┌────────────────────┐
-                    │    Express API     │
-                    └───────┬─────┬──────┘
-                            │     │
-            ┌───────────────┘     └───────────────┐
-            ▼                                     ▼
-     ┌──────────────┐                    ┌──────────────┐
-     │    Redis     │                    │   MongoDB    │
-     │    Cache     │                    │ Atlas Source │
-     └──────────────┘                    │  of Truth    │
-                                         └──────┬───────┘
-                                                │
-                                                ▼
-                                         ┌──────────────┐
-                                         │ Background   │
-                                         │ Job System   │
-                                         └──────────────┘
-```
-
-MongoDB Atlas remains the source of truth.
-
-Redis functions as a performance layer.
-
-Background jobs execute side effects outside the HTTP request lifecycle.
+### Why this structure?
+By organizing the backend by `modules` (Domain-Driven Design) rather than standard MVC buckets (all controllers in one folder, all models in another), the codebase scales significantly better. A developer working on `articles` finds the routes, controller, service, validation schema, and Mongoose model all in a single, cohesive directory.
 
 ---
 
-# Architectural Principles
+## 5. High-Level Architecture
 
-## Layer Separation
+The system operates across three distinct tiers: the Client Tier, the Service Tier, and the Data Tier. 
 
-Each layer owns a single responsibility.
+```mermaid
+flowchart TD
+    subgraph Client Tier
+        Browser[Browser / Mobile]
+        NextJS[Next.js SSR Frontend]
+    end
 
-```text
-Router
-  ↓
-Controller
-  ↓
-Service
-  ↓
-Persistence
+    subgraph Service Tier
+        Express[Express REST API Node.js]
+        Worker[Background Job Worker Node.js]
+    end
+
+    subgraph Data Tier
+        Mongo[(MongoDB Atlas Cluster)]
+        Redis[(Redis Cloud Cache)]
+    end
+
+    subgraph External Dependencies
+        Cloudinary[Cloudinary CDN]
+        Brevo[Brevo Transactional Email]
+    end
+
+    Browser -->|HTTPS Request| NextJS
+    NextJS -->|RESTful HTTP| Express
+    Browser -.->|Client-side Fetch| Express
+    
+    Express <-->|Mongoose ODM| Mongo
+    Express <-->|Cache Hit/Miss| Redis
+    
+    Express -->|Upload Media Payload| Cloudinary
+    Express -->|Dispatch OTPs| Brevo
+    
+    Express -.->|Enqueue Event| Worker
+    Worker <-->|Track Job State| Mongo
 ```
 
-Cross-layer leakage is intentionally avoided.
-
-Business rules never reside inside controllers.
-
-Database access never contains domain decisions.
-
----
-
-## Fail Fast
-
-The application refuses to start when critical dependencies are unavailable.
-
-Examples:
-
-* Invalid environment variables
-* MongoDB unavailable
-* Redis unavailable
-
-This prevents partially functional deployments.
-
----
-
-## Explicit Trust Boundaries
-
-The backend never trusts client-supplied authorization data.
-
-Trusted:
-
-```text
-req.user
-```
-
-Only after JWT verification.
-
-Untrusted:
-
-```text
-req.body
-req.query
-req.params
-headers
-cookies
-client role claims
-```
-
-All untrusted input is validated before use.
+1. **Client Tier**: Handles presentation, user input collection, and client-side routing. Next.js handles initial page loads via Server-Side Rendering (SSR) for SEO optimization, followed by client-side hydration for dynamic interactivity.
+2. **Service Tier**: The Express.js backend acts as the authoritative source of truth. It processes all business rules, validates incoming data, and orchestrates database transactions.
+3. **Data Tier**: MongoDB stores persistent document data, while Redis provides an ephemeral, high-speed memory layer for cached responses.
+4. **External Dependencies**: Offloads specialized tasks. Cloudinary handles global image delivery and resizing, while Brevo guarantees transactional email delivery.
 
 ---
 
-# Backend Architecture
+## 6. Request Lifecycle
 
-## Router Layer
+Every HTTP request entering the backend traverses a highly deterministic, heavily audited middleware pipeline. Understanding this lifecycle is critical for debugging and scaling.
 
-Responsibilities:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Express as Express App
+    participant Logger as httpLogger
+    participant RateLimit
+    participant ReqId as requestId
+    participant Auth as auth/rbac
+    participant Val as validate
+    participant Controller
+    participant Service
+    participant DB as Mongo/Redis
 
-* Route definitions
-* Middleware composition
-* Request entry points
-
-Example:
-
-```text
-POST /api/v1/auth/login
-GET  /api/v1/articles
-PATCH /api/v1/articles/:id
+    Client->>Express: HTTP GET /articles/my
+    Express->>Logger: Log incoming request
+    Express->>RateLimit: Check IP threshold
+    Express->>ReqId: Assign UUID to request
+    Express->>Auth: Verify JWT & Check Role
+    Express->>Val: Sanitize query/params
+    Express->>Controller: Route matches
+    Controller->>Service: Call business logic
+    Service->>DB: Fetch data
+    DB-->>Service: Return payload
+    Service-->>Controller: Return formatted data
+    Controller-->>Client: HTTP 200 OK + Payload
 ```
 
-Routers contain no business logic.
+### The Middleware Pipeline
 
----
-
-## Controller Layer
-
-Responsibilities:
-
-* Input extraction
-* Request orchestration
-* Response formatting
-
-Controllers coordinate work but do not implement business rules.
-
-Example:
-
-```text
-Extract request data
-↓
-Invoke service
-↓
-Format response
-```
-
----
-
-## Service Layer
-
-Responsibilities:
-
-* Domain logic
-* State transitions
-* Authorization checks
-* Ownership checks
-* Business validation
-
-The service layer represents the core application behavior.
-
-Examples:
-
-```text
-Create article
-Update article
-Publish article
-Soft delete article
-Refresh tokens
-```
+| Middleware | Responsibility |
+|---|---|
+| `httpLogger` | Intercepts requests to log the HTTP method, path, and user-agent. Ensures observability. |
+| `rateLimit` | Protects the system from brute-force and DDoS attacks by capping requests per IP window. |
+| `requestId` | Injects a unique UUID into `req.requestId`. Used to trace requests across complex async flows and external service calls. |
+| `authenticate` | Extracts the Bearer token, verifies the cryptographic signature, and attaches the decoded user payload to `req.user`. |
+| `authorize` | Checks if `req.user.role` exists within the allowed roles array for the specific route endpoint. |
+| `validate` | Parses `req.body`, `req.query`, and `req.params` against strict Zod schemas. Strips unknown fields. |
 
 ---
 
-## Persistence Layer
+## 7. Backend Architecture
 
-Responsibilities:
+The backend is built on **Express.js** and **Node.js**. Rather than relying heavily on class-based OOP patterns, the codebase leverages functional programming paradigms, heavily utilizing modern ES modules.
 
-* Database interaction
-* Query execution
-* Data retrieval
+### The `asyncHandler` Wrapper
+Node.js natively crashes if a promise rejection is unhandled. To prevent writing repetitive `try/catch` blocks in every controller, the platform wraps controllers in an `asyncHandler`. 
 
-Persistence never contains domain behavior.
-
-MongoDB remains the sole source of truth.
-
----
-
-# Runtime Request Flow
-
-```text
-Client
- ↓
-Rate Limiter
- ↓
-Request ID
- ↓
-HTTP Logger
- ↓
-Authentication
- ↓
-RBAC Authorization
- ↓
-Controller
- ↓
-Service (ABAC)
- ↓
-MongoDB / Redis
- ↓
-Response
- ↓
-Error Handler
+```javascript
+// utils/asyncHandler.js
+export const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
 ```
+This forces all promise rejections to be automatically forwarded to the global `error.middleware.js`, guaranteeing that the client receives a standardized JSON error response rather than a hung connection.
 
-Background workers execute independently of this lifecycle.
+### Global Error Handling
+The `error.middleware.js` acts as the final safety net. It intercepts all errors, determines if they are operational (e.g., 400 Bad Request, 404 Not Found) or programmatic (e.g., 500 Internal Server Error), logs the stack trace securely (without leaking it to the client in production), and returns a predictable object containing a `success: false` flag and the `requestId`.
 
 ---
 
-# Authentication Architecture
+## 8. Frontend Architecture
 
-The platform uses stateless JWT authentication.
+The frontend is a modern **Next.js 16** application utilizing the **App Router** architecture. 
 
-## Access Tokens
+### Why Next.js?
+Content platforms demand strong SEO. Standard React Single Page Applications (SPAs) ship empty HTML files to the browser, relying on JavaScript to render content. This is heavily penalized by search engine crawlers. Next.js solves this by securely fetching data on the server and rendering complete HTML before responding to the browser.
 
-Characteristics:
-
-* Short-lived
-* Stored client-side
-* Sent through Authorization header
-* Used for authorization decisions
-
-Example:
-
-```http
-Authorization: Bearer <access-token>
-```
+### Key Frontend Paradigms
+- **Server Components vs Client Components**: The application strictly separates components. Layouts, SEO metadata, and standard views are rendered entirely on the server. Interactive elements (like the TipTap Rich Text Editor, or React Hook Form logic) are marked with `"use client"` to hydrate in the browser.
+- **State Management**: Complex global state managers (like Redux) are avoided. Server state is managed via Axios interceptors and Next.js fetch caching. Local UI state is handled natively with React `useState` and `useContext`.
+- **Styling**: Tailwind CSS v4 provides a utility-first styling approach, eliminating complex CSS-in-JS runtimes and preventing CSS specificity wars.
 
 ---
 
-## Refresh Tokens
+## 9. Authentication
 
-Characteristics:
+Authentication operates on a stateless, two-token system: **Short-Lived Access Tokens** and **Long-Lived Refresh Tokens**.
 
-* Long-lived
-* Stored in HttpOnly cookies
-* Used only for token renewal
-* Never used for authorization decisions
+### Why Not Sessions?
+Traditional session-based authentication requires the server to query a database (or Redis) on every single request to validate the user's session ID. This creates a massive bottleneck. JWTs carry the user's identity cryptographically signed within the payload, allowing the server to mathematically verify the user's identity entirely in memory.
 
-Benefits:
+### The Token Lifecycle
 
-* Reduced XSS exposure
-* Stateless API design
-* Horizontal scalability
+| Token | Purpose | Storage | Lifetime |
+|---|---|---|---|
+| **Access Token** | Used for accessing protected API endpoints via the `Authorization: Bearer` header. | In-memory (React State / Closure) | 15 Minutes |
+| **Refresh Token** | Used exclusively to request a new Access Token when the old one expires. | HTTP-Only, Secure Cookie | 7 Days |
 
----
+### Refresh Token Rotation
+A common vulnerability with long-lived refresh tokens is extraction via physical device compromise or advanced XSS. The Content Platform mitigates this via **Refresh Token Rotation**.
 
-## Refresh Token Rotation
+1. When a user logs in, the server generates a refresh token containing a `version` number matching the user's `refreshTokenVersion` in MongoDB.
+2. The server issues this token as an HTTP-Only cookie, rendering it completely invisible to client-side JavaScript.
+3. When the access token expires, the client sends the refresh token to the `/refresh` endpoint.
+4. The server validates the token, checks the version against the database, **increments the version in the database**, and issues an entirely new refresh token and access token.
 
-The system implements refresh token versioning.
-
-```text
-User Login
-      ↓
-Refresh Token Issued
-      ↓
-Refresh Request
-      ↓
-Token Version Verified
-      ↓
-New Refresh Token Issued
-```
-
-Logout invalidates previously issued refresh tokens by incrementing token version numbers.
+If a malicious actor steals a refresh token and uses it, the version is incremented. When the legitimate user later attempts to use their (now outdated) refresh token, the server detects the version mismatch, realizes a token theft has occurred, and immediately forces a re-authentication by invalidating all tokens.
 
 ---
 
-## Password Security
+## 10. Authorization (RBAC + ABAC)
 
-Passwords are:
+Authentication answers "Who are you?". Authorization answers "What are you allowed to do?".
 
-* Hashed using bcrypt
-* Never stored in plaintext
-* Never logged
-* Never returned in API responses
+The platform utilizes a hybrid approach: **Role-Based Access Control (RBAC)** layered with **Attribute-Based Access Control (ABAC)**.
 
----
+### Role Definitions
 
-# Authorization Model
+| Role | Permissions |
+|---|---|
+| `USER` | Can read published articles. Can manage their own profile and authentication settings. |
+| `EDITOR` | Inherits `USER` permissions. Can create draft articles, edit their own articles, and submit them for review. |
+| `ADMIN` | Inherits all permissions. Can review, publish, or reject pending articles. Can delete any content globally. Can assign roles to other users. |
 
-Authorization is enforced at multiple layers.
+### Why ABAC?
+RBAC alone is insufficient for a content platform. While an `EDITOR` has the role-based permission to edit an article, they should only be permitted to edit *their own* articles. 
 
-## Role-Based Access Control (RBAC)
-
-Roles:
-
-```text
-USER
-EDITOR
-ADMIN
-```
-
-Applied at route boundaries.
-
-Example:
-
-```text
-USER
- └─ Read content
-
-EDITOR
- ├─ Create articles
- └─ Manage own articles
-
-ADMIN
- ├─ Full content management
- └─ Publishing authority
-```
-
-RBAC prevents unauthorized requests from reaching domain services.
-
----
-
-## Attribute-Based Access Control (ABAC)
-
-Ownership checks are enforced inside services.
-
-Example:
-
-```text
-Editor owns article?
-        │
-      Yes → Allow
-        │
-       No → Reject
-```
-
-Admins bypass ownership restrictions.
-
-Ownership is verified using database state rather than client-supplied data.
-
----
-
-# Frontend Authentication Architecture
-
-The frontend uses React Context for centralized authentication state management.
-
-```text
-AuthProvider
-      ↓
-getCurrentUser()
-      ↓
-AuthContext
-      ↓
-Role-aware Components
-      ↓
-Protected Pages
-```
-
-Responsibilities:
-
-* Authentication state restoration
-* Role-aware navigation
-* Protected dashboard access
-* User session synchronization
-
-The frontend never acts as the source of truth for authorization decisions.
-
-Backend authorization remains authoritative.
-
----
-
-# Frontend Routing Structure
-
-## Public Pages
-
-```text
-/
- /articles
- /articles/[slug]
- /search
- /login
- /register
-```
-
-## Protected Pages
-
-```text
-/dashboard
-/dashboard/create
-/dashboard/manage
-```
-
-Access is determined using authenticated user state.
-
----
-
-# SEO Architecture
-
-The platform includes built-in SEO support.
-
-Components:
-
-```text
-robots.txt generation
-sitemap.xml generation
-OpenGraph metadata
-Dynamic article metadata
-Canonical URLs
-```
-
-Implemented using:
-
-```text
-app/robots.ts
-app/sitemap.ts
-generateMetadata()
-```
-
-Benefits:
-
-* Improved discoverability
-* Better indexing
-* Enhanced social sharing
-* Search engine guidance
-
----
-
-# Articles Domain
-
-The Articles module represents the primary business domain.
-
-Responsibilities:
-
-* Draft creation
-* Publishing workflow
-* Slug generation
-* Ownership tracking
-* Soft deletion
-* Public content delivery
-
-```
-```
-# Articles Domain
-
-The Articles module represents the primary business domain of the platform.
-
-Responsibilities:
-
-* Draft creation
-* Article updates
-* Publishing workflow
-* Ownership tracking
-* Slug generation
-* Soft deletion
-* Public content delivery
-
----
-
-## Article Lifecycle
-
-```text
-Create
-  ↓
-DRAFT
-  ↓
-Update
-  ↓
-Publish
-  ↓
-PUBLISHED
-  ↓
-Public Visibility
-```
-
-Only published articles are visible through public endpoints.
-
----
-
-## Domain Guarantees
-
-Default State:
-
-```text
-DRAFT
-```
-
-Public State:
-
-```text
-PUBLISHED
-```
-
-Deletion Strategy:
-
-```text
-Soft Delete
-```
-
-Slug Requirements:
-
-* Unique
-* Indexed
-* Human-readable
-* Stable lookup identifier
-
-Timestamps:
-
-```text
-createdAt
-updatedAt
-```
-
-automatically maintained.
-
----
-
-## Public Content Access
-
-Public endpoints:
-
-```http
-GET /api/v1/articles
-GET /api/v1/articles/:slug
-```
-
-Guarantees:
-
-* Published only
-* Not deleted
-* Cacheable
-* SEO-friendly
-
----
-
-## Administrative Content Access
-
-Administrative endpoints:
-
-```http
-POST   /api/v1/articles
-PATCH  /api/v1/articles/:id
-PATCH  /api/v1/articles/:id/publish
-DELETE /api/v1/articles/:id
-```
-
-Guarantees:
-
-* Authentication required
-* Authorization enforced
-* Ownership validated
-* Never publicly cacheable
-
----
-
-# Search Architecture
-
-The Search module provides full-text article discovery.
-
-Endpoint:
-
-```http
-GET /api/v1/search?q=nodejs
-```
-
-Search operates exclusively on:
-
-```text
-PUBLISHED
-isDeleted = false
-```
-
-content.
-
-Drafts never appear in search results.
-
----
-
-## Search Flow
-
-```text
-Request
-   ↓
-Query Validation
-   ↓
-Redis Cache
-   ↓
-Hit?
- ├─ Yes
- │    ↓
- │ Return Cached Results
- │
- └─ No
-      ↓
- MongoDB Text Search
-      ↓
- Cache Results
-      ↓
- Return Response
-```
-
----
-
-## Search Validation
-
-Requirements:
-
-```text
-Minimum Length: 2 Characters
-```
-
-Examples:
-
-Valid:
-
-```text
-redis
-mongodb
-nodejs
-```
-
-Invalid:
-
-```text
-a
-x
-```
-
-Validation prevents:
-
-* Resource abuse
-* Meaningless searches
-* Unbounded query execution
-
----
-
-## Search Cache Keys
-
-Search responses are cached independently.
-
-Pattern:
-
-```text
-search:{query}:page:{page}:limit:{limit}
-```
-
-Examples:
-
-```text
-search:redis:page:1:limit:10
-
-search:mongodb:page:1:limit:10
-
-search:nodejs:page:2:limit:10
-```
-
-Benefits:
-
-* Reduced MongoDB load
-* Faster repeated searches
-* Consistent response times
-
----
-
-# Query Safety Architecture
-
-All query parameters pass through a centralized parser.
-
-Responsibilities:
-
-* Page validation
-* Limit validation
-* Sort whitelisting
-* Controlled filtering
-
-Guarantees:
-
-```text
-No query injection
-
-No unlimited pagination
-
-No arbitrary sort fields
-
-No raw MongoDB operator injection
-```
-
-Raw request query objects are never forwarded directly into MongoDB.
-
----
-
-# Database Architecture
-
-MongoDB Atlas serves as the system of record.
-
-Responsibilities:
-
-* User persistence
-* Article persistence
-* Job execution persistence
-
-MongoDB remains authoritative even when Redis is unavailable.
-
----
-
-## Collections
-
-Primary collections:
-
-```text
-users
-
-articles
-
-jobexecutions
-```
-
----
-
-## User Collection
-
-Stores:
-
-```text
-Name
-Email
-Password Hash
-Role
-Refresh Token Version
-Created At
-Updated At
-```
-
----
-
-## Article Collection
-
-Stores:
-
-```text
-Title
-Slug
-Content
-Status
-Author
-isDeleted
-Created At
-Updated At
-```
-
----
-
-## JobExecution Collection
-
-Stores:
-
-```text
-Job Type
-Status
-Attempt Count
-Execution Metadata
-Failure Information
-Created At
-Updated At
-```
-
-Used for:
-
-* Retry tracking
-* Failure visibility
-* Background job observability
-
----
-
-# Index Strategy
-
-Indexes align directly with query patterns.
-
-The objective is predictable query performance rather than premature optimization.
-
----
-
-## Compound Content Index
-
-```text
-status
-isDeleted
-createdAt
-```
-
-Supports:
-
-* Article listing
-* Pagination
-* Sorting
-
----
-
-## Slug Index
-
-```text
-slug
-```
-
-Properties:
-
-```text
-Unique
-Indexed
-```
-
-Supports:
-
-```text
-O(log n)
-article retrieval
-```
-
----
-
-## Search Index
-
-MongoDB text index:
-
-```text
-title
-content
-```
-
-Used by:
-
-```http
-GET /api/v1/search
-```
-
-This enables efficient full-text search without requiring an external search engine.
-
----
-
-# Redis Architecture
-
-Redis acts as a performance layer.
-
-MongoDB remains the source of truth.
-
-Redis may be flushed entirely without data loss.
-
----
-
-## Cache Categories
-
-### Published Article Lists
-
-```text
-articles:published:page:{page}:limit:{limit}
-```
-
-Example:
-
-```text
-articles:published:page:1:limit:10
-```
-
----
-
-### Individual Articles
-
-```text
-article:{slug}
-```
-
-Examples:
-
-```text
-article:redis-guide
-
-article:mongodb-indexes
-
-article:nodejs-basics
-```
-
----
-
-### Search Results
-
-```text
-search:{query}:page:{page}:limit:{limit}
-```
-
-Examples:
-
-```text
-search:redis:page:1:limit:10
-
-search:jwt:page:1:limit:10
-```
-
----
-
-# Cache Lifecycle
-
-```text
-Request
-   ↓
-Redis
-   ↓
-Hit?
- ├─ Yes
- │    ↓
- │ Return Cache
- │
- └─ No
-      ↓
- MongoDB
-      ↓
- Cache Result
-      ↓
- Return Response
-```
-
----
-
-## Cache Invalidation
-
-Triggered by:
-
-```text
-Article Created
-
-Article Updated
-
-Article Published
-
-Article Deleted
-```
-
-Affected entries are removed automatically.
-
-This guarantees cache correctness.
-
----
-
-# HTTP Cache Validation
-
-Public endpoints support conditional requests.
-
-Mechanisms:
-
-```http
-Last-Modified
-
-If-Modified-Since
-```
-
-Possible response:
-
-```http
-304 Not Modified
-```
-
-Headers:
-
-```http
-Cache-Control:
-public,
-max-age=60,
-stale-while-revalidate=30
-```
-
-Benefits:
-
-* Reduced bandwidth
-* Faster browser responses
-* Reduced backend load
-
----
-
-# Background Job Architecture
-
-Side effects execute asynchronously.
-
-Business operations remain synchronous.
-
----
-
-## Motivation
-
-Background processing exists to:
-
-* Reduce request latency
-* Isolate side effects
-* Support retries
-* Improve reliability
-
----
-
-## Structure
-
-```text
-jobs/
-
-├── queue.js
-
-├── worker.js
-
-├── jobExecution.model.js
-
-└── handlers/
-```
-
----
-
-## Execution Flow
-
-```text
-Controller
-    ↓
-Enqueue Job
-    ↓
-Worker
-    ↓
-Handler
-    ↓
-Persist Execution State
-    ↓
-Retry If Needed
-```
-
----
-
-## Current Jobs
-
-```text
-ARTICLE_PUBLISHED
-```
-
-The architecture supports future job expansion without requiring architectural changes.
-
----
-
-## Guarantees
-
-```text
-Retry Support
-
-Failure Tracking
-
-Execution Persistence
-
-Duplicate Protection
-
-Exponential Backoff
-```
-
----
-
-## Failure Handling
-
-Failures do not affect completed HTTP requests.
-
-Instead:
-
-```text
-Persist Failure
-      ↓
-Retry
-      ↓
-Record Outcome
-```
-
-This prevents user-facing latency increases caused by side effects.
-
-```
-```
-
-# Observability Architecture
-
-The platform includes structured observability mechanisms designed to improve debugging, traceability, and operational visibility.
-
-Observability is treated as a first-class architectural concern rather than an afterthought.
-
----
-
-## Request Identification
-
-Every incoming request receives a unique request identifier.
-
-Purpose:
-
-```text id="u2l4o0"
-Request Correlation
-
-Cross-Service Tracing
-
-Debugging
-
-Error Investigation
-```
-
-Example:
-
-```text id="ylh6rq"
-requestId:
-a2d64d87-0c77-42af-a6c8-53cbe0e90b90
-```
-
-This identifier follows the request throughout its lifecycle.
-
----
-
-## Structured Logging
-
-The application uses structured logs rather than ad-hoc console statements.
-
-Benefits:
-
-* Machine readability
-* Easier log aggregation
-* Faster troubleshooting
-* Improved observability
-
----
-
-## HTTP Logs
-
-Captured fields:
-
-```text id="i0mb4o"
-Method
-
-Path
-
-Status Code
-
-Duration
-
-Request ID
-```
-
-Example:
-
-```text id="zjwkzl"
-GET
-/api/v1/articles
-
-200
-
-32ms
-
-requestId:
-abc123
-```
-
----
-
-## Error Logs
-
-Captured fields:
-
-```text id="qcb0ni"
-Error Message
-
-Status Code
-
-Stack Trace
-
-Request ID
-```
-
-Purpose:
-
-```text id="qjlwm7"
-Debugging
-
-Incident Investigation
-
-Failure Analysis
-```
-
----
-
-## Audit Logs
-
-Critical business events generate audit entries.
-
-Examples:
-
-```text id="l6hd8v"
-USER_LOGIN
-
-USER_LOGOUT
-
-ARTICLE_CREATED
-
-ARTICLE_UPDATED
-
-ARTICLE_PUBLISHED
-
-ARTICLE_DELETED
-```
-
-Audit logs provide accountability and operational traceability.
-
----
-
-# Health and Readiness Architecture
-
-The platform exposes operational endpoints used by deployment environments and monitoring systems.
-
----
-
-## Health Endpoint
-
-Endpoint:
-
-```http id="j9od7r"
-GET /api/v1/health
-```
-
-Purpose:
-
-```text id="m7e0t6"
-Application Health
-
-MongoDB Connectivity
-
-Redis Connectivity
-```
-
-Example Response:
-
-```json id="g66o7w"
-{
-  "status": "ok",
-  "mongodb": "connected",
-  "redis": "connected"
+ABAC is enforced directly at the service and controller layer. When an `EDITOR` attempts to update an article, the system checks:
+```javascript
+if (req.user.role !== "ADMIN" && article.author.toString() !== req.user.id) {
+    throw new ForbiddenError("You do not have permission to modify this resource");
 }
 ```
+This ensures that horizontal privilege escalation (accessing another user's data of the same tier) is impossible.
 
 ---
 
-## Readiness Endpoint
+## 11. Articles Domain
 
-Endpoint:
+The `Articles` module represents the core domain of the platform. It handles the entire lifecycle of editorial content.
 
-```http id="u0k2ls"
-GET /api/v1/readiness
+### State Machine Workflow
+An article does not simply exist; it transitions through a heavily guarded state machine enforced by the Mongoose model.
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT: Create Article
+    DRAFT --> DRAFT: Edit (Editor)
+    DRAFT --> PENDING: Submit for Review (Editor)
+    PENDING --> PUBLISHED: Approve (Admin)
+    PENDING --> REJECTED: Reject (Admin)
+    REJECTED --> DRAFT: Re-edit (Editor)
+    PUBLISHED --> DRAFT: Unpublish (Admin)
 ```
 
-Purpose:
+### Soft Deletion
+Articles are never physically removed from the MongoDB cluster upon deletion. Instead, the `isDeleted` boolean is set to `true`.
 
-```text id="sm6z1d"
-MongoDB Reachable
+**Why Soft Delete?**
+1. **Auditability**: Prevents destructive loss of historical data.
+2. **Referential Integrity**: If an article is physically deleted, any internal analytics, user reading histories, or external foreign keys pointing to that `_id` will break. 
+3. **Recovery**: Allows administrators to easily restore accidentally deleted content.
 
-Redis Reachable
-
-Application Ready
-```
-
-Readiness checks prevent traffic from reaching partially initialized instances.
-
----
-
-## Operational Benefits
-
-```text id="o3m6vk"
-Deployment Validation
-
-Infrastructure Monitoring
-
-Container Health Checks
-
-Incident Detection
-```
+### View Counter Logic
+Tracking article views synchronously during the `GET /:slug` request is an anti-pattern. Writing to the database on every read request destroys the benefits of read caching. 
+Instead, the platform fires a fire-and-forget event to the background job queue (`ARTICLE_VIEWED`). The worker processes the queue and safely increments the `$inc: { views: 1 }` operation asynchronously, ensuring the reader experiences zero latency.
 
 ---
 
-# Security Architecture
+## 12. Search Architecture
 
-The platform follows a defense-in-depth security model.
+Content discovery is paramount. The platform implements a high-performance search capability natively using MongoDB, avoiding the heavy infrastructural overhead of maintaining a separate Elasticsearch cluster.
 
-No single layer is trusted to provide complete protection.
-
-Multiple independent security controls operate together.
-
----
-
-## Authentication Security
-
-Implemented Controls:
-
-```text id="8mjjlwm"
-JWT Access Tokens
-
-Refresh Token Rotation
-
-Refresh Token Versioning
-
-HttpOnly Cookies
+### Implementation Details
+The `Article` Mongoose schema defines a compound text index:
+```javascript
+articleSchema.index({
+  title: "text",
+  content: "text",
+});
 ```
+When a client hits the `GET /search?q={query}` endpoint, the query is passed to the MongoDB `$text` operator. MongoDB calculates text scores based on keyword density and relevance, returning the most accurate documents first.
 
-Benefits:
-
-```text id="ghvgju"
-Reduced Session Hijacking Risk
-
-Stateless Scaling
-
-Controlled Session Revocation
-```
+### Why not Elasticsearch?
+Elasticsearch is incredibly powerful but requires significant operational overhead, complex data synchronization pipelines (logstash/kibana), and high memory consumption. For a standard editorial platform, MongoDB's native B-Tree text indexing provides more than enough performance with zero added architectural complexity.
 
 ---
 
-## Authorization Security
+## 13. Database Design
 
-Implemented Controls:
+The data persistence layer utilizes MongoDB Atlas. The database is designed favoring **denormalization and references** depending on the volatility of the data.
 
-```text id="5x0nng"
-RBAC
+### Collections
 
-ABAC
+| Collection | Purpose | Design Philosophy |
+|---|---|---|
+| `users` | Stores identity, credentials, and OTP states. | Highly indexed by `email`. Structured to maintain token versioning for security. |
+| `articles` | Stores core content, SEO slugs, and view metrics. | Contains a reference to `users` via `author` ObjectId. Heavily indexed by `slug` and `status` to ensure fast resolution of public reads. |
+| `jobexecutions` | Tracks background job states (`jobId`). | Ephemeral execution logs. Prevents horizontal scaling edge-cases where multiple pods attempt to process the exact same background event. |
 
-Ownership Validation
-```
-
-Benefits:
-
-```text id="mxtn0k"
-Least Privilege Access
-
-Role Separation
-
-Resource Ownership Enforcement
-```
+### Indexing Strategy
+Indexes drastically improve read performance at the cost of slight write degradation. The `articles` collection features a critical compound index:
+`{ status: 1, isDeleted: 1, createdAt: -1 }`
+This index perfectly maps to the query utilized by the public feed (`GET /`), allowing MongoDB to execute an index-covered scan to return recent published articles instantaneously.
 
 ---
 
-## Input Validation
+## 14. Redis Caching
 
-All incoming data is validated before reaching business logic.
+Database disk I/O is the slowest component of any web architecture. The Content Platform mitigates this by intercepting read-heavy requests and serving them directly from Redis RAM.
 
-Validated Areas:
+### Cache Keys
 
-```text id="zn2l8t"
-Request Body
+| Key Pattern | Description | Time-To-Live (TTL) |
+|---|---|---|
+| `articles:published:page:{page}:limit:{limit}` | Paginated list of public articles. | 5 Minutes (300s) |
+| `article:{slug}` | Individual article payload resolution. | 5 Minutes (300s) |
+| `search:{query}:page:{page}:limit:{limit}` | Full-text search result sets. | 5 Minutes (300s) |
 
-Query Parameters
-
-Route Parameters
-```
-
-Benefits:
-
-```text id="h96l4u"
-Input Sanitization
-
-Reduced Attack Surface
-
-Predictable System Behavior
-```
+### Surgical Cache Invalidation
+Caching is notoriously difficult due to invalidation. If an editor corrects a typo in an article, readers must see the correction immediately. 
+The system does not rely on arbitrary TTL expirations. When an article is successfully transitioned to `PUBLISHED`, or an already published article is `UPDATED`, the service layer forcefully intercepts Redis and deletes the specific `article:{slug}` key, as well as executing a wildcard deletion of all `articles:published:*` list keys. This guarantees immediate eventual consistency.
 
 ---
 
-## Password Security
+## 15. Background Jobs
 
-Passwords are:
+Traditional HTTP requests are synchronous. If an endpoint needs to send an email, resizing an image, and querying a database, the client's browser is forced to wait until all tasks complete. The platform solves this via the `jobs/` directory.
 
-```text id="mttr5h"
-Hashed
+### In-Memory Queue with MongoDB State Tracking
+The system does not rely on heavy external message brokers like RabbitMQ or Redis Bull queues. It utilizes an array-based in-memory queue inside the Node.js process (`queue.js`). 
 
-Salted
+**How it works:**
+1. An event occurs (e.g., Article is Published).
+2. The controller calls `enqueueJob("ARTICLE_PUBLISHED", { articleId, authorEmail })`.
+3. The queue immediately pushes the job to the `worker.js` thread.
+4. The worker checks `jobExecution.model.js` to ensure this `jobId` hasn't already been processed by another pod.
+5. The worker executes the task (e.g., dispatching an email via Brevo API).
 
-Never Logged
-
-Never Returned
-```
-
-Algorithm:
-
-```text id="k9p9p3"
-bcrypt
-```
+### Exponential Backoff
+External APIs (like Brevo) fail. Network drops happen. The worker features built-in resilience. If a job fails, the `worker.js` increments the `attempts` counter. It then delays the retry using the formula `delay = 2 ** job.attempts * 100` milliseconds. This exponential backoff prevents the system from hammering a struggling external API, giving it time to recover before retrying up to a maximum of 5 attempts.
 
 ---
 
-## HTTP Security
+## 16. Observability
 
-Implemented Middleware:
+Operating a system in production blindly is dangerous. Observability is integrated fundamentally through **Winston**.
 
-```text id="dsh0z5"
-Helmet
+### Structured Logging
+Console logs (`console.log`) are synchronous and poorly formatted. Winston streams structured JSON logs to standard output. 
 
-CORS
+Every log contains:
+- The exact Timestamp.
+- The Log Level (`INFO`, `WARN`, `ERROR`).
+- The explicit `requestId`.
 
-Rate Limiting
-
-Cookie Security
-```
-
-Purpose:
-
-```text id="4hbwff"
-Reduce Common Web Risks
-
-Prevent Abuse
-
-Protect Sensitive Headers
-```
+When a user reports an error, engineers can search the central logging aggregator for that specific `requestId`, immediately pulling up the entire lifecycle of that exact HTTP request, including database fetches and validation errors.
 
 ---
 
-# Frontend Architecture
+## 17. Security
 
-The frontend is built using Next.js App Router.
+Beyond architecture, explicit security libraries are deployed:
 
-The frontend is responsible for:
-
-* User interaction
-* Content rendering
-* Authentication state management
-* Navigation
-* SEO delivery
-
-Business rules remain enforced by the backend.
+- **Helmet.js**: Modifies Express headers. It prevents clickjacking by setting `X-Frame-Options: SAMEORIGIN`, stops MIME-type sniffing via `X-Content-Type-Options`, and forces strict HTTPS routing via Strict-Transport-Security (HSTS).
+- **Zod Input Validation**: Validating input manually leads to edge-case misses. Zod schemas explicitly define the shape, type, and boundaries of every incoming variable. If a malicious user attempts to pass a NoSQL injection payload like `{"$gt": ""}` into a password field, Zod throws a 400 Bad Request instantly, terminating the request before it touches Mongoose.
+- **Bcrypt**: Passwords are never stored in plaintext. They are salted and hashed utilizing the bcrypt algorithm. Even if the database is entirely compromised, passwords remain mathematically impossible to decrypt.
 
 ---
 
-## Frontend Layer Structure
+## 18. SEO
 
-```text id="7sqv2n"
-Pages
-  ↓
-Components
-  ↓
-Services
-  ↓
-API Layer
-```
-
-Responsibilities are separated to improve maintainability.
+Search Engine Optimization (SEO) dictates the success of a content platform. 
+Because the frontend leverages Next.js, article pages are pre-rendered on the server. When Googlebot crawls an article URL, it receives a fully hydrated HTML document containing complete `<title>`, `<meta name="description">`, and Open Graph tags, ensuring high organic discoverability that standard React applications cannot provide.
 
 ---
 
-## Components Layer
+## 19. Testing Strategy
 
-Responsibilities:
+The platform prioritizes confidence through automated verification.
 
-```text id="rjms7o"
-Reusable UI
+### Integration Over Unit Tests
+Unit testing an Express controller heavily mocks the database, providing little confidence that the code actually works in production. The platform focuses on **Integration Testing** via Jest and Supertest. 
 
-Navigation
-
-Forms
-
-Display Components
-```
-
-Examples:
-
-```text id="svu7zf"
-Navbar
-
-Article Cards
-
-Search Components
-```
+### MongoDB Memory Server
+Tests do not execute against a live Atlas cluster. The test-utils setup spins up a dedicated `mongodb-memory-server` completely in RAM. The Supertest library fires actual HTTP requests against the Express router, testing the full middleware pipeline, the Zod validation, the service logic, and the database persistence in a single, blazing-fast automated flow.
 
 ---
 
-## Services Layer
+## 20. Deployment
 
-Responsibilities:
+The deployment topology embraces modern cloud-native architectures.
 
-```text id="wr0i4r"
-HTTP Requests
+```mermaid
+flowchart TD
+    subgraph Vercel
+        Frontend[Next.js SSR Frontend]
+    end
 
-Authentication Calls
+    subgraph Render
+        Backend[Express REST API Container]
+    end
 
-Article Operations
+    subgraph Cloud Providers
+        Mongo[(MongoDB Atlas)]
+        Redis[(Redis Cloud)]
+    end
 
-Search Operations
+    Internet((Internet)) --> Frontend
+    Frontend --> Backend
+    Internet --> Backend
+    Backend <--> Mongo
+    Backend <--> Redis
 ```
 
-Services isolate API communication from UI components.
+### Environment Components
 
----
-
-## Auth Context
-
-Authentication state is centralized using React Context.
-
-Structure:
-
-```text id="09t9cf"
-AuthProvider
-     ↓
-AuthContext
-     ↓
-useAuth()
-```
-
-Responsibilities:
-
-```text id="m0rl5m"
-User Restoration
-
-Authentication State
-
-Loading State
-
-Role Awareness
-
-Logout Handling
-```
-
-Benefits:
-
-```text id="2h1fb8"
-Single Source of Truth
-
-Reduced Duplication
-
-Consistent Authentication State
-```
+| Component | Responsibility | Provider |
+|---|---|---|
+| **Frontend Platform** | Edge caching, SSR execution, static asset delivery. | Vercel |
+| **Backend Compute** | Express server execution, background workers. | Render |
+| **Database** | Persistent data storage, replica sets for high availability. | MongoDB Atlas |
+| **Cache Cluster** | In-memory key-value store for API payloads. | Redis Cloud |
+| **Media Delivery** | Image transformation and global CDN delivery. | Cloudinary |
 
 ---
 
-## Protected Routing
+## 21. Architectural Decisions
 
-Dashboard access is protected using authenticated user state.
+### Why Node.js & Express instead of Go or Rust?
+While Go and Rust offer superior raw compute performance, a CMS is fundamentally I/O bound (waiting on databases, network requests, and file system uploads). Node.js's asynchronous, non-blocking I/O model handles thousands of concurrent I/O operations effortlessly. Furthermore, using JavaScript across both the frontend (Next.js) and backend (Express) allows engineering teams to share types, schemas, and developers seamlessly.
 
-Flow:
-
-```text id="8w0rr6"
-User
-  ↓
-AuthProvider
-  ↓
-Role Check
-  ↓
-Protected Page
-```
-
-Unauthorized users are redirected appropriately.
+### Why Multer & Cloudinary over S3 Direct Uploads?
+Direct S3 uploads require complex pre-signed URL generation and client-side uploading logic. By intercepting multipart form-data via Multer, the backend retains strict control over file sizes, MIME type validation, and security before streaming the buffer directly to Cloudinary. Cloudinary then natively handles dynamic image resizing (e.g., generating WebP formats automatically), heavily simplifying the frontend asset pipeline.
 
 ---
 
-## Role-Aware Navigation
+## 22. Trust Boundaries
 
-Navigation adapts to authenticated user state.
+Trust boundaries define where untrusted data transitions into a trusted state.
 
-Examples:
+1. **The Network Edge**: The first boundary. Handled by Helmet and Rate Limiting.
+2. **The Validation Edge**: The second boundary. Handled by Zod middleware. Data entering the controller is guaranteed to conform strictly to the defined TypeScript/Zod schema.
+3. **The Identity Edge**: Handled by the JWT verification middleware.
+4. **The Database Edge**: Handled by Mongoose strict schemas.
 
-```text id="84ey5n"
-Guest
- ├─ Home
- ├─ Articles
- ├─ Login
- └─ Register
-
-Authenticated User
- ├─ Home
- ├─ Articles
- ├─ Dashboard
- └─ Logout
-```
-
-The frontend improves user experience but never replaces backend authorization.
+By isolating these boundaries, developers writing business logic in the `service` layer can operate with absolute certainty that the data they receive is sanitized, validated, and authorized.
 
 ---
 
-# SEO Architecture
+## 23. Scalability Considerations
 
-Search engine discoverability is treated as a platform feature.
+As the platform scales from hundreds to millions of users, the architecture is designed to accommodate horizontal scaling:
 
----
-
-## Metadata Strategy
-
-Metadata is generated dynamically.
-
-Examples:
-
-```text id="qk1vxy"
-Article Titles
-
-Descriptions
-
-OpenGraph Metadata
-```
-
-Benefits:
-
-```text id="3svwwm"
-Improved Search Visibility
-
-Social Sharing Support
-```
+- **Stateless Pods**: Because JWTs and Redis handle state, the Render backend can be scaled from 1 to 100 instances with a load balancer placed in front without requiring configuration changes.
+- **Redis Saturation**: If Redis memory fills, it acts as a true cache utilizing an LRU (Least Recently Used) eviction policy. The system gracefully degrades to querying MongoDB if a cache miss occurs.
+- **Database Bottlenecks**: MongoDB Atlas allows zero-downtime vertical scaling of compute classes, and eventual read-replica sharding if read volumes outpace single-cluster capacities.
 
 ---
 
-## Robots Configuration
+## 24. Future Improvements
 
-Implemented using:
+While robust, the current architecture has areas planned for future evolution:
 
-```text id="9fcqns"
-app/robots.ts
-```
-
-Generates:
-
-```text id="vpkxja"
-/robots.txt
-```
-
-Purpose:
-
-```text id="prf0zt"
-Search Engine Guidance
-
-Crawler Rules
-
-Sitemap Discovery
-```
-
----
-
-## Sitemap Generation
-
-Implemented using:
-
-```text id="njlwmr"
-app/sitemap.ts
-```
-
-Generates:
-
-```text id="9c1mxg"
-/sitemap.xml
-```
-
-Benefits:
-
-```text id="9l3fwo"
-Improved Crawling
-
-Content Discovery
-
-Faster Indexing
-```
-
----
-
-## Canonical URLs
-
-Canonical URLs reduce duplicate-content issues and improve indexing consistency.
-
----
-
-## OpenGraph Support
-
-OpenGraph metadata improves:
-
-```text id="6yj5cg"
-Social Sharing
-
-Link Preview Quality
-
-Content Presentation
-```
-
----
-
-# Testing Strategy
-
-Testing focuses on validating behavior through HTTP interfaces.
-
-The platform primarily uses integration testing.
-
-Frameworks:
-
-```text id="5w4o5v"
-Jest
-
-Supertest
-```
-
----
-
-## Testing Philosophy
-
-Tests interact with the application through real HTTP requests.
-
-Benefits:
-
-```text id="cvpk0j"
-Higher Confidence
-
-Realistic Validation
-
-Full Request Lifecycle Coverage
-```
-
-Business behavior is verified instead of implementation details.
-
----
-
-## Authentication Tests
-
-Coverage:
-
-```text id="h18rm6"
-Registration
-
-Login
-
-Protected Routes
-
-Token Validation
-```
-
----
-
-## Authorization Tests
-
-Coverage:
-
-```text id="a5o4q6"
-RBAC Rules
-
-ABAC Ownership Rules
-
-Role Restrictions
-```
-
-Examples:
-
-```text id="gn5p7r"
-Editor Cannot Publish
-
-Editor Cannot Edit Others' Articles
-
-Admin Override Access
-```
-
----
-
-## Articles Tests
-
-Coverage:
-
-```text id="7fl1u5"
-Create
-
-Update
-
-Delete
-
-Publish
-
-Slug Uniqueness
-
-Draft Visibility
-```
-
----
-
-## Search Tests
-
-Coverage:
-
-```text id="1vrlf7"
-Search Validation
-
-Published Content Search
-
-Pagination
-
-Public Visibility Rules
-```
-
----
-
-## Integration Test Benefits
-
-```text id="18c7nd"
-Regression Prevention
-
-Deployment Confidence
-
-API Reliability
-
-Security Verification
-```
-
-```
-```
-# Architectural Decisions
-
-Architectural decisions explain why specific technologies and patterns were selected.
-
-This section documents the rationale behind major system choices.
-
----
-
-## Why Next.js?
-
-Selected for:
-
-```text
-Server Rendering
-
-SEO Support
-
-App Router
-
-Metadata Generation
-
-Modern React Ecosystem
-```
-
-Benefits:
-
-* Better search engine visibility
-* Faster initial page load
-* File-based routing
-* Built-in SEO primitives
-
----
-
-## Why Express.js?
-
-Selected for:
-
-```text
-Minimal Framework
-
-Middleware Ecosystem
-
-Predictable Request Lifecycle
-
-Large Community Support
-```
-
-Benefits:
-
-* Fast development
-* Explicit control over application flow
-* Easy integration with authentication and caching
-
----
-
-## Why MongoDB Atlas?
-
-Selected for:
-
-```text
-Flexible Document Model
-
-Managed Infrastructure
-
-Built-In Replication
-
-Text Search Support
-```
-
-Benefits:
-
-* Rapid iteration
-* Simplified operations
-* Managed backups
-* Cloud-native deployment
-
-MongoDB aligns well with content-oriented applications where schemas evolve over time.
-
----
-
-## Why Redis?
-
-Selected for:
-
-```text
-Low Latency
-
-In-Memory Storage
-
-Simple Integration
-
-High Throughput
-```
-
-Benefits:
-
-* Faster content delivery
-* Reduced database load
-* Efficient caching layer
-* Better scalability characteristics
-
-Redis is treated as an optimization layer rather than a source of truth.
-
----
-
-## Why JWT Authentication?
-
-Selected for:
-
-```text
-Stateless Authentication
-
-Horizontal Scalability
-
-No Session Database
-
-Industry Adoption
-```
-
-Benefits:
-
-* Reduced infrastructure complexity
-* Easy service scaling
-* Decoupled authentication flow
-
----
-
-## Why Refresh Tokens?
-
-Access tokens remain intentionally short-lived.
-
-Refresh tokens provide:
-
-```text
-Long Sessions
-
-Improved Security
-
-Controlled Renewal
-```
-
-Benefits:
-
-* Reduced impact of token leakage
-* Better user experience
-* Session continuity
-
----
-
-## Why Refresh Token Rotation?
-
-Implemented through:
-
-```text
-refreshTokenVersion
-```
-
-Benefits:
-
-```text
-Token Revocation
-
-Logout Everywhere
-
-Compromised Token Protection
-```
-
-This allows previously issued refresh tokens to become invalid immediately.
-
----
-
-## Why RBAC?
-
-Role-Based Access Control simplifies permission management.
-
-Roles:
-
-```text
-USER
-
-EDITOR
-
-ADMIN
-```
-
-Benefits:
-
-```text
-Predictable Permissions
-
-Centralized Access Rules
-
-Operational Simplicity
-```
-
----
-
-## Why ABAC?
-
-RBAC alone cannot enforce ownership.
-
-Example:
-
-```text
-EDITOR
-```
-
-should edit:
-
-```text
-Own Article
-```
-
-but not:
-
-```text
-Another Editor's Article
-```
-
-ABAC solves this by incorporating resource ownership into authorization decisions.
-
----
-
-## Why Soft Deletes?
-
-Selected instead of permanent deletion.
-
-Benefits:
-
-```text
-Data Recovery
-
-Auditability
-
-Operational Safety
-```
-
-Deleted content remains recoverable until intentionally purged.
-
----
-
-## Why Background Jobs?
-
-Some work should not execute during user requests.
-
-Examples:
-
-```text
-Publishing Side Effects
-
-Notifications
-
-Future Integrations
-```
-
-Benefits:
-
-```text
-Lower Request Latency
-
-Improved Reliability
-
-Retry Capability
-```
-
----
-
-## Why Structured Logging?
-
-Traditional console logging becomes difficult to manage at scale.
-
-Structured logging provides:
-
-```text
-Consistency
-
-Machine Readability
-
-Filtering
-
-Aggregation
-```
-
-Benefits:
-
-* Faster debugging
-* Better observability
-* Easier production support
-
----
-
-## Why Integration Testing?
-
-The project prioritizes behavior verification.
-
-Tests interact with:
-
-```text
-Routes
-
-Controllers
-
-Services
-
-Database
-```
-
-simultaneously.
-
-Benefits:
-
-```text
-Higher Confidence
-
-Realistic Validation
-
-Reduced Regression Risk
-```
-
----
-
-# Trust Boundaries
-
-Trust boundaries define where external data enters the system.
-
-Every trust boundary requires validation and security controls.
-
----
-
-## Client Boundary
-
-Untrusted Source:
-
-```text
-Browser
-```
-
-Incoming Data:
-
-```text
-Forms
-
-Headers
-
-Cookies
-
-Query Parameters
-```
-
-Controls:
-
-```text
-Validation
-
-Authentication
-
-Authorization
-```
-
----
-
-## API Boundary
-
-All HTTP requests cross the API trust boundary.
-
-Controls:
-
-```text
-Input Validation
-
-JWT Verification
-
-RBAC
-
-ABAC
-```
-
-No request data is trusted automatically.
-
----
-
-## Database Boundary
-
-MongoDB is trusted only after validation.
-
-Controls:
-
-```text
-Schema Validation
-
-Application Validation
-
-Controlled Queries
-```
-
-Direct client access is never permitted.
-
----
-
-## Cache Boundary
-
-Redis is considered an optimization layer.
-
-Rules:
-
-```text
-Cache Can Be Lost
-
-Cache Can Expire
-
-Cache Never Owns Data
-```
-
-MongoDB remains authoritative.
-
----
-
-# Deployment Architecture
-
-Current deployment target:
-
-```text
-Frontend
-  ↓
-Vercel
-
-Backend
-  ↓
-Railway
-
-Database
-  ↓
-MongoDB Atlas
-
-Cache
-  ↓
-Redis
-```
-
----
-
-## Production Topology
-
-```text
-                Internet
-                     │
-                     ▼
-
-              Next.js Frontend
-                    Vercel
-                     │
-                     ▼
-
-              Express API
-                 Railway
-              ┌──────────┐
-              │          │
-              ▼          ▼
-
-      MongoDB Atlas    Redis
-```
-
----
-
-## Environment Separation
-
-Development:
-
-```text
-Local Next.js
-
-Local Express
-
-Local Redis
-
-MongoDB Atlas
-```
-
-Testing:
-
-```text
-Dedicated Test Database
-
-Isolated Test Execution
-```
-
-Production:
-
-```text
-Vercel
-
-Railway
-
-MongoDB Atlas
-
-Redis
-```
-
----
-
-# Future Enhancements
-
-The architecture intentionally leaves room for expansion.
-
----
-
-## Authentication Improvements
-
-Planned:
-
-```text
-Google OAuth
-
-GitHub OAuth
-
-Email Verification
-
-Password Reset Flow
-```
-
-Benefits:
-
-```text
-Improved Security
-
-Reduced Friction
-
-Better User Experience
-```
-
----
-
-## Content Features
-
-Potential additions:
-
-```text
-Article Categories
-
-Tags
-
-Comments
-
-Bookmarks
-
-Likes
-```
-
----
-
-## Media Management
-
-Potential additions:
-
-```text
-Cloudinary Integration
-
-Image Uploads
-
-Image Optimization
-```
-
-Benefits:
-
-```text
-Improved Content Presentation
-
-Reduced Asset Complexity
-```
-
----
-
-## Search Improvements
-
-Future options:
-
-```text
-Search Suggestions
-
-Popular Searches
-
-Advanced Filters
-
-Search Analytics
-```
-
-For larger scale systems:
-
-```text
-Elasticsearch
-
-OpenSearch
-```
-
-may replace MongoDB text search.
-
----
-
-## Moderation Features
-
-Potential additions:
-
-```text
-Content Moderation
-
-Spam Detection
-
-Abuse Prevention
-```
-
----
-
-## Observability Improvements
-
-Potential additions:
-
-```text
-Grafana
-
-Prometheus
-
-Centralized Logging
-
-Error Dashboards
-```
-
-Benefits:
-
-```text
-Faster Incident Detection
-
-Operational Visibility
-
-Production Diagnostics
-```
-
----
-
-## Scalability Enhancements
-
-Potential additions:
-
-```text
-Dedicated Worker Services
-
-Queue Backends
-
-Horizontal Scaling
-
-Distributed Caching
-```
-
----
-
-# Conclusion
-
-The Content Platform follows a production-oriented architecture emphasizing:
-
-```text
-Security
-
-Maintainability
-
-Scalability
-
-Reliability
-
-Performance
-```
-
-Key characteristics include:
-
-```text
-Layered Architecture
-
-JWT Authentication
-
-Refresh Token Rotation
-
-RBAC + ABAC Authorization
-
-MongoDB Persistence
-
-Redis Caching
-
-Background Job Processing
-
-SEO Optimization
-
-Integration Testing
-
-Structured Observability
-```
-
-The system is intentionally designed to evolve from a student project into a deployable production-grade content management platform without requiring major architectural rewrites.
-
-```
-```
+- **External Message Brokers**: The current in-memory job queue relies on MongoDB for state. While sufficient for moderate loads, scaling to thousands of events per second will require migrating to a dedicated broker like RabbitMQ or an AWS SQS queue to decouple the worker threads entirely from the HTTP process.
+- **WebSocket Integration**: Currently, state changes (like an Admin publishing an article) require the Editor to refresh their dashboard to see the status update. Integrating WebSockets (via Socket.io) would allow real-time UI invalidation.
+- **OAuth 2.0 Integration**: Extending the IAM module to support federated identity providers (Google, GitHub) via Passport.js to decrease onboarding friction.
+- **Analytics Pipeline**: Extracting the rudimentary view-counter logic into a dedicated time-series database pipeline to handle heavy analytical aggregations without touching the primary MongoDB transactional cluster.
