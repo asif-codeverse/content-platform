@@ -1,20 +1,23 @@
-# Use official Node image
+# Base image
 FROM node:20-alpine
 
-# Create working directory
+# Working directory
 WORKDIR /app
 
-# Copy package files first
+# Copy dependency files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install production dependencies
+RUN npm ci --omit=dev
 
-# Copy application code
+# Copy source code
 COPY . .
 
-# Expose port
+# Environment
+ENV NODE_ENV=production
+
+# Expose API port
 EXPOSE 5001
 
-# Start server
-CMD ["npm","start"]
+# Start the application
+CMD ["npm", "start"]

@@ -1,4 +1,14 @@
 node_modules
 npm-debug.log
 .env
+.env
+.env.local
+.env.development
+.env.test
+coverage
+logs
 .git
+.gitignore
+.elasticbeanstalk
+Dockerfile
+README.md

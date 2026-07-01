@@ -1,0 +1,69 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo-data:/data/db
+
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+  api:
+    build:
+      context: ./server
+
+    restart: unless-stopped
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    env_file:
+      - server/.env
+
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/content-platform
+      REDIS_URL: redis://redis:6379
+
+    ports:
+      - "5001:5001"
+
+  client:
+    build:
+      context: ./client
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+
+    restart: unless-stopped
+
+    depends_on:
+      - api
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo-data:
+  redis-data:

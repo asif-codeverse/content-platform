@@ -1,0 +1,32 @@
+services:
+  api:
+    image: content-platform-api:latest
+
+    container_name: content-platform-api
+
+    restart: unless-stopped
+
+    env_file:
+      - server/.env
+
+    ports:
+      - "5001:5001"
+
+  client:
+    image: content-platform-client:latest
+
+    container_name: content-platform-client
+
+    restart: unless-stopped
+
+    depends_on:
+      - api
+
+    env_file:
+      - client/.env.local
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+
+    ports:
+      - "3000:3000"
