@@ -83,7 +83,12 @@ export const registerUser = async ({
 
     } catch (error) {
 
-      logger.error(error);
+      logger.error("Email send failed", {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+        responseCode: error.responseCode,
+      });
 
       logger.info(
         "EMAIL_VERIFICATION_OTP",
