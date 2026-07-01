@@ -1,4 +1,7 @@
 # Content Platform
+
+A production-ready full-stack publishing platform where editors can create rich articles, administrators review and publish content, readers discover articles through search, and the platform handles authentication, caching, background jobs, and email verification.
+
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
@@ -8,6 +11,23 @@
 A production-oriented content publishing platform built with Next.js, Express.js, MongoDB, and Redis.
 
 The platform provides secure authentication, role-based access control, article publishing workflows, Redis-powered caching, full-text search, background job processing, SEO optimization, and production-ready architecture.
+
+---
+
+✨ Highlights
+
+• Rich Text Editor (TipTap)
+• Email Verification
+• Password Reset via Email
+• Image Uploads (Cloudinary)
+• Role-Based Dashboard
+• Article Review Workflow
+• Redis Caching
+• Full-Text Search
+• Background Jobs
+• SEO Optimized
+• Dark Mode
+• Responsive UI
 
 ---
 
@@ -30,26 +50,41 @@ https://github.com/asif-codeverse/content-platform
 
 ## Screenshots
 
-### Home Page
+Home Page
+[placeholder]
 
-<img src="./docs/screenshots/home.png" width="100%" />
+Public Articles
+[placeholder]
 
-### Articles Listing
+Article Details
+[placeholder]
 
-<img src="./docs/screenshots/articles.png" width="100%" />
+Search
+[placeholder]
 
-### Search Results
+Login
+[placeholder]
 
-<img src="./docs/screenshots/search.png" width="100%" />
+Register
+[placeholder]
 
-### Admin Dashboard
+Email Verification
+[placeholder]
 
-<img src="./docs/screenshots/dashboard.png" width="100%" />
+Editor Dashboard
+[placeholder]
 
-### Swagger API Documentation
+Rich Text Editor
+[placeholder]
 
-<img src="./docs/screenshots/swagger.png" width="100%" />
+Pending Reviews
+[placeholder]
 
+Admin Dashboard
+[placeholder]
+
+Swagger Docs
+[placeholder]
 ---
 
 
@@ -65,6 +100,11 @@ https://github.com/asif-codeverse/content-platform
 * Role-Based Access Control (RBAC)
 * Attribute-Based Access Control (ABAC)
 * Secure Password Hashing with bcrypt
+✔ Registration
+✔ Email Verification
+✔ Password Reset
+✔ Refresh Token Rotation
+✔ JWT Authentication
 
 ### Content Management
 
@@ -74,12 +114,22 @@ https://github.com/asif-codeverse/content-platform
 * Soft Delete Articles
 * Slug-Based Routing
 * Draft & Published States
+* ✔ Rich Text Editor
+✔ Image Upload
+✔ Draft Workflow
+✔ Pending Review
+✔ Publish / Reject
+✔ Slug URLs
+✔ View Counter
 
 ### Search
 
 * MongoDB Full-Text Search
 * Search Pagination
 * Redis Search Caching
+* ✔ MongoDB Full Text Search
+✔ Pagination
+✔ Cached Search
 
 ### Performance
 
@@ -141,6 +191,14 @@ https://github.com/asif-codeverse/content-platform
 * TypeScript
 * Tailwind CSS
 * App Router
+* Next.js 16
+React 19
+TypeScript
+Tailwind CSS v4
+TipTap
+Framer Motion
+Axios
+React Hook Form
 
 ## Backend
 
@@ -149,12 +207,25 @@ https://github.com/asif-codeverse/content-platform
 * MongoDB
 * Mongoose
 * Redis
+* Express
+MongoDB
+Redis
+JWT
+Zod
+Cloudinary
+Resend
+Winston
 
 ## Infrastructure
 
 * MongoDB Atlas
 * Redis
 * GitHub Actions
+* ✔ Redis
+✔ Cloudinary
+✔ Render Deployment
+✔ Vercel Deployment
+✔ GitHub Actions
 
 ## Testing
 
@@ -167,20 +238,28 @@ https://github.com/asif-codeverse/content-platform
 
 ```text
 Browser
-   │
-   ▼
+      │
+      ▼
 Next.js Frontend
-   │
-   ▼
+      │
+      ▼
 Express REST API
-   │
- ┌─┴─────────────┐
+      │
+ ┌────┴──────────┐
  ▼               ▼
-MongoDB        Redis
-Atlas          Cache
-   │
-   ▼
-Background Jobs
+MongoDB       Redis
+Atlas         Cache
+ │
+ ▼
+Cloudinary
+
+ │
+ ▼
+Email Provider
+
+ │
+ ▼
+Background Worker
 ```
 
 ---
@@ -189,26 +268,55 @@ Background Jobs
 
 ```text
 content-platform/
-│
+.
 ├── client/
 │   ├── app/
+│   │   ├── articles/
+│   │   ├── dashboard/
+│   │   │   ├── create/
+│   │   │   ├── edit/
+│   │   │   ├── manage/
+│   │   │   ├── my/
+│   │   │   ├── pending/
+│   │   │   └── users/
+│   │   ├── forgot-password/
+│   │   ├── login/
+│   │   ├── register/
+│   │   ├── search/
+│   │   └── verify-email/
 │   ├── components/
+│   │   ├── articles/
+│   │   ├── dashboard/
+│   │   ├── editor/
+│   │   ├── motion/
+│   │   ├── search/
+│   │   └── ui/
 │   ├── context/
+│   ├── hooks/
+│   ├── lib/
+│   ├── public/
 │   ├── services/
-│   └── middleware/
-│
-├── server/
-│   ├── src/
-│   │   ├── modules/
-│   │   ├── middlewares/
-│   │   ├── jobs/
-│   │   ├── config/
-│   │   ├── utils/
-│   │   └── docs/
-│   │
-│   └── __tests__/
-│
-└── docs/
+│   └── types/
+├── docs/
+└── server/
+    ├── __tests__
+    ├── scripts
+    ├── src
+    │   ├── config
+    │   ├── docs
+    │   ├── jobs
+    │   │   └── handlers
+    │   ├── middlewares
+    │   ├── modules
+    │   │   ├── articles
+    │   │   ├── auth
+    │   │   ├── search
+    │   │   ├── upload
+    │   │   └── users
+    │   ├── routes
+    │   ├── services
+    │   └── utils
+    └── test-utils
 ```
 
 ---
@@ -216,23 +324,82 @@ content-platform/
 # Authentication Flow
 
 ```text
+Register
+
+↓
+
+Email Verification
+
+↓
+
 Login
-   │
-   ▼
-Access Token Issued
-   │
-   ▼
-Protected API Access
-   │
-   ▼
-Access Token Expires
-   │
-   ▼
-Refresh Endpoint
-   │
-   ▼
-New Access Token
+
+↓
+
+Access Token
+
+↓
+
+Protected APIs
+
+↓
+
+Refresh Token Rotation
+
+↓
+
+Logout
 ```
+# Article Workflow
+Editor
+
+↓
+
+Create Draft
+
+↓
+
+Submit
+
+↓
+
+Pending Review
+
+↓
+
+Admin Review
+
+↓
+
+Publish
+
+↓
+
+Readers
+
+# Deployment
+
+Frontend
+Vercel
+
+Backend
+Render
+
+Database
+MongoDB Atlas
+
+Cache
+Redis Cloud
+
+Media
+Cloudinary
+
+Email
+Resend
+
+CI
+GitHub Actions
+
 
 ---
 
@@ -268,11 +435,15 @@ http://localhost:5001/docs
 
 Major API Groups:
 
-```text
-Auth
-Articles
-Search
-Health
+| Module   | Description                                         |
+| -------- | --------------------------------------------------- |
+| Auth     | Register, Login, Email Verification, Password Reset |
+| Articles | CRUD, Publish, Delete                               |
+| Upload   | Cloudinary uploads                                  |
+| Search   | Full Text Search                                    |
+| Users    | Admin User Management                               |
+| Health   | Health endpoints                                    |
+
 ```
 
 ---
@@ -317,17 +488,33 @@ npm install
 Create:
 
 ```env
-PORT=5001
+PORT
 
-NODE_ENV=development
+NODE_ENV
 
-MONGODB_URI=
+MONGODB_URI
 
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
+REDIS_URL
 
-REDIS_HOST=
-REDIS_PORT=
+JWT_ACCESS_SECRET
+
+JWT_REFRESH_SECRET
+
+ACCESS_TOKEN_EXPIRES_IN
+
+REFRESH_TOKEN_EXPIRES_IN
+
+EMAIL_FROM
+
+BREVO_API_KEY
+
+CLIENT_URL
+
+CLOUDINARY_CLOUD_NAME
+
+CLOUDINARY_API_KEY
+
+CLOUDINARY_API_SECRET
 ```
 
 ## Client
@@ -431,6 +618,19 @@ Coverage includes:
 * Publishing Workflow
 * Search
 * Ownership Rules
+* Authentication
+
+Registration
+
+RBAC
+
+Publishing
+
+Search
+
+Ownership Rules
+
+Protected Routes
 
 ---
 
@@ -455,34 +655,70 @@ Returns:
 # CI/CD
 
 GitHub Actions automatically verifies:
+Backend CI
 
-```text
-Dependency Installation
-Automated Tests
-Build Validation
-```
+Frontend Build
 
-Triggered on:
+Docker Validation
 
-```text
-Push
-Pull Request
-```
 
 ---
 
 # Future Roadmap
 
-* Google OAuth
-* Email Verification
-* Image Upload Support
-* Cloud Storage Integration
-* Content Moderation
-* AI-Assisted Search
-* Analytics Dashboard
-* Admin User Management
+Google OAuth
+
+Bookmarks
+
+Comments
+
+Notifications
+
+Article Analytics
+
+Reading History
+
+Multi-language
+
+AI Recommendations
 
 ---
+# Performance
+
+Redis caching
+
+HTTP 304
+
+ETags
+
+Background jobs
+
+Lazy loading
+
+Optimized images
+
+Server-side rendering
+
+Pagination
+
+# Security Section
+Helmet
+
+Rate Limiting
+
+JWT
+
+Refresh Token Rotation
+
+Password Hashing
+
+Input Validation
+
+Secure Cookies
+
+RBAC
+
+ABAC
 
 # Production Principles
 
@@ -502,3 +738,46 @@ The project is designed around:
 # License
 
 MIT License
+
+# Built by
+
+Asif
+
+GitHub:
+https://github.com/asif-codeverse
+
+LinkedIn:
+<placeholder>
+
+# badges
+GitHub Actions
+
+Vercel
+
+Render
+
+MIT
+
+Node
+
+Next
+
+MongoDB
+
+Redis
+
+Express
+
+React
+
+TypeScript
+
+
+
+Frontend production URL (Vercel). : https://content-platform-v1.vercel.app/
+Backend production URL (Render). : https://content-platform-api-8ars.onrender.com/
+Redis provider (Redis Cloud or Upstash?). redis cloud
+Email provider: brevo api thing
+Your LinkedIn URL : https://www.linkedin.com/in/mohd-asif-011805tz/
+Around 10–12 screenshots (keep paths like i have folder screenshot just need to add all screenshots there , assume file is exact what you need like dashboard.jpeg home.jpeg admindshboard.jpeg userdashboard.jpeg).
+

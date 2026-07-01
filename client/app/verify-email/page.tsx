@@ -146,7 +146,7 @@ export default function VerifyEmailPage() {
     "
                     >
                         <h2 className="text-sm font-semibold text-[var(--foreground)]">
-                            Can't find the email?
+                            Can&#39;t find the email?
                         </h2>
 
                         <ul className="mt-3 space-y-2 text-sm text-[var(--muted-foreground)]">

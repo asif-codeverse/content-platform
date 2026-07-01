@@ -141,8 +141,11 @@ export const registerUser = async ({
     );
 
   } catch (error) {
-
-    logger.error(error);
+    logger.error("EMAIL_SEND_FAILED", {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+    });
 
     logger.info(
       "EMAIL_VERIFICATION_OTP",
@@ -254,7 +257,11 @@ export const forgotPassword =
 
     } catch (error) {
 
-      logger.error(error);
+      logger.error("EMAIL_SEND_FAILED", {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+      });
 
       logger.info(
         "PASSWORD_RESET_OTP",

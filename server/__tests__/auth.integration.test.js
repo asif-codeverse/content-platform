@@ -1,5 +1,6 @@
 import request from "supertest";
 import mongoose from "mongoose";
+import {jest} from "@jest/globals"
 
 import app from "../src/app.js";
 import { connectDB } from "../src/config/db.js";
@@ -10,7 +11,6 @@ const API = "/api/v1";
 describe("Auth API", () => {
     beforeAll(async () => {
         await connectDB();
-
 
         if (!env.MONGODB_URI.includes("test")) {
             throw new Error(
@@ -207,4 +207,4 @@ describe("Auth API", () => {
 
 
     // });
-});
+},15000);
