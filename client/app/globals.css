@@ -549,6 +549,7 @@ button:disabled {
 
 .article-content code {
     background: var(--surface-secondary);
+    color: var(--foreground);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: .15rem .4rem;
@@ -560,12 +561,13 @@ button:disabled {
     padding: 1.5rem;
     overflow-x: auto;
     border-radius: var(--radius);
-    background: #1f1f22;
+    background: #1e1e1e;
+    color: #f8f8f2;
 }
 
 .article-content pre code {
-    border: none;
     background: transparent;
+    border: none;
     padding: 0;
     color: inherit;
 }
