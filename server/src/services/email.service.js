@@ -1,14 +1,15 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
 
-const transporter =
-    nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: env.EMAIL_USER,
-            pass: env.EMAIL_PASS,
-        },
-    });
+const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASS,
+    },
+});
 
 export const sendMail = async ({
     to,
