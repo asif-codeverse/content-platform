@@ -6,7 +6,6 @@ import {
 
 import EmptyState from "@/components/ui/EmptyState";
 import ViewTracker from "@/components/articles/ViewTracker";
-import { articleTypography } from "@/lib/articleTypography";
 
 type Props = {
     params: Promise<{
@@ -135,7 +134,7 @@ export default async function ArticlePage({ params }: Props) {
                 </header>
 
                 <div
-                    className={`${articleTypography} article-content`}
+                    className="article-content"
                     dangerouslySetInnerHTML={{
                         __html: article.content,
                     }}
