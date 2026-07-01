@@ -21,7 +21,10 @@ export const authenticate = (req, res, next) => {
     };
 
     next();
-  } catch (err) {
-    next({ statusCode: 401, message: "Invalid or expired access token" });
+  } catch {
+    next({
+      statusCode: 401,
+      message: "Invalid or expired access token",
+    });
   }
 };

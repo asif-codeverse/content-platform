@@ -328,7 +328,9 @@ export const logout =
 
           }
 
-        } catch { }
+        } catch (_err) {
+          logger.warn("...");
+        }
 
       }
 
