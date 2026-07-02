@@ -67,7 +67,8 @@ export default function ConfirmDialog({
                             left-1/2
                             top-1/2
                             z-50
-                            w-full
+                            w-[calc(100%-2rem)]
+                            sm:w-full
                             max-w-md
                             -translate-x-1/2
                             -translate-y-1/2

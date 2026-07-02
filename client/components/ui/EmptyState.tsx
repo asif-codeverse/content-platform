@@ -33,8 +33,10 @@ export default function EmptyState({
                 border-dashed
                 border-[var(--border)]
                 bg-[var(--surface)]
-                px-8
-                py-24
+                px-6
+                md:px-8
+                py-16
+                md:py-24
                 text-center
             "
         >

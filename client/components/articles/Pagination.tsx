@@ -20,8 +20,10 @@ export default function Pagination({
             className="
                 mt-12
                 flex
+                flex-wrap
                 items-center
                 justify-between
+                gap-4
                 py-4
             "
         >

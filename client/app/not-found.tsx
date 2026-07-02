@@ -10,7 +10,8 @@ export default function NotFound() {
                 min-h-[70vh]
                 items-center
                 justify-center
-                px-6
+                px-4
+                sm:px-6
                 py-12
             "
         >
@@ -22,7 +23,8 @@ export default function NotFound() {
                     border
                     border-[var(--border)]
                     bg-[var(--surface)]
-                    p-8
+                    p-6
+                    sm:p-8
                     md:p-10
                     text-center
                     shadow-[var(--shadow-sm)]

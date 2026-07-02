@@ -25,10 +25,8 @@ export default function SearchBar() {
             role="search"
             className="
                 relative
-                hidden
                 w-full
                 max-w-[280px]
-                md:block
             "
         >
             <Search

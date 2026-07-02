@@ -39,7 +39,7 @@ export default function RichTextEditor({
 
     editorProps: {
       attributes: {
-        class: "ProseMirror prose prose-lg max-w-none min-h-[650px] px-7 py-7 focus:outline-none",
+        class: "ProseMirror prose prose-lg max-w-none min-h-[650px] px-4 sm:px-7 py-7 focus:outline-none",
       },
     },
 
@@ -56,7 +56,7 @@ export default function RichTextEditor({
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-secondary)] px-8 py-4 text-sm text-[var(--muted)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[var(--border)] bg-[var(--surface-secondary)] px-4 sm:px-8 py-4 text-sm text-[var(--muted)]">
         <span>
           Rich Text Editor • Headings • Lists • Links • Images • Code Blocks
         </span>

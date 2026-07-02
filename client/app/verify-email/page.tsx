@@ -85,7 +85,8 @@ export default function VerifyEmailPage() {
                 items-center
                 justify-center
                 bg-[var(--background)]
-                px-6
+                px-4
+                sm:px-6
                 py-12
             "
         >
@@ -97,7 +98,8 @@ export default function VerifyEmailPage() {
                     border
                     border-[var(--border)]
                     bg-[var(--surface)]
-                    p-8
+                    p-6
+                    sm:p-8
                     md:p-10
                     shadow-[var(--shadow-sm)]
                 "
