@@ -149,41 +149,41 @@ Experience the platform in a live production environment:
 ---
 
 ## Architecture Overview
-
 The system utilizes a heavily decoupled architecture, fully isolating the Next.js SSR presentation layer from the Express business logic, and utilizing a distinct worker architecture for intensive tasks.
 
 ```mermaid
 flowchart TD
-    subgraph Client Tier
-        Browser[Browser / Mobile]
-        NextJS[Next.js 16 SSR Frontend]
+
+    subgraph "Client Tier"
+        Browser["Browser / Mobile"]
+        NextJS["Next.js 16 SSR Frontend"]
     end
 
-    subgraph Service Tier
-        Express[Express.js REST API]
-        Worker[Asynchronous Job Worker]
+    subgraph "Service Tier"
+        Express["Express.js REST API"]
+        Worker["Asynchronous Job Worker"]
     end
 
-    subgraph Data Tier
+    subgraph "Data Tier"
         Mongo[(MongoDB Atlas Cluster)]
         Redis[(Redis Cloud Cache)]
     end
 
-    subgraph External Dependencies
-        Cloudinary[Cloudinary CDN]
-        Brevo[Brevo Transactional API]
+    subgraph "External Dependencies"
+        Cloudinary["Cloudinary CDN"]
+        Brevo["Brevo Transactional API"]
     end
 
     Browser -->|HTTPS / UI Interactions| NextJS
     NextJS -->|RESTful API Calls| Express
-    Browser -.->|Direct API calls (CSR)| Express
-    
+    Browser -.->|"Direct API calls (CSR)"| Express
+
     Express <-->|Mongoose ODM| Mongo
     Express <-->|Cache Hit/Miss| Redis
-    
+
     Express -->|Upload Media| Cloudinary
     Express -->|Dispatch OTPs| Brevo
-    
+
     Express -.->|Enqueue Event Payload| Worker
     Worker <-->|Track Job Execution State| Mongo
 ```
