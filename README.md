@@ -16,31 +16,56 @@ Content Platform is a production-grade, headless content management system built
 
 ## Table of Contents
 
-- [Project Overview](#project-overview)
-- [Live Demo](#live-demo)
-- [Visual Walkthrough](#visual-walkthrough)
-- [Core Capabilities](#core-capabilities)
-  - [Identity & Access Management (IAM)](#identity--access-management-iam)
-  - [Editorial Workflow Management](#editorial-workflow-management)
-  - [Data Discovery & Performance](#data-discovery--performance)
-  - [Background Processing](#background-processing)
-- [Architecture Overview](#architecture-overview)
-- [Repository Structure](#repository-structure)
-- [Data Models](#data-models)
-- [System Workflows](#system-workflows)
-- [Authorization Matrix](#authorization-matrix)
-- [Comprehensive API Reference](#comprehensive-api-reference)
-- [Caching Strategy](#caching-strategy)
-- [Security & Production Principles](#security--production-principles)
-- [Local Development Guide](#local-development-guide)
-- [Environment Variables](#environment-variables)
-- [Infrastructure & Deployment](#infrastructure--deployment)
-- [Testing Strategy](#testing-strategy)
-- [CI/CD Pipeline](#cicd-pipeline)
-- [Future Roadmap](#future-roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Author](#author)
+- [Content Platform](#content-platform)
+  - [Table of Contents](#table-of-contents)
+  - [Project Overview](#project-overview)
+  - [Live Demo](#live-demo)
+  - [Visual Walkthrough](#visual-walkthrough)
+    - [Public Discovery](#public-discovery)
+    - [Authentication](#authentication)
+    - [Administration](#administration)
+  - [Core Capabilities](#core-capabilities)
+    - [Identity \& Access Management (IAM)](#identity--access-management-iam)
+    - [Editorial Workflow Management](#editorial-workflow-management)
+    - [Data Discovery \& Performance](#data-discovery--performance)
+    - [Background Processing](#background-processing)
+  - [Architecture Overview](#architecture-overview)
+  - [Repository Structure](#repository-structure)
+  - [Data Models](#data-models)
+    - [User Schema (`auth.model.js`)](#user-schema-authmodeljs)
+    - [Article Schema (`article.model.js`)](#article-schema-articlemodeljs)
+  - [System Workflows](#system-workflows)
+    - [Authentication \& Token Rotation Flow](#authentication--token-rotation-flow)
+    - [Complex Editorial Lifecycle](#complex-editorial-lifecycle)
+  - [Authorization Matrix](#authorization-matrix)
+  - [Comprehensive API Reference](#comprehensive-api-reference)
+    - [1. Identity Verification](#1-identity-verification)
+    - [2. Creating an Editorial Draft](#2-creating-an-editorial-draft)
+    - [3. Fetching Paginated \& Cached Search Results](#3-fetching-paginated--cached-search-results)
+  - [Caching Strategy](#caching-strategy)
+    - [Primary Redis Key Structures](#primary-redis-key-structures)
+    - [Cache Flow \& Invalidation Matrix](#cache-flow--invalidation-matrix)
+    - [HTTP ETag Optimization](#http-etag-optimization)
+  - [Security \& Production Principles](#security--production-principles)
+  - [Local Development Guide](#local-development-guide)
+    - [Prerequisites](#prerequisites)
+    - [1. Repository Setup](#1-repository-setup)
+    - [2. Dependency Installation](#2-dependency-installation)
+    - [3. Execution](#3-execution)
+  - [Environment Variables](#environment-variables)
+    - [Server Application (`server/.env`)](#server-application-serverenv)
+    - [Client Application (`client/.env.local`)](#client-application-clientenvlocal)
+  - [Infrastructure \& Deployment](#infrastructure--deployment)
+    - [Recommended Production Topology](#recommended-production-topology)
+    - [Docker Deployment](#docker-deployment)
+  - [Testing Strategy](#testing-strategy)
+    - [Executing the Test Suite](#executing-the-test-suite)
+    - [Validated Areas](#validated-areas)
+  - [CI/CD Pipeline](#cicd-pipeline)
+  - [Future Roadmap](#future-roadmap)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Author](#author)
 
 ---
 
@@ -70,15 +95,31 @@ Experience the platform in a live production environment:
 
 ## Visual Walkthrough
 
-| Interface | View |
-|:---|:---|
-| **Public Discovery** | ![Home](docs/screenshots/home.jpeg) <br> ![Articles](docs/screenshots/articles.jpeg) <br> ![Search](docs/screenshots/search.jpeg) |
-| **Authentication** | ![Login](docs/screenshots/login.jpeg) <br> ![Register](docs/screenshots/register.jpeg) <br> ![Email Verification](docs/screenshots/verify-email.jpeg) |
-| **Editorial Tools** | ![Editor](docs/screenshots/editor.jpeg) <br> ![Editor Dashboard](docs/screenshots/dashboard.jpeg) <br> ![Pending Reviews](docs/screenshots/userdashboard.jpeg) |
-| **Administration** | ![Admin Dashboard](docs/screenshots/admindashboard.jpeg) <br> ![Swagger](docs/screenshots/swagger.jpeg) |
+### Public Discovery
 
-*(Note: Original high-resolution assets are located in `docs/screenshots/`)*
+![Home](docs/screenshots/home.png)
 
+![Articles](docs/screenshots/articles.png)
+
+![Search](docs/screenshots/search.png)
+
+### Authentication
+
+![Login](docs/screenshots/login.png)
+
+![Register](docs/screenshots/register.png)
+
+![Email Verification](docs/screenshots/verify-email.png)
+
+### Administration
+
+![Admin Dashboard](docs/screenshots/admindashboard.png)
+
+![Pending Reviews](docs/screenshots/pending.png)
+
+![Swagger](docs/screenshots/swagger.png)
+
+> **Note:** Original high-resolution screenshots are available in `docs/screenshots/`.
 ---
 
 ## Core Capabilities
@@ -273,18 +314,18 @@ Tracks the complex editorial lifecycle, relations, and search indexing.
 
 The platform employs a dual-layered security model combining standard **RBAC** (Role-Based Access Control) with **ABAC** (Attribute-Based Access Control). ABAC strictly checks if `req.user.id === resource.author.toString()`.
 
-| Endpoint / Action | Endpoint Path | `USER` | `EDITOR` | `ADMIN` |
-|---|---|:---:|:---:|:---:|
-| **Read Published Articles** | `GET /` or `GET /:slug` | ✅ | ✅ | ✅ |
-| **Manage Own Profile** | `GET /auth/me` | ✅ | ✅ | ✅ |
-| **View Own Drafts** | `GET /articles/my` | ❌ | ✅ | ✅ |
-| **Create Articles** | `POST /articles` | ❌ | ✅ | ✅ |
-| **Edit Own Articles** | `PATCH /articles/my/:id` | ❌ | ✅ | ✅ |
-| **Submit Articles for Review**| `PATCH /articles/:id/submit` | ❌ | ✅ | ✅ |
-| **Review Pending Articles** | `GET /articles/pending` | ❌ | ❌ | ✅ |
-| **Publish / Reject Articles** | `PATCH /articles/:id/(publish\|reject)` | ❌ | ❌ | ✅ |
-| **Delete Any Article** | `DELETE /articles/:id` | ❌ | ❌ | ✅ |
-| **Manage Platform Users** | `PATCH /users/:id/role` | ❌ | ❌ | ✅ |
+| Endpoint / Action | Endpoint Path | `USER` | `ADMIN` |
+|---|---|:---:|:---:|
+| **Read Published Articles** | `GET /` or `GET /:slug` | ✅ | ✅ |
+| **Manage Own Profile** | `GET /auth/me` | ✅ | ✅ |
+| **View Own Drafts** | `GET /articles/my` | ✅ | ✅ |
+| **Create Articles** | `POST /articles` | ✅ | ✅ |
+| **Edit Own Articles** | `PATCH /articles/my/:id` | ✅ | ✅ |
+| **Submit Articles for Review** | `PATCH /articles/:id/submit` | ✅ | ✅ |
+| **Review Pending Articles** | `GET /articles/pending` | ❌ | ✅ |
+| **Publish / Reject Articles** | `PATCH /articles/:id/(publish\|reject)` | ❌ | ✅ |
+| **Delete Any Article** | `DELETE /articles/:id` | ❌ | ✅ |
+| **Manage Platform Users** | `PATCH /users/:id/role` | ❌ | ✅ |
 
 ---
 
