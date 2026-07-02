@@ -18,25 +18,50 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://YOUR-DOMAIN.com"),
+
     title: {
         default: "Content Platform",
         template: "%s | Content Platform",
     },
 
     description:
-        "A modern content publishing platform built with Next.js, Express, MongoDB, and Redis.",
+        "A modern publishing platform featuring editorial workflows, intelligent search, secure authentication, and a clean reading experience.",
 
     keywords: [
         "Content Platform",
-        "CMS",
-        "Next.js",
-        "React",
-        "Express",
-        "MongoDB",
-        "Redis",
-        "Publishing",
+        "Publishing Platform",
         "Content Management",
+        "Editorial Workflow",
+        "Articles",
+        "Knowledge Sharing",
     ],
+
+    openGraph: {
+        title: "Content Platform",
+        description:
+            "Publish, review, and discover articles with a modern editorial workflow.",
+        url: "https://content-platform-v1.vercel.app/",
+        siteName: "Content Platform",
+        locale: "en_US",
+        type: "website",
+        images: [
+            {
+                url: "/opengraph-image.png",
+                width: 1200,
+                height: 630,
+                alt: "Content Platform",
+            },
+        ],
+    },
+
+    twitter: {
+        card: "summary_large_image",
+        title: "Content Platform",
+        description:
+            "Publish, review, and discover articles with a modern editorial workflow.",
+        images: ["/twitter-image.png"],
+    },
 };
 
 export default function RootLayout({

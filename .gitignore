@@ -21,5 +21,6 @@ logs
 !.elasticbeanstalk/*.global.yml
 
 .vscode
+desktop.ini
 
 *.log
