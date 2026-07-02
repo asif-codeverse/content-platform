@@ -5,7 +5,7 @@ import compression from "compression";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 
-import swaggerDocument from "./docs/swagger.js";
+import { swaggerSpec } from "./docs/swagger.js";
 
 import healthRoutes from "./routes/health.routes.js";
 import readinessRoutes from "./routes/readiness.routes.js"
@@ -54,7 +54,14 @@ app.use("/api/v1/search", searchRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customSiteTitle: "Content Platform API Docs",
+  })
+);
 
 // Error handler (must be last)
 app.use(errorHandler);

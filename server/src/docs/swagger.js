@@ -1,442 +1,87 @@
-const swaggerDocument = {
-    openapi: "3.0.0",
-    info: {
-        title: "Content Platform API",
-        version: "1.0.0",
-        description: "Backend API Documentation",
-    },
-    tags: [
-        {
-            name: "Authentication",
-            description: "Authentication APIs",
-        },
-        {
-            name: "Articles",
-            description: "Article management APIs",
-        },
-        {
-            name: "Search",
-            description: "Search APIs",
-        },
-        {
-            name: "Upload",
-            description: "File upload APIs",
-        },
-        {
-            name: "Health",
-            description: "Health monitoring APIs",
-        },
-    ],
-    servers: [
-        {
-            url: "http://localhost:5001",
-            description: "Local Development",
-        },
-    ],
-    paths: {
-        "/api/v1/health": {
-            get: {
-                tags: ["Health"],
-                summary: "Health Check",
-                description: "Returns server health information",
-                responses: {
-                    200: {
-                        description: "Server is healthy",
-                    },
-                },
-            },
-        },
-        "/api/v1/readiness": {
-            get: {
-                tags: ["Health"],
-                summary: "Readiness Check",
+import { articlePaths } from "./path/article.paths.js";
+import { authPaths } from "./path/auth.paths.js";
+import { healthPaths } from "./path/health.paths.js";
+import { searchPaths } from "./path/search.paths.js";
+import { uploadPaths } from "./path/upload.paths.js";
+import { userPaths } from "./path/user.paths.js";
 
-                responses: {
-                    200: {
-                        description: "Application Ready",
-                    },
-                },
-            },
-        },
+import { components } from "./components.js";
+import { tags } from "./tags.js";
+import { servers } from "./servers.js";
 
-        "/api/v1/auth/register": {
-            post: {
-                tags: ["Authentication"],
-                summary: "Register User",
+export const swaggerSpec = {
+  openapi: "3.0.3",
 
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    name: {
-                                        type: "string",
-                                    },
-                                    email: {
-                                        type: "string",
-                                    },
-                                    password: {
-                                        type: "string",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+  info: {
+    title: "Content Platform API",
+    version: "1.0.0",
 
-                responses: {
-                    201: {
-                        description: "User Registered",
-                    },
-                },
-            },
-        },
+    description: `
+Production-ready Content Management Platform API.
 
-        "/api/v1/auth/login": {
-            post: {
-                tags: ["Authentication"],
-                summary: "Login User",
+## Features
 
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    email: {
-                                        type: "string",
-                                    },
-                                    password: {
-                                        type: "string",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+- JWT Authentication
+- Refresh Token Rotation
+- Role-Based Access Control (RBAC)
+- Article Publishing Workflow
+- Editorial Review System
+- Redis Caching
+- Full-Text Search
+- Image Uploads
+- Email Verification (OTP)
+- Password Reset (OTP)
+- Request Validation
+- Rate Limiting
+- Security Headers
+- Structured Logging
 
-                responses: {
-                    200: {
-                        description: "Logged In Successfully",
-                    },
-                },
-            },
-        },
+### Authentication
 
-        "/api/v1/auth/refresh": {
-            post: {
-                tags: ["Authentication"],
-                summary: "Refresh Access Token",
+Authenticate using the **Authorize** button.
 
-                responses: {
-                    200: {
-                        description: "New Access Token Generated",
-                    },
-                },
-            },
-        },
+Paste **only** the JWT access token.
 
-        "/api/v1/auth/me": {
-            get: {
-                tags: ["Authentication"],
-                summary: "Current User",
+Example:
 
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
+\`\`\`
+eyJhbGciOiJIUzI1NiIs...
+\`\`\`
 
-                responses: {
-                    200: {
-                        description: "Authenticated User",
-                    },
-                },
-            },
-        },
+Do **not** include:
 
-        "/api/v1/articles": {
-            get: {
-                tags: ["Articles"],
-                summary: "List Published Articles",
-
-                responses: {
-                    200: {
-                        description: "Published articles list",
-                    },
-                },
-            },
-
-            post: {
-                tags: ["Articles"],
-                summary: "Create Article",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    title: {
-                                        type: "string",
-                                    },
-                                    content: {
-                                        type: "string",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-
-                responses: {
-                    201: {
-                        description: "Article Created",
-                    },
-                },
-            },
-        },
-
-        "/api/v1/articles/all": {
-            get: {
-                tags: ["Articles"],
-                summary: "List All Articles",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                responses: {
-                    200: {
-                        description: "All Articles",
-                    },
-                },
-            },
-        },
-
-        "/api/v1/articles/{slug}": {
-            get: {
-                tags: ["Articles"],
-                summary: "Get Article By Slug",
-
-                parameters: [
-                    {
-                        name: "slug",
-                        in: "path",
-                        required: true,
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                ],
-
-                responses: {
-                    200: {
-                        description: "Article Found",
-                    },
-                    404: {
-                        description: "Article Not Found",
-                    },
-                },
-            },
-        },
-
-        "/api/v1/articles/{id}": {
-            patch: {
-                tags: ["Articles"],
-                summary: "Update Article",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                parameters: [
-                    {
-                        name: "id",
-                        in: "path",
-                        required: true,
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                ],
-
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    title: {
-                                        type: "string",
-                                    },
-                                    content: {
-                                        type: "string",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-
-                responses: {
-                    200: {
-                        description: "Article Updated",
-                    },
-                },
-            },
-
-            delete: {
-                tags: ["Articles"],
-                summary: "Delete Article",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                parameters: [
-                    {
-                        name: "id",
-                        in: "path",
-                        required: true,
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                ],
-
-                responses: {
-                    200: {
-                        description: "Article Deleted",
-                    },
-                },
-            },
-        },
-
-        "/api/v1/articles/{id}/publish": {
-            patch: {
-                tags: ["Articles"],
-                summary: "Publish Article",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                parameters: [
-                    {
-                        name: "id",
-                        in: "path",
-                        required: true,
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                ],
-
-                responses: {
-                    200: {
-                        description: "Article Published",
-                    },
-                },
-            },
-        },
-        "/api/v1/search": {
-            get: {
-                tags: ["Search"],
-                summary: "Search Articles",
-
-                parameters: [
-                    {
-                        name: "q",
-                        in: "query",
-                        required: true,
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                ],
-
-                responses: {
-                    200: {
-                        description: "Search Results",
-                    },
-                },
-            },
-        },
-        "/api/v1/upload": {
-            post: {
-                tags: ["Upload"],
-                summary: "Upload Image",
-
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-
-                requestBody: {
-                    required: true,
-                    content: {
-                        "multipart/form-data": {
-                            schema: {
-                                type: "object",
-                                required: ["image"],
-                                properties: {
-                                    image: {
-                                        type: "string",
-                                        format: "binary",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-
-                responses: {
-                    200: {
-                        description: "Image uploaded successfully",
-                    },
-                    400: {
-                        description: "No image uploaded",
-                    },
-                    401: {
-                        description: "Unauthorized",
-                    },
-                },
-            },
-        },
+\`\`\`
+Bearer eyJ...
+\`\`\`
+`,
+    contact: {
+      name: "Asif",
+      url: "https://github.com/asif-codeverse",
     },
 
-    components: {
-        securitySchemes: {
-            bearerAuth: {
-                type: "http",
-                scheme: "bearer",
-                bearerFormat: "JWT",
-                description:
-                    "Enter JWT token without Bearer prefix",
-            },
-        },
+    license: {
+      name: "MIT",
     },
+  },
+
+  servers,
+
+  tags,
+
+  components,
+
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
+
+  paths: {
+    ...healthPaths,
+    ...authPaths,
+    ...articlePaths,
+    ...searchPaths,
+    ...uploadPaths,
+    ...userPaths,
+  },
 };
-
-export default swaggerDocument;
